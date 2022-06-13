@@ -620,7 +620,7 @@ void NetPlayDialog::show(std::string nickname, bool use_traversal)
   m_night_stadium->setEnabled(is_hosting);
   //m_coin_flipper->setHidden(!is_hosting);
   //m_coin_flipper->setEnabled(is_hosting);
-  m_coin_flipper->setEnabled(true);
+  //m_coin_flipper->setEnabled(true);
 
   SetOptionsEnabled(true);
 
