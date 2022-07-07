@@ -288,7 +288,7 @@ void NetPlaySetupDialog::CreateMainLayout()
       "This will limit the speed of chunked uploading per client, which is used for save sync."));
 
   m_host_server_name->setToolTip(tr("Name of your session shown in the server browser"));
-  m_host_server_name->setPlaceholderText(tr("Name"));
+  m_host_server_name->setPlaceholderText(tr("Lobby Name"));
   m_host_server_password->setToolTip(tr("Password for joining your game (leave empty for none)"));
   m_host_server_password->setPlaceholderText(tr("Password"));
 
