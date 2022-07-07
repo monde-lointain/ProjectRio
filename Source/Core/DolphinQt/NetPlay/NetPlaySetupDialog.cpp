@@ -80,8 +80,9 @@ NetPlaySetupDialog::NetPlaySetupDialog(const GameListModel& game_list_model, QWi
   m_host_server_name->setEnabled(use_index);
   m_host_server_name->setText(QString::fromStdString(index_name));
 
-  m_host_ranked->setEnabled(true);
-  m_host_superstars->setEnabled(true);
+  bool is_ranked = Config::Get(Config::NETPLAY_RANKED);
+  m_host_ranked->setChecked(is_ranked);
+  m_host_game_mode->setEnabled(true);
 
   m_host_server_password->setEnabled(use_index);
   m_host_server_password->setText(QString::fromStdString(index_password));
@@ -245,17 +246,31 @@ void NetPlaySetupDialog::CreateMainLayout()
   m_host_server_name = new QLineEdit;
   m_host_server_password = new QLineEdit;
   m_host_server_region = new QComboBox;
+
+  // m_host_option_label = new QLabel(tr("Game Options:"));
+  m_host_option_label = new QLabel;
+  m_host_option_label->setTextFormat(Qt::RichText);
+  m_host_option_label->setText(tr("<b><u>Game Options</u>:</b>"));
+
   m_host_ranked = new QCheckBox(tr("Ranked Mode"));
   m_host_ranked->setToolTip(
       tr("Enabling Ranked Mode will mark down your games as being ranked in the stats files\n and "
          "disable any extra gecko codes as well as Training Mode. This should be toggled for\n"
          "serious/competitive/ranked games ase accurate and organized. Toggling this box will\n"
          " always record stats, ignoring user configurations."));
-  m_host_superstars = new QCheckBox(tr("Superstar Characters"));
-  m_host_superstars->setToolTip(
-      tr("Check this box if you would like to play using superstarred characters, "
-         "or leave it unchecked if you want to keep them off.\nRanked mode has two different "
-         "ranked leaderboards: one for superstars on and one for superstars off"));
+  m_host_game_mode = new QComboBox;
+  m_host_game_mode->setToolTip(
+      tr("Choose which game mode you would like to play with. This will appear and be visible to other players in the lobby browser.\n"
+      "- Superstars OFF: doesn't allow superstarred characters to be used\n"
+      "- Superstars ON: allows the use of superstarred characters\n"
+      "- UU: doesn't allow superstar characters or the following characters:\n\tBowser, DK, Petey, Yoshi, Birdo, Hammer Bro, King Boo, Boo, Magikoopa"));
+
+  // add game modes
+  m_host_game_mode->addItem(tr("Superstars OFF"));
+  m_host_game_mode->addItem(tr("Superstars ON"));
+  m_host_game_mode->addItem(tr("UU"));
+  std::string current_mode = Config::Get(Config::NETPLAY_GAME_MODE);
+  m_host_game_mode->setCurrentIndex(m_host_game_mode->findText(QString::fromStdString(current_mode)));
 
 #ifdef USE_UPNP
   m_host_upnp = new QCheckBox(tr("Forward port (UPnP)"));
@@ -283,7 +298,7 @@ void NetPlaySetupDialog::CreateMainLayout()
         tr("%1 (%2)").arg(tr(region.second.c_str())).arg(QString::fromStdString(region.first)),
         QString::fromStdString(region.first));
   }
-
+  QLabel* separator = new QLabel(tr(" "));
   host_layout->addWidget(m_host_port_label, 0, 0);
   host_layout->addWidget(m_host_port_box, 0, 1);
 #ifdef USE_UPNP
@@ -293,14 +308,16 @@ void NetPlaySetupDialog::CreateMainLayout()
   host_layout->addWidget(m_host_server_region, 1, 1);
   host_layout->addWidget(m_host_server_name, 1, 2);
   host_layout->addWidget(m_host_server_password, 1, 3);
-  host_layout->addWidget(m_host_ranked, 2, 0);
-  host_layout->addWidget(m_host_superstars, 2, 1);
-  host_layout->addWidget(m_host_games, 3, 0, 1, -1);
-  host_layout->addWidget(m_host_force_port_check, 4, 0);
-  host_layout->addWidget(m_host_force_port_box, 4, 1, Qt::AlignLeft);
-  host_layout->addWidget(m_host_chunked_upload_limit_check, 5, 0);
-  host_layout->addWidget(m_host_chunked_upload_limit_box, 5, 1, Qt::AlignLeft);
-  host_layout->addWidget(m_host_button, 5, 3, 2, 1, Qt::AlignRight);
+  host_layout->addWidget(separator, 2, 0);
+  host_layout->addWidget(m_host_option_label, 3, 0);
+  host_layout->addWidget(m_host_ranked, 4, 0);
+  host_layout->addWidget(m_host_game_mode, 4, 1);
+  host_layout->addWidget(m_host_games, 5, 0, 1, -1);
+  host_layout->addWidget(m_host_force_port_check, 6, 0);
+  host_layout->addWidget(m_host_force_port_box, 6, 1, Qt::AlignLeft);
+  host_layout->addWidget(m_host_chunked_upload_limit_check, 7, 0);
+  host_layout->addWidget(m_host_chunked_upload_limit_box, 7, 1, Qt::AlignLeft);
+  host_layout->addWidget(m_host_button, 7, 3, 2, 1, Qt::AlignRight);
 
   host_widget->setLayout(host_layout);
 
@@ -387,13 +404,11 @@ void NetPlaySetupDialog::ConnectWidgets()
     m_host_server_name->setEnabled(value);
     m_host_server_password->setEnabled(value);
   });
-  //// connect this to lobby data stuff
-  connect(m_host_ranked, &QCheckBox::toggled, this, [this](bool is_ranked) {
-    NetPlay::m_RankedMode = is_ranked;
-  });
-  connect(m_host_superstars, &QCheckBox::toggled, this, [this](bool value) {
-    NetPlay::m_Superstars = value;
-  });
+
+  // connect this to lobby data stuff
+  connect(m_host_game_mode, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+          this, &NetPlaySetupDialog::SaveLobbySettings);
+  connect(m_host_ranked, &QCheckBox::toggled, this, &NetPlaySetupDialog::SaveLobbySettings);
 
   // Browser Stuff
   connect(m_region_combo, qOverload<int>(&QComboBox::currentIndexChanged), this,
@@ -415,6 +430,14 @@ void NetPlaySetupDialog::ConnectWidgets()
   connect(this, &NetPlaySetupDialog::UpdateListRequestedBrowser, this,
           &NetPlaySetupDialog::OnUpdateListRequestedBrowser,
           Qt::QueuedConnection);
+}
+
+void NetPlaySetupDialog::SaveLobbySettings()
+{
+  Config::SetBaseOrCurrent(Config::NETPLAY_RANKED, m_host_ranked->isChecked());
+  Config::SetBaseOrCurrent(Config::NETPLAY_GAME_MODE,
+                           m_host_game_mode->currentText().toStdString());
+  Config::Save();
 }
 
 void NetPlaySetupDialog::SaveSettings()
@@ -501,8 +524,6 @@ void NetPlaySetupDialog::show()
     m_host_server_name->setText(QString::fromStdString(nickname));
   }
   m_host_server_browser->setChecked(true);
-  m_host_ranked->setChecked(false);
-  m_host_superstars->setChecked(false);
   m_connection_type->setCurrentIndex(1);
   m_tab_widget->setCurrentIndex(2); // start on browser
   RefreshBrowser();
@@ -651,8 +672,8 @@ void NetPlaySetupDialog::UpdateListBrowser()
 
   m_table_widget->clear();
   m_table_widget->setColumnCount(7);
-  m_table_widget->setHorizontalHeaderLabels({tr("Region"), tr("Name"), tr("Game Mode"),
-                                             tr("Superstars"), tr("Password?"), tr("Players"),
+  m_table_widget->setHorizontalHeaderLabels({tr("Region"), tr("Name"), tr("Ranked Mode"),
+                                             tr("Game Mode"), tr("Password?"), tr("Players"),
                                              tr("Version")});
 
   auto* hor_header = m_table_widget->horizontalHeader();
@@ -678,7 +699,7 @@ void NetPlaySetupDialog::UpdateListBrowser()
     auto* name = new QTableWidgetItem(QString::fromStdString(game_tags[0]));
     auto* password = new QTableWidgetItem(entry.has_password ? tr("Yes") : tr("No"));
     auto* is_ranked = new QTableWidgetItem(game_tags[1] == "Ranked" ? tr("Ranked") : tr("Unranked"));
-    auto* superstars = new QTableWidgetItem(game_tags[2] == "Superstars On" ? tr("On") : tr("Off"));
+    auto* gamemode = new QTableWidgetItem(QString::fromStdString(game_tags[2]));
     auto* player_count = new QTableWidgetItem(QStringLiteral("%1").arg(entry.player_count));
     auto* version = new QTableWidgetItem(QString::fromStdString(entry.version));
 
@@ -686,13 +707,13 @@ void NetPlaySetupDialog::UpdateListBrowser()
     if (enabled)
       online_count += entry.player_count;
 
-    for (const auto& item : {region, name, is_ranked, superstars, password, player_count, version})
+    for (const auto& item : {region, name, is_ranked, gamemode, password, player_count, version})
       item->setFlags(enabled ? Qt::ItemIsEnabled | Qt::ItemIsSelectable : Qt::NoItemFlags);
 
     m_table_widget->setItem(i, 0, region);
     m_table_widget->setItem(i, 1, name);
     m_table_widget->setItem(i, 2, is_ranked); // was in_game
-    m_table_widget->setItem(i, 3, superstars); // was game_id
+    m_table_widget->setItem(i, 3, gamemode);   // was game_id
     m_table_widget->setItem(i, 4, password);
     m_table_widget->setItem(i, 5, player_count);
     m_table_widget->setItem(i, 6, version);
@@ -780,7 +801,7 @@ std::string NetPlaySetupDialog::LobbyNameString()
   lobby_string += delimiter;
   lobby_string += m_host_ranked->isChecked() ? "Ranked" : "Unranked";
   lobby_string += delimiter;
-  lobby_string += m_host_superstars->isChecked() ? "Superstars On" : "Superstars Off";
+  lobby_string += m_host_game_mode->currentText().toStdString();
   // potentially add more here for each tag
   return lobby_string;
 }

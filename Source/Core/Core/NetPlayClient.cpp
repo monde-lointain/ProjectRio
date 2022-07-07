@@ -468,8 +468,8 @@ void NetPlayClient::OnData(sf::Packet& packet)
     OnMD5Abort();
     break;
 
-  case MessageID::SuperstarBox:
-    OnSuperstarBoxMsg(packet);
+  case MessageID::GameMode:
+    OnGameModeMsg(packet);
     break;
   
   case MessageID::RankedBox:
@@ -1499,11 +1499,11 @@ void NetPlayClient::OnMD5Abort()
   m_dialog->AbortMD5();
 }
 
-void NetPlayClient::OnSuperstarBoxMsg(sf::Packet& packet)
+void NetPlayClient::OnGameModeMsg(sf::Packet& packet)
 {
-  bool stars_on;
-  packet >> stars_on;
-  m_dialog->OnSuperstarEnabled(stars_on);
+  std::string mode;
+  packet >> mode;
+  m_dialog->OnGameMode(mode);
 }
 
 void NetPlayClient::OnRankedBoxMsg(sf::Packet& packet)

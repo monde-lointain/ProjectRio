@@ -466,15 +466,15 @@ ConnectionError NetPlayServer::OnConnect(ENetPeer* socket, sf::Packet& rpac)
   // send ranked box state
   spac.clear();
   spac << MessageID::RankedBox;
-  m_current_ranked_value = NetPlay::m_RankedMode;
+  m_current_ranked_value = Config::Get(Config::NETPLAY_RANKED);
   spac << m_current_ranked_value;
   Send(player.socket, spac);
 
-  // send superstar box state
+  // send Game Mode state
   spac.clear();
-  spac << MessageID::SuperstarBox;
-  bool stars_on = NetPlay::m_Superstars;
-  spac << stars_on;
+  spac << MessageID::GameMode;
+  std::string game_mode = Config::Get(Config::NETPLAY_GAME_MODE);
+  spac << game_mode;
   Send(player.socket, spac);
 
   // send night stadium state
@@ -1522,6 +1522,8 @@ bool NetPlayServer::SetupNetSettings()
   settings.m_GolfMode = Config::Get(Config::NETPLAY_NETWORK_MODE) == "golf";
   settings.m_UseFMA = DoAllPlayersHaveHardwareFMA();
   settings.m_HideRemoteGBAs = Config::Get(Config::NETPLAY_HIDE_REMOTE_GBAS);
+  settings.m_RankedMode = Config::Get(Config::NETPLAY_RANKED);
+  settings.m_GameMode = Config::Get(Config::NETPLAY_GAME_MODE);
 
   // Unload GameINI to restore things to normal
   Config::RemoveLayer(Config::LayerType::GlobalGame);

@@ -61,6 +61,7 @@ private:
   void acceptBrowser();
 
   void SaveSettings();
+  void SaveLobbySettings();
 
   void OnConnectionTypeChanged(int index);
 
@@ -93,7 +94,8 @@ private:
   QLineEdit* m_host_server_password;
   QComboBox* m_host_server_region;
   QCheckBox* m_host_ranked;
-  QCheckBox* m_host_superstars;
+  QComboBox* m_host_game_mode;
+  QLabel* m_host_option_label;
 
   // Browser Tab
   QTableWidget* m_table_widget;

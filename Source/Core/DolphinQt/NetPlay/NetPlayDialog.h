@@ -74,7 +74,7 @@ public:
   void OnGolferChanged(bool is_golfer, const std::string& golfer_name) override;
 
   void RankedStartingMsg(bool is_ranked) override;
-  void OnSuperstarEnabled(bool is_stars) override;
+  void OnGameMode(std::string mode) override;
   void OnRankedEnabled(bool is_ranked) override;
   void OnCoinFlipResult(int coinNum);
   void OnNightResult(bool is_night);
