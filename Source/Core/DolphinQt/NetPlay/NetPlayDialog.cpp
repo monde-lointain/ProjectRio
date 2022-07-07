@@ -250,6 +250,7 @@ void NetPlayDialog::CreateChatLayout()
   m_chat_type_edit = new QLineEdit;
   m_chat_send_button = new QPushButton(tr("Send"));
   m_coin_flipper = new QPushButton(tr("Coin Flip"));
+  m_coin_flipper->setAutoDefault(false); // prevents accidental coin flips when trying to send a chat msg
 
   // This button will get re-enabled when something gets entered into the chat box
   m_chat_send_button->setEnabled(false);
