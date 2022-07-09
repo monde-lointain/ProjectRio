@@ -263,14 +263,17 @@ void NetPlaySetupDialog::CreateMainLayout()
       tr("Choose which game mode you would like to play with. This will appear and be visible to other players in the lobby browser.\n"
       "- Superstars OFF: doesn't allow superstarred characters to be used\n"
       "- Superstars ON: allows the use of superstarred characters\n"
-      "- UU: doesn't allow superstar characters or the following characters:\n\tBowser, DK, Petey, Yoshi, Birdo, Hammer Bro, King Boo, Boo, Magikoopa"));
+      "- Custom: any non-standard format"
+      ));
 
   // add game modes
   m_host_game_mode->addItem(tr("Superstars OFF"));
   m_host_game_mode->addItem(tr("Superstars ON"));
-  m_host_game_mode->addItem(tr("UU"));
+  m_host_game_mode->addItem(tr("Custom"));
+
   std::string current_mode = Config::Get(Config::NETPLAY_GAME_MODE);
-  m_host_game_mode->setCurrentIndex(m_host_game_mode->findText(QString::fromStdString(current_mode)));
+  int iMode = m_host_game_mode->findText(QString::fromStdString(current_mode));
+  m_host_game_mode->setCurrentIndex(iMode == -1 ? 0 : iMode);
 
 #ifdef USE_UPNP
   m_host_upnp = new QCheckBox(tr("Forward port (UPnP)"));
