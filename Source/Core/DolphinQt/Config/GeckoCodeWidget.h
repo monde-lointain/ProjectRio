@@ -48,10 +48,12 @@ private:
   void DownloadCodes();
   void SaveCodes();
   void SortAlphabetically();
+  void MakeEnabledList();
 
   std::string m_game_id;
   std::string m_gametdb_id;
   u16 m_game_revision;
+  std::vector<std::string> m_enabled_codes_list;
 
   CheatWarningWidget* m_warning;
   QListWidget* m_code_list;
