@@ -2,12 +2,14 @@ name: Builds
 
 on:
   push:
-    branches: [ ProjectRio/**_release ]
+    branches:
+      - "**_release"
     paths-ignore:
       - "**.md"
       - "**.ini"
   pull_request:
-    branches: [ ProjectRio/**_release ]
+    branches: 
+      - "**_release"
     paths-ignore:
       - "**.md"
       - "**.ini"
