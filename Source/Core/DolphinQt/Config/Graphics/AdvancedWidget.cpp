@@ -195,14 +195,9 @@ void AdvancedWidget::LoadSettings()
   m_dump_bitrate->setEnabled(!Config::Get(Config::GFX_USE_FFV1));
 
   // set index of combobox to matching element from config file
-  int iTexturePack = Config::Get(Config::GFX_TEXTURE_PACK);
-  int indexConfig = 0;
-  for (int i = 0; i < m_custom_textures_list->count(); i++)
-  {
-    if (i == iTexturePack)
-      indexConfig = i;
-  }
-  m_custom_textures_list->setCurrentIndex(indexConfig);
+  std::string current_pack = Config::Get(Config::GFX_TEXTURE_PACK);
+  int iPack = m_custom_textures_list->findText(QString::fromStdString(current_pack));
+  m_custom_textures_list->setCurrentIndex(iPack == -1 ? 0 : iPack);
 
   m_enable_prog_scan->setChecked(Config::Get(Config::SYSCONF_PROGRESSIVE_SCAN));
   m_dump_mip_textures->setEnabled(Config::Get(Config::GFX_DUMP_TEXTURES));
@@ -218,7 +213,7 @@ void AdvancedWidget::SaveSettings()
   m_dump_mip_textures->setEnabled(Config::Get(Config::GFX_DUMP_TEXTURES));
   m_dump_base_textures->setEnabled(Config::Get(Config::GFX_DUMP_TEXTURES));
 
-  Config::SetBase(Config::GFX_TEXTURE_PACK, m_custom_textures_list->currentIndex());
+  Config::SetBaseOrCurrent(Config::GFX_TEXTURE_PACK, m_custom_textures_list->currentText().toStdString());
 }
 
 void AdvancedWidget::OnBackendChanged()

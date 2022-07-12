@@ -30,6 +30,7 @@ void LocalPlayersWindow::CreateMainLayout()
   layout->addWidget(m_button_box);
 
   WrapInScrollArea(this, layout);
+  setMinimumWidth(400);
 }
 
 void LocalPlayersWindow::ConnectWidgets()
