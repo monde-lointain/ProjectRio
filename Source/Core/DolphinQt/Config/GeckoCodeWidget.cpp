@@ -190,6 +190,7 @@ void GeckoCodeWidget::OnItemChanged(QListWidgetItem* item)
   if (!m_restart_required)
     Gecko::SetActiveCodes(m_gecko_codes);
 
+  MakeEnabledList();
   SaveCodes();
 }
 
@@ -307,6 +308,7 @@ void GeckoCodeWidget::UpdateList()
     m_code_list->addItem(item);
   }
   m_code_list->setDragDropMode(QAbstractItemView::InternalMove);
+  MakeEnabledList();
 }
 
 void GeckoCodeWidget::DownloadCodes()
@@ -347,4 +349,32 @@ void GeckoCodeWidget::DownloadCodes()
       this, tr("Download complete"),
       tr("Downloaded %1 codes. (added %2)")
           .arg(QString::number(codes.size()), QString::number(added_count)));
+}
+
+void GeckoCodeWidget::MakeEnabledList()
+{
+  m_enabled_codes_list.clear();
+
+  for (auto code : m_gecko_codes)
+  {
+    if (code.enabled)
+    {
+      m_enabled_codes_list.push_back(code.name);
+    }
+  }
+
+  std::ostringstream enabled_codes_string;
+  if (!m_enabled_codes_list.empty())
+  {
+    std::copy(m_enabled_codes_list.begin(), m_enabled_codes_list.end() - 1,
+              std::ostream_iterator<std::string>(enabled_codes_string, "\n- "));
+    enabled_codes_string << m_enabled_codes_list.back();
+
+    m_code_list->setToolTip(tr("\nCurrently Enabled Codes: \n- %1")
+                                .arg(QString::fromStdString(enabled_codes_string.str())));
+  }
+  else
+  {
+    m_code_list->setToolTip(tr("\nNo Codes Currently Enabled"));
+  }
 }

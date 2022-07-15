@@ -28,6 +28,7 @@ private:
   void SetPlayers();
   void CreateLayout();
   void OnAddPlayers();
+  void OnRemovePlayers();
   void SavePlayers();
   void UpdatePlayers();
   void AddPlayerToList();
@@ -41,6 +42,7 @@ private:
 
   QGroupBox* m_player_box;
   QGridLayout* m_player_layout;
+  QListWidget* m_player_list;
 
   QComboBox* m_player_list_1;
   QComboBox* m_player_list_2;
@@ -48,6 +50,7 @@ private:
   QComboBox* m_player_list_4;
 
   QPushButton* m_add_button;
+  QPushButton* m_remove_button;
   std::array<QHBoxLayout*, 4> m_player_groups;
   std::vector<LocalPlayers::LocalPlayers::Player> m_local_players;
 };

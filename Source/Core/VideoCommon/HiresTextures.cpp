@@ -416,16 +416,12 @@ bool HiresTexture::LoadTexture(Level& level, const std::vector<u8>& buffer)
 std::set<std::string> GetTextureDirectoriesWithGameId(const std::string& root_directory,
                                                       const std::string& game_id)
 {
-  bool isCustomTexturePack = (Config::Get(Config::GFX_TEXTURE_PACK) == 0);
-  std::string sTexturePack = "";
+  std::string pack = Config::Get(Config::GFX_TEXTURE_PACK);
+  bool isCustomTexturePack = pack == "" || pack == "Custom";
+  std::string sTexturePack = isCustomTexturePack ? "" : pack;
   auto textures_search_results = Common::DoFileSearch(
       {File::GetUserPath(D_TEXTUREPACKS_IDX), File::GetSysDirectory() + TEXTUREPACKS_DIR});
   const auto textures_directory = File::GetSysDirectory() + TEXTUREPACKS_DIR + DIR_SEP;
-  if (!isCustomTexturePack)
-  {
-    int iCustomTexturePack = Config::Get(Config::GFX_TEXTURE_PACK) - 1;
-    sTexturePack = PathToFileName(textures_search_results[iCustomTexturePack]);
-  }
   return GetTextureDirectoriesWithGameId(isCustomTexturePack ? root_directory : textures_directory,
                                          game_id, isCustomTexturePack, sTexturePack);
 }

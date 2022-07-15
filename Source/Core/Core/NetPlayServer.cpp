@@ -466,15 +466,15 @@ ConnectionError NetPlayServer::OnConnect(ENetPeer* socket, sf::Packet& rpac)
   // send ranked box state
   spac.clear();
   spac << MessageID::RankedBox;
-  m_current_ranked_value = NetPlay::m_RankedMode;
+  m_current_ranked_value = Config::Get(Config::NETPLAY_RANKED);
   spac << m_current_ranked_value;
   Send(player.socket, spac);
 
-  // send superstar box state
+  // send Game Mode state
   spac.clear();
-  spac << MessageID::SuperstarBox;
-  bool stars_on = NetPlay::m_Superstars;
-  spac << stars_on;
+  spac << MessageID::GameMode;
+  std::string game_mode = Config::Get(Config::NETPLAY_GAME_MODE);
+  spac << game_mode;
   Send(player.socket, spac);
 
   // send night stadium state
@@ -1522,6 +1522,8 @@ bool NetPlayServer::SetupNetSettings()
   settings.m_GolfMode = Config::Get(Config::NETPLAY_NETWORK_MODE) == "golf";
   settings.m_UseFMA = DoAllPlayersHaveHardwareFMA();
   settings.m_HideRemoteGBAs = Config::Get(Config::NETPLAY_HIDE_REMOTE_GBAS);
+  settings.m_RankedMode = Config::Get(Config::NETPLAY_RANKED);
+  settings.m_GameMode = Config::Get(Config::NETPLAY_GAME_MODE);
 
   // Unload GameINI to restore things to normal
   Config::RemoveLayer(Config::LayerType::GlobalGame);
@@ -1602,8 +1604,8 @@ bool NetPlayServer::StartGame()
 
   const sf::Uint64 initial_rtc = GetInitialNetPlayRTC();
 
-  const std::string region = SConfig::GetDirectoryForRegion(
-      SConfig::ToGameCubeRegion(m_dialog->FindGameFile(m_selected_game_identifier)->GetRegion()));
+  const std::string region = Config::GetDirectoryForRegion(
+      Config::ToGameCubeRegion(m_dialog->FindGameFile(m_selected_game_identifier)->GetRegion()));
 
   // sync GC SRAM with clients
   if (!g_SRAM_netplay_initialized)
@@ -1797,8 +1799,8 @@ bool NetPlayServer::SyncSaveData()
   if (save_count == 0)
     return true;
 
-  const std::string region =
-      SConfig::GetDirectoryForRegion(SConfig::ToGameCubeRegion(game->GetRegion()));
+  const auto game_region = game->GetRegion();
+  const std::string region = Config::GetDirectoryForRegion(Config::ToGameCubeRegion(game_region));
 
   for (ExpansionInterface::Slot slot : ExpansionInterface::MEMCARD_SLOTS)
   {
@@ -1806,17 +1808,12 @@ bool NetPlayServer::SyncSaveData()
 
     if (m_settings.m_EXIDevice[slot] == ExpansionInterface::EXIDeviceType::MemoryCard)
     {
-      std::string path = Config::Get(Config::GetInfoForMemcardPath(slot));
-
-      MemoryCard::CheckPath(path, region, slot);
-
       const int size_override = m_settings.m_MemcardSizeOverride;
-      if (size_override >= 0 && size_override <= 4)
-      {
-        path.insert(path.find_last_of('.'),
-                    fmt::format(".{}", Memcard::MbitToFreeBlocks(Memcard::MBIT_SIZE_MEMORY_CARD_59
-                                                                 << size_override)));
-      }
+      const u16 card_size_mbits =
+          size_override >= 0 && size_override <= 4 ?
+              static_cast<u16>(Memcard::MBIT_SIZE_MEMORY_CARD_59 << size_override) :
+              Memcard::MBIT_SIZE_MEMORY_CARD_2043;
+      const std::string path = Config::GetMemcardPath(slot, game_region, card_size_mbits);
 
       sf::Packet pac;
       pac << MessageID::SyncSaveData;

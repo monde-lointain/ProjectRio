@@ -13,7 +13,7 @@ endif()
 
 # Minimum OS X version.
 # This is inserted into the Info.plist as well.
-set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14.0" CACHE STRING "")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15.0" CACHE STRING "")
 
 set(CMAKE_USER_MAKE_RULES_OVERRIDE "CMake/FlagsOverride.cmake")
 
@@ -96,6 +96,7 @@ if(APPLE)
   option(SKIP_POSTPROCESS_BUNDLE "Skip postprocessing bundle for redistributability" OFF)
   # Enable adhoc code signing by default (otherwise makefile builds on ARM will not work)
   option(MACOS_CODE_SIGNING "Enable codesigning" ON)
+  option(USE_BUNDLED_MOLTENVK "Build MoltenVK from Externals with Dolphin-specific patches" ON)
   set(MACOS_CODE_SIGNING_IDENTITY "-" CACHE STRING "The identity used for codesigning.")
   set(MACOS_CODE_SIGNING_IDENTITY_UPDATER "-" CACHE STRING "The identity used for codesigning, for the updater.")
 endif()
@@ -663,7 +664,7 @@ add_subdirectory(Externals/glslang)
 if(ENABLE_VULKAN)
   add_definitions(-DHAS_VULKAN)
 
-  if(APPLE)
+  if(APPLE AND USE_BUNDLED_MOLTENVK)
     add_subdirectory(Externals/MoltenVK)
   endif()
 endif()

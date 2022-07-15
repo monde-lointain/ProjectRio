@@ -128,17 +128,32 @@ std::string GenerateChangelog(const picojson::array& versions)
 
 bool AutoUpdateChecker::SystemSupportsAutoUpdates()
 {
-#if defined AUTOUPDATE
-#if defined _WIN32 || defined __APPLE__
+#if defined(AUTOUPDATE) && (defined(_WIN32) || defined(__APPLE__))
   return true;
-#else
-  return false;
-#endif
 #else
   return false;
 #endif
 }
 
+// Uncomment this when using it for the eventual use of auto-downloading/installing updates
+//static std::string GetPlatformID()
+//{
+//#if defined(_WIN32)
+//#if defined(_M_ARM_64)
+//  return "win-arm64";
+//#else
+//  return "win";
+//#endif
+//#elif defined(__APPLE__)
+//#if defined(MACOS_UNIVERSAL_BUILD)
+//  return "macos-universal";
+//#else
+//  return "macos";
+//#endif
+//#else
+//  return "unknown";
+//#endif
+//}
 
 void AutoUpdateChecker::CheckForUpdate(std::string_view update_track,
                                        std::string_view hash_override)

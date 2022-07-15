@@ -250,6 +250,7 @@ void NetPlayDialog::CreateChatLayout()
   m_chat_type_edit = new QLineEdit;
   m_chat_send_button = new QPushButton(tr("Send"));
   m_coin_flipper = new QPushButton(tr("Coin Flip"));
+  m_coin_flipper->setAutoDefault(false); // prevents accidental coin flips when trying to send a chat msg
 
   // This button will get re-enabled when something gets entered into the chat box
   m_chat_send_button->setEnabled(false);
@@ -365,7 +366,7 @@ void NetPlayDialog::ConnectWidgets()
   connect(m_spectator_toggle, &QCheckBox::stateChanged, this, &NetPlayDialog::OnSpectatorToggle);
 
   connect(m_coin_flipper, &QPushButton::clicked, this, &NetPlayDialog::OnCoinFlip);
-
+  
   const auto hia_function = [this](bool enable) {
     if (m_host_input_authority != enable)
     {
@@ -495,12 +496,9 @@ void NetPlayDialog::OnActiveGeckoCodes(std::string codeStr)
   DisplayMessage(QString::fromStdString(codeStr), "cornflowerblue");
 }
 
-void NetPlayDialog::OnSuperstarEnabled(bool is_stars)
+void NetPlayDialog::OnGameMode(std::string mode)
 {
-  if (is_stars)
-    DisplayMessage(tr("Superstar Characters Enabled"), "goldenrod");
-  else
-    DisplayMessage(tr("Superstar Characters Disabled"), "orangered");
+  DisplayMessage(tr("Game Mode: %1").arg(QString::fromStdString(mode)), "goldenrod");
 }
 
 void NetPlayDialog::OnRankedEnabled(bool is_ranked)
@@ -620,7 +618,7 @@ void NetPlayDialog::show(std::string nickname, bool use_traversal)
   m_night_stadium->setEnabled(is_hosting);
   //m_coin_flipper->setHidden(!is_hosting);
   //m_coin_flipper->setEnabled(is_hosting);
-  m_coin_flipper->setEnabled(true);
+  //m_coin_flipper->setEnabled(true);
 
   SetOptionsEnabled(true);
 

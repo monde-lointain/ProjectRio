@@ -105,6 +105,9 @@ struct NetSettings
   bool m_UseFMA = false;
   bool m_HideRemoteGBAs = false;
 
+  bool m_RankedMode = false;
+  std::string m_GameMode = "";
+
   // These aren't sent over the network directly
   bool m_IsHosting = false;
   bool m_HostInputAuthority = false;
@@ -141,7 +144,7 @@ enum class MessageID : u8
   ChunkedDataComplete = 0x44,
   ChunkedDataAbort = 0x45,
 
-  SuperstarBox = 0x5e,
+  GameMode = 0x5e,
   RankedBox = 0x5f,
 
   PadData = 0x60,
@@ -275,7 +278,4 @@ bool IsSyncingAllWiiSaves();
 void SetupWiimotes();
 std::string GetGBASavePath(int pad_num);
 PadDetails GetPadDetails(int pad_num);
-
-bool m_RankedMode = false;
-bool m_Superstars = false;
 }  // namespace NetPlay
