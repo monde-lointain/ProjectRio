@@ -4,12 +4,14 @@ on:
   push:
     branches:
       - "**_release"
+      - "master"
     paths-ignore:
       - "**.md"
       - "**.ini"
   pull_request:
     branches: 
       - "**_release"
+      - "master"
     paths-ignore:
       - "**.md"
       - "**.ini"
