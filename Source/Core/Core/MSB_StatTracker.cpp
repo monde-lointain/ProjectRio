@@ -20,6 +20,16 @@ void StatTracker::Run(){
 }
 
 void StatTracker::lookForTriggerEvents(){
+    if (m_game_state != m_game_state_prev) {
+        state_logger.writeToFile(c_game_state[m_game_state]);
+        m_game_state_prev = m_game_state;
+    }
+
+    if (m_event_state != m_event_state_prev) {
+        state_logger.writeToFile(c_event_state[m_event_state]);
+        m_event_state_prev = m_event_state;
+    }
+
     //At Bat State Machine
     if (m_game_state == GAME_STATE::INGAME){
         switch(m_event_state){
@@ -333,8 +343,12 @@ void StatTracker::lookForTriggerEvents(){
             case (EVENT_STATE::GAME_OVER):
                 std::cout << "Game Over. Waiting for next game\n";
                 break;
+            case (EVENT_STATE::UNDEFINED):
+                std::cout << "UNDEFINED STATE\n";
+                m_event_state = EVENT_STATE::INIT;
+                break;                
             default:
-                std::cout << "Unknown State\n";
+                std::cout << "Unknown Event State\n";
                 m_event_state = EVENT_STATE::INIT;
                 break;
         }
@@ -404,6 +418,14 @@ void StatTracker::lookForTriggerEvents(){
                 std::cout << "ENDGAME->PREGAME\n";
             }
             break;
+        case (GAME_STATE::UNDEFINED):
+            std::cout << "UNDEFINED GAME STATE\n";
+            m_event_state = EVENT_STATE::INIT;
+            break;
+        default:
+            std::cout << "Unknown Game State\n";
+            m_event_state = EVENT_STATE::INIT;
+            break;        
     }
 }
 

@@ -34,6 +34,7 @@ enum
                           // settings (per game)
   D_STATFILES_IDX,
   D_HUDFILES_IDX,
+  D_STATELOGGER_IDX,
   D_MAPS_IDX,
   D_CACHE_IDX,
   D_COVERCACHE_IDX,

@@ -16,11 +16,21 @@
 
 #include "Core/LocalPlayers.h"
 
+#include "Core/Logger.h"
+
 enum class GAME_STATE
 {
   PREGAME,
   INGAME,
   ENDGAME_LOGGED,
+  UNDEFINED
+};
+
+static std::map<GAME_STATE, std::string> c_game_state = {
+    {GAME_STATE::PREGAME, "PREGAME"},
+    {GAME_STATE::INGAME, "INGAME"},
+    {GAME_STATE::ENDGAME_LOGGED, "ENDGAME_LOGGED"},
+    {GAME_STATE::UNDEFINED, "UNDEFINED"}
 };
 
 enum class EVENT_STATE
@@ -36,6 +46,22 @@ enum class EVENT_STATE
     FINAL_RESULT,
     WAITING_FOR_EVENT,
     GAME_OVER,
+    UNDEFINED
+};
+
+static std::map<EVENT_STATE, std::string> c_event_state = {
+    {EVENT_STATE::INIT, "INIT"},
+    {EVENT_STATE::PITCH_STARTED, "PITCH_STARTED"},
+    {EVENT_STATE::CONTACT, "CONTACT"},
+    {EVENT_STATE::CONTACT_RESULT, "CONTACT_RESULT"},
+    {EVENT_STATE::LOG_FIELDER, "LOG_FIELDER"},
+    {EVENT_STATE::NO_CONTACT, "NO_CONTACT"},
+    {EVENT_STATE::MONITOR_RUNNERS, "MONITOR_RUNNERS"},
+    {EVENT_STATE::PLAY_OVER, "PLAY_OVER"},
+    {EVENT_STATE::FINAL_RESULT, "FINAL_RESULT"},
+    {EVENT_STATE::WAITING_FOR_EVENT, "WAITING_FOR_EVENT"},
+    {EVENT_STATE::GAME_OVER, "GAME_OVER"},
+    {EVENT_STATE::UNDEFINED, "UNDEFINED"}
 };
 
 //Conversion Maps
@@ -450,6 +476,7 @@ static const u32 cRunner_Offset = 0x154;
 class StatTracker{
 public:
     //StatTracker() { };
+    Logger state_logger = Logger("stateLog.txt");;
 
     struct TrackerInfo{
         bool mRecord;
@@ -881,7 +908,9 @@ public:
     }
 
     GAME_STATE  m_game_state  = GAME_STATE::PREGAME;
+    GAME_STATE  m_game_state_prev = GAME_STATE::UNDEFINED;
     EVENT_STATE m_event_state = EVENT_STATE::INIT;
+    EVENT_STATE m_event_state_prev = EVENT_STATE::UNDEFINED;
 
     struct state_members{
         //Holds the status of the ranked button check box. Sampled at beginning of game
