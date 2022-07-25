@@ -2561,21 +2561,22 @@ void NetPlayClient::AutoGolfMode(bool isField, int BatPort, int FieldPort)
 void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
 {
   int clientID = m_local_player->pid; // refers to netplay client (the computer that's connected)
-  int GolfPort = isField ? FieldPort - 1 : BatPort - 1; // subtract 1 since m_pad_map uses 0->3 instead of 1->4
-  if (GolfPort >= 4 || GolfPort < 0 || !PortHasPlayerAssigned(GolfPort)) // something's wrong. probably a CPU player; return to avoid array out-of-range errors
-    return;
 
   // this little block makes it so that the auto golf logic will only complete if the client's been the golfer for more than
   // 10 frames. this is to ensure that under laggier conditions, a golfer who's game is too far behind doesn't swap the golfer
   // status back and forth for a short while, which can be extra jarring to players
   if (clientID != m_current_golfer) {
     framesAsGolfer = 0;
-    return;
+    return;   // don't run code unless we're the golfer
   }
   if (framesAsGolfer < 255) // don't want a memory overflow here
     framesAsGolfer += 1;
-  if (framesAsGolfer <= 10)
+  if (framesAsGolfer <= 60) // delay this so that swapping bugs are way less likely; 1 second lockout window (60 frames)
     return;
+
+  int GolfPort = isField ? FieldPort - 1 : BatPort - 1;  // subtract 1 since m_pad_map uses 0->3 instead of 1->4
+  if (GolfPort >= 4 || GolfPort < 0 ||!PortHasPlayerAssigned(GolfPort))  // something's wrong. probably a CPU player                                         
+    return;   // return to avoid array out-of-range errors
 
   // if the current golfer is also the one who should be the golfer, return
   // this prevents bugs due to requesting a swap every frame, which i think caused problems in the old code
@@ -2584,10 +2585,7 @@ void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
     return;
 
   // find the player that should be the golfer and assign them as the golfer
-  for (auto player : GetPlayers()) {
-    if (m_pad_map[GolfPort] == player->pid)
-      RequestGolfControl(player->pid);
-  }
+  RequestGolfControl(m_pad_map[GolfPort]);
 }
 
 
