@@ -142,6 +142,8 @@ static thread_local bool tls_is_gpu_thread = false;
 
 static void EmuThread(std::unique_ptr<BootParameters> boot, WindowSystemInfo wsi);
 
+DefaultGeckoCodes CodeWriter;
+
 bool GetIsThrottlerTempDisabled()
 {
   return s_is_throttler_temp_disabled;
@@ -187,7 +189,6 @@ void OnFrameEnd()
 {
   // always enable netplay event code for ranked games
   // if not ranked, check if code is checked off
-  DefaultGeckoCodes CodeWriter;
   CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(), isNight());
 
   AutoGolfMode();
