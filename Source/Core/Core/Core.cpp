@@ -187,24 +187,31 @@ void FrameUpdateOnCPUThread()
 
 void OnFrameEnd()
 {
-  // always enable netplay event code for ranked games
-  // if not ranked, check if code is checked off
-  CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(), isNight());
-
-  AutoGolfMode();
-  TrainingMode();
-  DisplayBatterFielder();
-  SetAvgPing();
-  SetNetplayerUserInfo();
-
 #ifdef USE_MEMORYWATCHER
   if (s_memory_watcher)
     s_memory_watcher->Step();
 #endif
 
-  if (s_stat_tracker) {
-    s_stat_tracker->Run();
-  }
+  // prevent cpu thread racing
+  RunAsCPUThread(
+      [&] {
+        SetNetplayerUserInfo();
+
+        if (s_stat_tracker)
+        {
+          s_stat_tracker->Run();
+        }
+
+        // always enable netplay event code for ranked games
+        // if not ranked, check if code is checked off
+        CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(),
+                                 isNight());
+
+        AutoGolfMode();
+        TrainingMode();
+        DisplayBatterFielder();
+        SetAvgPing();
+      });
 }
 
 void AutoGolfMode()
