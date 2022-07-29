@@ -81,4 +81,6 @@ bool PauseAndLock(bool do_lock, bool unpause_on_unlock = true, bool control_adja
 // Adds a job to be executed during on the CPU thread. This should be combined with PauseAndLock(),
 // as while the CPU is in the run loop, it won't execute the function.
 void AddCPUThreadJob(std::function<void()> function);
+
+bool IsCPUActive();
 }  // namespace CPU
