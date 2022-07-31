@@ -762,6 +762,7 @@ public:
         std::map<int, LocalPlayers::LocalPlayers::Player> NetplayerUserInfo;  // int is port
 
         Event& getCurrentEvent() { return events.at(event_num); }
+        bool anyEvents() { return (events.size() > 0); }
 
         LocalPlayers::LocalPlayers::Player getAwayTeamPlayer() { 
             if (team0_port == away_port) {

@@ -36,7 +36,9 @@ void StatTracker::lookForTriggerEvents(){
 
     if (m_event_state != m_event_state_prev) {
         state_logger.writeToFile(c_event_state[m_event_state]);
-        m_game_info.getCurrentEvent().history.push_back(m_event_state);
+        if (m_game_info.anyEvents()){
+            m_game_info.getCurrentEvent().history.push_back(m_event_state);
+        }
         m_event_state_prev = m_event_state;
     }
 
