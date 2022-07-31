@@ -24,6 +24,10 @@ void StatTracker::Run(){
     lookForTriggerEvents();
 }
 
+// Every event has a struct that
+// All m_event_states we saw 
+// .push_back
+
 void StatTracker::lookForTriggerEvents(){
     if (m_game_state != m_game_state_prev) {
         state_logger.writeToFile(c_game_state[m_game_state]);
@@ -32,6 +36,7 @@ void StatTracker::lookForTriggerEvents(){
 
     if (m_event_state != m_event_state_prev) {
         state_logger.writeToFile(c_event_state[m_event_state]);
+        m_game_info.current_state.history.push_back(m_event_state);
         m_event_state_prev = m_event_state;
     }
 
@@ -43,14 +48,16 @@ void StatTracker::lookForTriggerEvents(){
             "Inning: {}\n"
             "Half Inning: {}\n"
             "Batter: {}\n"
-            "Pitcher: {}\n",
+            "Pitcher: {}\n"
+            "Event History: \n {} \n",
             c_game_state[m_game_state],
             c_event_state[m_event_state],
             m_game_info.current_state.event_num,
             m_game_info.current_state.inning,
             m_game_info.current_state.half_inning,
             (m_game_info.current_state.runner_batter) ? std::to_string(m_game_info.current_state.runner_batter->char_id) : "None",
-            (m_game_info.current_state.pitch) ? std::to_string(m_game_info.current_state.pitch->pitcher_char_id) : "Pitch Not Thrown Yet"
+            (m_game_info.current_state.pitch) ? std::to_string(m_game_info.current_state.pitch->pitcher_char_id) : "Pitch Not Thrown Yet",
+            m_game_info.current_state.stringifyHistory()
         ), 200, OSD::Color::CYAN);
     } else {
         OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(

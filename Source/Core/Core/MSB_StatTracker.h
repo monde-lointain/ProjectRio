@@ -64,6 +64,8 @@ static std::map<EVENT_STATE, std::string> c_event_state = {
     {EVENT_STATE::UNDEFINED, "UNDEFINED"}
 };
 
+
+
 //Conversion Maps
 
 static const std::map<u8, std::string> cCharIdToCharName = {
@@ -687,6 +689,15 @@ public:
 
         u8 rbi;
         u8 result_of_atbat;
+
+        std::vector<EVENT_STATE> history;
+        std::string stringifyHistory() {
+            std::string stringifiedHistory;
+            for(EVENT_STATE i : history) {  
+                stringifiedHistory += c_event_state[i] + "\n";
+            }
+            return stringifiedHistory;
+        }
     };
     
     struct GameInfo{
