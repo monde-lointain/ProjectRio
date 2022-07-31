@@ -40,7 +40,7 @@ void StatTracker::lookForTriggerEvents(){
             "Game State: {}\n"
             "Event State: {}\n"
             "Event Num: {}\n"
-            "Inning: {}\n",
+            "Inning: {}\n"
             "Half Inning: {}\n"
             "Batter: {}\n"
             "Pitcher: {}\n",
