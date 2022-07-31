@@ -24,10 +24,6 @@ void StatTracker::Run(){
     lookForTriggerEvents();
 }
 
-// Every event has a struct that
-// All m_event_states we saw 
-// .push_back
-
 void StatTracker::lookForTriggerEvents(){
     if (m_game_state != m_game_state_prev) {
         state_logger.writeToFile(c_game_state[m_game_state]);

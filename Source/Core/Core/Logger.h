@@ -15,7 +15,6 @@
 class Logger{
     // Create Log file
     std::string log_file_path = File::GetUserPath(D_STATELOGGER_IDX) + file_name + ".txt";
-    // std::string json = getHUDJSON(std::to_string(m_game_info.event_num) + "a", m_game_info.getCurrentEvent(), m_game_info.previous_state, true);
 
 public:
     // Constructor
