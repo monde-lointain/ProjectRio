@@ -229,11 +229,17 @@ void AutoGolfMode()
     if (Memory::Read_U8(aWhoPaused) == 2)
       isField = true;
 
-    // add barrel batter functionality
-    if (Memory::Read_U8(aMinigameID) == 3)
+    // add minigame functionality
+    int minigameId = Memory::Read_U8(aMinigameID);
+    if (minigameId == 3 || minigameId == 1)
     {
       BatterPort = Memory::Read_U8(aBarrelBatterPort) + 1;
       isField = false;
+    }
+    else if (minigameId == 2)
+    {
+      FielderPort = Memory::Read_U8(aWallBallPort) + 1;
+      isField = true;
     }
 
     NetPlay::NetPlayClient::AutoGolfMode(isField, BatterPort, FielderPort);
