@@ -32,14 +32,14 @@ void StatTracker::lookForTriggerEvents(){
 
     if (m_event_state != m_event_state_prev) {
         state_logger.writeToFile(c_event_state[m_event_state]);
-        if (m_game_info.anyEvents()){
+        if (m_game_info.currentEventVld()){
             m_game_info.getCurrentEvent().history.push_back(m_event_state);
         }
         m_event_state_prev = m_event_state;
     }
 
     if (m_game_state == GAME_STATE::INGAME) {
-        if (m_game_info.anyEvents()){
+        if (m_game_info.currentEventVld()){
             OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(
                 "Game State: {}\n"
                 "Event State: {}\n"
@@ -54,10 +54,10 @@ void StatTracker::lookForTriggerEvents(){
                 m_game_info.getCurrentEvent().event_num,
                 m_game_info.getCurrentEvent().inning,
                 m_game_info.getCurrentEvent().half_inning,
-                (m_game_info.getCurrentEvent().runner_batter) ? std::to_string(m_game_info.getCurrentEvent().runner_batter->char_id) : "None",
-                (m_game_info.getCurrentEvent().pitch) ? std::to_string(m_game_info.getCurrentEvent().pitch->pitcher_char_id) : "Pitch Not Thrown Yet",
+                (m_game_info.getCurrentEvent().runner_batter) ? cCharIdToCharName.at(m_game_info.getCurrentEvent().runner_batter->char_id) : "None",
+                (m_game_info.getCurrentEvent().pitch) ? cCharIdToCharName.at(m_game_info.getCurrentEvent().pitch->pitcher_char_id) : "Pitch Not Thrown Yet",
                 m_game_info.getCurrentEvent().stringifyHistory()
-            ), 200, OSD::Color::CYAN);
+            ), 3000, OSD::Color::CYAN);
         }
     } else {
         OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(
@@ -88,6 +88,8 @@ void StatTracker::lookForTriggerEvents(){
                     }
 
                     m_game_info.events[m_game_info.event_num] = Event();
+
+                    m_game_info.getCurrentEvent().event_num = m_game_info.event_num;
 
                     logEventState(m_game_info.getCurrentEvent());
                     logGameInfo();

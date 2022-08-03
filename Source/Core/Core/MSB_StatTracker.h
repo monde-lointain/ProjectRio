@@ -659,7 +659,7 @@ public:
     };
 
     struct Event{
-        u16 event_num = 0;
+        u16 event_num;
 
         u8 inning;
         u8 half_inning;
@@ -751,7 +751,6 @@ public:
 
         //All of the events for this game
         std::map<u16, Event> events;
-        Event current_state;
         std::optional<Event> previous_state;
         bool write_hud = true;
 
@@ -762,7 +761,7 @@ public:
         std::map<int, LocalPlayers::LocalPlayers::Player> NetplayerUserInfo;  // int is port
 
         Event& getCurrentEvent() { return events.at(event_num); }
-        bool anyEvents() { return (events.size() > 0); }
+        bool currentEventVld() { return (events.count(event_num) >= 1); }
 
         LocalPlayers::LocalPlayers::Player getAwayTeamPlayer() { 
             if (team0_port == away_port) {
