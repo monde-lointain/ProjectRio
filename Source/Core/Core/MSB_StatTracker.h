@@ -478,7 +478,7 @@ static const u32 cRunner_Offset = 0x154;
 class StatTracker{
 public:
     //StatTracker() { };
-    Logger state_logger = Logger("stateLog.txt");;
+    Logger state_logger = Logger("state_log");;
 
     struct TrackerInfo{
         bool mRecord;

@@ -9,6 +9,7 @@
 #include <tuple>
 #include <iostream>
 #include <fstream>
+#include <ctime>
 #include "Common/FileUtil.h"
 #include "Common/FileSearch.h"
 
@@ -17,7 +18,10 @@ class Logger{
 public:
     // Constructor
     Logger(std::string in_file_name){
-        log_file_path = File::GetUserPath(D_STATELOGGER_IDX) + in_file_name + ".txt";;
+        std::time_t unix_time = std::time(nullptr);
+        std::string time = std::asctime(std::localtime(&unix_time));
+        time.pop_back();
+        log_file_path = File::GetUserPath(D_STATELOGGER_IDX) + in_file_name + ".txt";
     };    
     
     // Path to log file
