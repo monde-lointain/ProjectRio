@@ -57,6 +57,61 @@ void StatTracker::lookForTriggerEvents(){
                     (m_game_info.getCurrentEvent().pitch) ? cCharIdToCharName.at(m_game_info.getCurrentEvent().pitch->pitcher_char_id) : "Pitch Not Thrown Yet",
                     m_game_info.getCurrentEvent().stringifyHistory()
                 ));
+            
+                            
+                if (m_game_info.getCurrentEvent().result_of_atbat != 0) {
+                    u8 batter_port;
+                    u8 half_inning = m_game_info.getCurrentEvent().half_inning;
+                    if (half_inning == 0) {
+                        batter_port = m_game_info.away_port;
+                    } else {
+                        batter_port = m_game_info.home_port;
+                    };
+
+                    u8 batter_screen_side_port;
+                    u8 pitcher_screen_side_port;
+                    if (m_game_info.team0_port == batter_port) {
+                        batter_screen_side_port = m_game_info.team0_port;
+                    } else {
+                        batter_screen_side_port = m_game_info.team1_port;
+                    };
+
+                    u8 batter_char_id = m_game_info.character_summaries[batter_screen_side_port][m_game_info.getCurrentEvent().batter_roster_loc].char_id;
+                    u8 pitcher_char_id = m_game_info.character_summaries[pitcher_screen_side_port][m_game_info.getCurrentEvent().pitcher_roster_loc].char_id;
+
+                    std::string batter_name = cCharIdToCharName.at(batter_char_id);
+                    std::string pitcher_name = cCharIdToCharName.at(pitcher_char_id);
+
+                    OSD::AddTypedMessage(OSD::MessageType::GameStatePreviousPlayResult, fmt::format(
+                        "====PREVIOUS EVENT RESULT====\n"
+                        "Result of At Bat: {}\n"
+                        "RBI: {}\n"
+                        "Outs: {}\n"
+                        "Pitcher: {}\n"
+                        "Batter: {}\n",
+                        m_game_info.getCurrentEvent().result_of_atbat,
+                        m_game_info.getCurrentEvent().rbi,
+                        m_game_info.getCurrentEvent().outs,
+                        pitcher_name,
+                        batter_name
+                    ), 10000, OSD::Color::RED);
+
+                    OSD::AddTypedMessage(OSD::MessageType::GameStatePreviousPlayInfo, fmt::format(
+                        "====PREVIOUS EVENT SUMMARY====\n"
+                        "Event Num: {}\n"
+                        "Inning: {}\n"
+                        "Half Inning: {}\n"
+                        "Batter: {}\n"
+                        "Pitcher: {}\n"
+                        "Event History: \n{}\n",
+                        m_game_info.getCurrentEvent().event_num,
+                        m_game_info.getCurrentEvent().inning,
+                        m_game_info.getCurrentEvent().half_inning,
+                        (m_game_info.getCurrentEvent().runner_batter) ? cCharIdToCharName.at(m_game_info.getCurrentEvent().runner_batter->char_id) : "None",
+                        (m_game_info.getCurrentEvent().pitch) ? cCharIdToCharName.at(m_game_info.getCurrentEvent().pitch->pitcher_char_id) : "Pitch Not Thrown Yet",
+                        m_game_info.getCurrentEvent().stringifyHistory()
+                    ), 10000, OSD::Color::BLUE);
+                };
             }
         }
         // Update previous event state variable for checking purposes
@@ -66,6 +121,7 @@ void StatTracker::lookForTriggerEvents(){
     if (m_game_state == GAME_STATE::INGAME) {
         if (m_game_info.currentEventVld()){
             OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(
+                "====CURRENT EVENT SUMMARY====\n"
                 "Game State: {}\n"
                 "Event State: {}\n"
                 "Event Num: {}\n"
