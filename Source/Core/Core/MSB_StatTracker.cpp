@@ -31,10 +31,35 @@ void StatTracker::lookForTriggerEvents(){
     }
 
     if (m_event_state != m_event_state_prev) {
+        // Write state on every change
         state_logger.writeToFile(c_event_state[m_event_state]);
         if (m_game_info.currentEventVld()){
+            // Add state of current event to event.history for logging purposes
             m_game_info.getCurrentEvent().history.push_back(m_event_state);
+
+            if (m_event_state == EVENT_STATE::PLAY_OVER) {
+            // Write state details on play over
+                state_logger.writeToFile(fmt::format(
+                    "Game State: {}\n"
+                    "Event State: {}\n"
+                    "Event Num: {}\n"
+                    "Inning: {}\n"
+                    "Half Inning: {}\n"
+                    "Batter: {}\n"
+                    "Pitcher: {}\n"
+                    "Event History: \n{}\n",
+                    c_game_state[m_game_state],
+                    c_event_state[m_event_state],
+                    m_game_info.getCurrentEvent().event_num,
+                    m_game_info.getCurrentEvent().inning,
+                    m_game_info.getCurrentEvent().half_inning,
+                    (m_game_info.getCurrentEvent().runner_batter) ? cCharIdToCharName.at(m_game_info.getCurrentEvent().runner_batter->char_id) : "None",
+                    (m_game_info.getCurrentEvent().pitch) ? cCharIdToCharName.at(m_game_info.getCurrentEvent().pitch->pitcher_char_id) : "Pitch Not Thrown Yet",
+                    m_game_info.getCurrentEvent().stringifyHistory()
+                ));
+            }
         }
+        // Update previous event state variable for checking purposes
         m_event_state_prev = m_event_state;
     }
 
