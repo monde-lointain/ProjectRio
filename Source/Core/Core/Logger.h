@@ -21,7 +21,7 @@ public:
         std::time_t unix_time = std::time(nullptr);
         std::string time = std::asctime(std::localtime(&unix_time));
         time.pop_back();
-        log_file_path = File::GetUserPath(D_STATELOGGER_IDX) + in_file_name + ".txt";
+        log_file_path = File::GetUserPath(D_STATELOGGER_IDX) + time + '_' + in_file_name + ".txt";
     };    
     
     // Path to log file
