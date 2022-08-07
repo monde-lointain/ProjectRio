@@ -196,6 +196,7 @@ void OnFrameEnd()
   RunAsCPUThread(
       [&] {
         SetNetplayerUserInfo();
+        SetDisplayStats();
 
         if (s_stat_tracker)
         {
@@ -1587,6 +1588,16 @@ void setRankedStatus(bool inNewStatus)
     s_stat_tracker->init();
   }
   s_stat_tracker->setRankedStatus(inNewStatus);
+}
+
+void SetDisplayStats()
+{
+  if (!s_stat_tracker)
+  {
+    s_stat_tracker = std::make_unique<StatTracker>();
+    s_stat_tracker->init();
+  }
+  s_stat_tracker->setDisplayStats(g_ActiveConfig.bShowStats);
 }
 
 }  // namespace Core

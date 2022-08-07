@@ -196,6 +196,7 @@ static int previousPing = 0;
 void setRecordStatus(bool inNewStatus);
 void setSubmitStatus(bool inNewStatus);
 void setRankedStatus(bool inNewStatus);
+void SetDisplayStats();
 
 union{
   u32 num;
