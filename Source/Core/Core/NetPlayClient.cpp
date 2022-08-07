@@ -2571,7 +2571,7 @@ void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
   }
   if (framesAsGolfer < 255) // don't want a memory overflow here
     framesAsGolfer += 1;
-  if (framesAsGolfer <= 60) // delay this so that swapping bugs are way less likely; 1 second lockout window (60 frames)
+  if (framesAsGolfer <= 120) // delay this so that swapping bugs are way less likely; 2 second lockout window (120 frames)
     return;
 
   int GolfPort = isField ? FieldPort - 1 : BatPort - 1;  // subtract 1 since m_pad_map uses 0->3 instead of 1->4
