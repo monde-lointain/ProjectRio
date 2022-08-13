@@ -537,13 +537,11 @@ void SetAvgPing()
   previousPing = currentPing;
 
   // tell the stat tracker what the new avg ping is
-  if (!s_stat_tracker)
+  if (s_stat_tracker)
   {
-    s_stat_tracker = std::make_unique<StatTracker>();
-    s_stat_tracker->init();
+    s_stat_tracker->setAvgPing(avgPing);
+    s_stat_tracker->setLagSpikes(nLagSpikes);
   }
-  s_stat_tracker->setAvgPing(avgPing);
-  s_stat_tracker->setLagSpikes(nLagSpikes);
 }
 
 void SetNetplayerUserInfo()
@@ -556,12 +554,10 @@ void SetNetplayerUserInfo()
     return;
 
   // tell the stat tracker who the players are
-  if (!s_stat_tracker)
+  if (s_stat_tracker)
   {
-    s_stat_tracker = std::make_unique<StatTracker>();
-    s_stat_tracker->init();
+    s_stat_tracker->setNetplayerUserInfo(NetPlay::NetPlayClient::getNetplayerUserInfo());
   }
-  s_stat_tracker->setNetplayerUserInfo(NetPlay::NetPlayClient::getNetplayerUserInfo());
 }
 
 
@@ -1567,12 +1563,9 @@ void setRecordStatus(bool inNewStatus)
 {
   //SConfig& settings = SConfig::GetInstance();
   //settings.SaveSettings();
-  if (!s_stat_tracker) {
-    s_stat_tracker = std::make_unique<StatTracker>();
-    s_stat_tracker->init();
+  if (s_stat_tracker) {
+    s_stat_tracker->setRecordStatus(inNewStatus);
   }
-
-  s_stat_tracker->setRecordStatus(inNewStatus);
 }
 
 void setSubmitStatus(bool inNewStatus)
@@ -1583,21 +1576,17 @@ void setSubmitStatus(bool inNewStatus)
 
 void setRankedStatus(bool inNewStatus)
 {
-  if (!s_stat_tracker) {
-    s_stat_tracker = std::make_unique<StatTracker>();
-    s_stat_tracker->init();
+  if (s_stat_tracker) {
+    s_stat_tracker->setRankedStatus(inNewStatus);
   }
-  s_stat_tracker->setRankedStatus(inNewStatus);
 }
 
 void SetDisplayStats()
 {
-  if (!s_stat_tracker)
+  if (s_stat_tracker)
   {
-    s_stat_tracker = std::make_unique<StatTracker>();
-    s_stat_tracker->init();
+      s_stat_tracker->setDisplayStats(g_ActiveConfig.bShowStats);
   }
-  s_stat_tracker->setDisplayStats(g_ActiveConfig.bShowStats);
 }
 
 }  // namespace Core
