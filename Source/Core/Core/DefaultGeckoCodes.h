@@ -125,7 +125,7 @@ class DefaultGeckoCodes {
         0x9A03003F, 0x3C60803C}
     };
 
-    // Manual Fielder Select 4.0 [PeacockSlayers, LittleCoaks]
+    // Manual Fielder Select 4.0 [PeacockSlayer, LittleCoaks]
     const DefaultGeckoCode sManualSelect = {
         0x80678F8C, 0x88061BD1,
         {0x7C6E1B78, 0x7C0802A6, 0x90010004, 0x9421FF00, 0xBC610008, 0x3D20802E, 0x6129BF97,
