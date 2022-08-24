@@ -427,6 +427,10 @@ static const u32 aAB_TotalFramesOfPitch            = 0x80890AF4;
 static const u32 aAB_ControlStickInput = 0x8089392C; //P1
 static const u8 cControl_Offset = 0x10;
 
+//static const u32 aBattingRandInt1 = 0x802ec010; // short
+//static const u32 aBattingRandInt2 = 0x802ec012; // short
+//static const u32 aBattingRandInt3 = 0x802ec014; // short
+
 //At-Bat Miss
 static const u32 aAB_Miss_SwingOrBunt = 0x808909A9; //(0=NoSwing, 1=Swing, 2=Bunt)
 static const u32 aAB_Miss_AnyStrike = 0x80890B17;
