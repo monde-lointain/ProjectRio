@@ -169,6 +169,15 @@ class DefaultGeckoCodes {
         0x880E0000, 0x70000010,
         0x2C000000, 0x41820008, 0x38000001}};
 
+    // Store Random Batting Ints[Roeming]
+    const DefaultGeckoCode sStoreRandBattingInts = {
+        0x80651E68, 0x98040091,
+        {0x98040091, 0x3CA08089,
+        0x38A52684, 0x3CC0802F,
+        0x38C6C010, 0x80850000,
+        0xB0860000, 0x80850004,
+        0xB0860002, 0xA0850018, 0xB0860004}}; // Store Rand1 at 802ec010, Rand2 at 802ec012 and Rand3, at 802ec014
+
 
     void WriteAsm(DefaultGeckoCode CodeBlock);
     u32 aWriteAddr;  // address where the first code gets written to
@@ -176,7 +185,7 @@ class DefaultGeckoCodes {
     std::vector<DefaultGeckoCode> sRequiredCodes =
     {sGenerateGameID, sClearGameID_1, sClearGameID_2, sClearGameID_3,
     sClearPortInfo, sClearHitResult, sClearPortInfo_1, sClearPortInfo_2,
-    sRememberWhoQuit_1, sRememberWhoQuit_2};
+        sRememberWhoQuit_1, sRememberWhoQuit_2, sStoreRandBattingInts};
 
     std::vector<DefaultGeckoCode> sNetplayCodes =
     {sAntiQuickPitch, sDefaultCompetitiveRules, sManualSelect,sRemoveDingus};
