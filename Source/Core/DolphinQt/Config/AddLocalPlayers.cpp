@@ -42,10 +42,9 @@ void AddLocalPlayersEditor::CreateWidgets()
         "NOTE: the player at port 1 will\nbe used over NetPlay."));
 
   m_description = new QLabel(
-      tr("\n***CLOSED BETA - PATRONS ONLY***\nEnter the Username and User ID EXACTLY\nas they appear on projectrio.online.\n"
+      tr("\nEnter the Username and User ID EXACTLY\nas they appear on projectrio.online and/or from your email.\n"
          "This is necessary to send stat files to\nour database properly. If you enter an\n"
-         "invalid Username and/or User ID, your\nstats will not be saved to the database.\n\n***ALL OTHER USERS***\n"
-         "Enter any info, your stats are not being tracked yet"));
+         "invalid Username and/or User ID, your\nstats will not be saved to the database."));
 
   m_button_box = new QDialogButtonBox(QDialogButtonBox::Cancel | QDialogButtonBox::Save);
 

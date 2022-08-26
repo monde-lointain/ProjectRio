@@ -34,6 +34,7 @@ enum
                           // settings (per game)
   D_STATFILES_IDX,
   D_HUDFILES_IDX,
+  D_STATELOGGER_IDX,
   D_MAPS_IDX,
   D_CACHE_IDX,
   D_COVERCACHE_IDX,
@@ -235,7 +236,7 @@ std::string GetBundleDirectory();
 std::string GetExePath();
 std::string GetExeDirectory();
 
-bool WriteStringToFile(const std::string& filename, std::string_view str);
+bool WriteStringToFile(const std::string& filename, std::string_view str, bool append=false);
 bool ReadFileToString(const std::string& filename, std::string& str);
 
 // To deal with Windows not fully supporting UTF-8 and Android not fully supporting paths.

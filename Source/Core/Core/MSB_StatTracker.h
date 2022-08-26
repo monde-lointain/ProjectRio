@@ -16,11 +16,21 @@
 
 #include "Core/LocalPlayers.h"
 
+#include "Core/Logger.h"
+
 enum class GAME_STATE
 {
   PREGAME,
   INGAME,
   ENDGAME_LOGGED,
+  UNDEFINED
+};
+
+static std::map<GAME_STATE, std::string> c_game_state = {
+    {GAME_STATE::PREGAME, "PREGAME"},
+    {GAME_STATE::INGAME, "INGAME"},
+    {GAME_STATE::ENDGAME_LOGGED, "ENDGAME_LOGGED"},
+    {GAME_STATE::UNDEFINED, "UNDEFINED"}
 };
 
 enum class EVENT_STATE
@@ -36,7 +46,25 @@ enum class EVENT_STATE
     FINAL_RESULT,
     WAITING_FOR_EVENT,
     GAME_OVER,
+    UNDEFINED
 };
+
+static std::map<EVENT_STATE, std::string> c_event_state = {
+    {EVENT_STATE::INIT, "INIT"},
+    {EVENT_STATE::PITCH_STARTED, "PITCH_STARTED"},
+    {EVENT_STATE::CONTACT, "CONTACT"},
+    {EVENT_STATE::CONTACT_RESULT, "CONTACT_RESULT"},
+    {EVENT_STATE::LOG_FIELDER, "LOG_FIELDER"},
+    {EVENT_STATE::NO_CONTACT, "NO_CONTACT"},
+    {EVENT_STATE::MONITOR_RUNNERS, "MONITOR_RUNNERS"},
+    {EVENT_STATE::PLAY_OVER, "PLAY_OVER"},
+    {EVENT_STATE::FINAL_RESULT, "FINAL_RESULT"},
+    {EVENT_STATE::WAITING_FOR_EVENT, "WAITING_FOR_EVENT"},
+    {EVENT_STATE::GAME_OVER, "GAME_OVER"},
+    {EVENT_STATE::UNDEFINED, "UNDEFINED"}
+};
+
+
 
 //Conversion Maps
 
@@ -399,6 +427,10 @@ static const u32 aAB_TotalFramesOfPitch            = 0x80890AF4;
 static const u32 aAB_ControlStickInput = 0x8089392C; //P1
 static const u8 cControl_Offset = 0x10;
 
+//static const u32 aBattingRandInt1 = 0x802ec010; // short
+//static const u32 aBattingRandInt2 = 0x802ec012; // short
+//static const u32 aBattingRandInt3 = 0x802ec014; // short
+
 //At-Bat Miss
 static const u32 aAB_Miss_SwingOrBunt = 0x808909A9; //(0=NoSwing, 1=Swing, 2=Bunt)
 static const u32 aAB_Miss_AnyStrike = 0x80890B17;
@@ -450,10 +482,12 @@ static const u32 cRunner_Offset = 0x154;
 class StatTracker{
 public:
     //StatTracker() { };
+    Logger state_logger = Logger("state_log");;
 
     struct TrackerInfo{
         bool mRecord;
         bool mSubmit = true;
+        bool mDisplay = true;
     };
     TrackerInfo mTrackerInfo;
 
@@ -630,7 +664,7 @@ public:
     };
 
     struct Event{
-        u16 event_num = 0;
+        u16 event_num;
 
         u8 inning;
         u8 half_inning;
@@ -660,6 +694,15 @@ public:
 
         u8 rbi;
         u8 result_of_atbat;
+
+        std::vector<EVENT_STATE> history;
+        std::string stringifyHistory() {
+            std::string stringifiedHistory;
+            for(EVENT_STATE i : history) {  
+                stringifiedHistory += c_event_state[i] + "\n";
+            }
+            return stringifiedHistory;
+        }
     };
     
     struct GameInfo{
@@ -713,7 +756,6 @@ public:
 
         //All of the events for this game
         std::map<u16, Event> events;
-        Event current_state;
         std::optional<Event> previous_state;
         bool write_hud = true;
 
@@ -724,6 +766,7 @@ public:
         std::map<int, LocalPlayers::LocalPlayers::Player> NetplayerUserInfo;  // int is port
 
         Event& getCurrentEvent() { return events.at(event_num); }
+        bool currentEventVld() { return (events.count(event_num) >= 1); }
 
         LocalPlayers::LocalPlayers::Player getAwayTeamPlayer() { 
             if (team0_port == away_port) {
@@ -881,7 +924,9 @@ public:
     }
 
     GAME_STATE  m_game_state  = GAME_STATE::PREGAME;
+    GAME_STATE  m_game_state_prev = GAME_STATE::UNDEFINED;
     EVENT_STATE m_event_state = EVENT_STATE::INIT;
+    EVENT_STATE m_event_state_prev = EVENT_STATE::UNDEFINED;
 
     struct state_members{
         //Holds the status of the ranked button check box. Sampled at beginning of game
@@ -903,6 +948,7 @@ public:
     void setAvgPing(int avgPing);
     void setLagSpikes(int nLagSpikes);
     void setNetplayerUserInfo(std::map<int, LocalPlayers::LocalPlayers::Player> userInfo);
+    void setDisplayStats(bool bDisplay);
 
     void Run();
     void lookForTriggerEvents();

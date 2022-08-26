@@ -29,6 +29,7 @@ const Info<int> GFX_SAFE_TEXTURE_CACHE_COLOR_SAMPLES{
 const Info<bool> GFX_SHOW_FPS{{System::GFX, "Settings", "ShowFPS"}, false};
 const Info<bool> GFX_SHOW_BATTER_FIELDER{{System::GFX, "Settings", "ShowBatterFielder"}, true};
 const Info<bool> GFX_TRAINING_MODE{{System::GFX, "Settings", "TrainingModeOverlay"}, false};
+const Info<bool> GFX_SHOW_STATS{{System::GFX, "Settings", "ShowRioStats"}, true};
 const Info<bool> GFX_SHOW_NETPLAY_PING{{System::GFX, "Settings", "ShowNetPlayPing"}, true};
 const Info<bool> GFX_SHOW_NETPLAY_MESSAGES{{System::GFX, "Settings", "ShowNetPlayMessages"}, false};
 const Info<bool> GFX_LOG_RENDER_TIME_TO_FILE{{System::GFX, "Settings", "LogRenderTimeToFile"},

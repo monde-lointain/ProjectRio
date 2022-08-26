@@ -942,6 +942,7 @@ static void RebuildUserDirectories(unsigned int dir_index)
     s_user_paths[D_GAMESETTINGS_IDX] = s_user_paths[D_USER_IDX] + GAMESETTINGS_DIR DIR_SEP;
     s_user_paths[D_STATFILES_IDX] = s_user_paths[D_USER_IDX] + STATFILES_DIR DIR_SEP;
     s_user_paths[D_HUDFILES_IDX] = s_user_paths[D_USER_IDX] + HUDFILES_DIR DIR_SEP;
+    s_user_paths[D_STATELOGGER_IDX] = s_user_paths[D_USER_IDX] + STATELOGGERFILES_DIR DIR_SEP;
     s_user_paths[D_MAPS_IDX] = s_user_paths[D_USER_IDX] + MAPS_DIR DIR_SEP;
     s_user_paths[D_CACHE_IDX] = s_user_paths[D_USER_IDX] + CACHE_DIR DIR_SEP;
     s_user_paths[D_COVERCACHE_IDX] = s_user_paths[D_CACHE_IDX] + COVERCACHE_DIR DIR_SEP;
@@ -1112,8 +1113,11 @@ std::string GetThemeDir(const std::string& theme_name)
   return GetSysDirectory() + THEMES_DIR "/" DEFAULT_THEME_DIR "/";
 }
 
-bool WriteStringToFile(const std::string& filename, std::string_view str)
+bool WriteStringToFile(const std::string& filename, std::string_view str, bool append)
 {
+  if (append){
+    return File::IOFile(filename, "ab").WriteBytes(str.data(), str.size());
+  }
   return File::IOFile(filename, "wb").WriteBytes(str.data(), str.size());
 }
 
