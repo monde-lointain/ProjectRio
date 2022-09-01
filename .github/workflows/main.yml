@@ -219,7 +219,7 @@ jobs:
           brew install \
           ffmpeg \
           libpng \
-          libav \
+          libswresample \
           pkgconfig \
           libao \
           sound-touch \
