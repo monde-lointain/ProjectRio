@@ -19,6 +19,7 @@
     <ClCompile>
       <!-- Ensure libusb sees it's own config.h first... -->
       <AdditionalIncludeDirectories>.\libusb\msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdcpp20</LanguageStandard>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

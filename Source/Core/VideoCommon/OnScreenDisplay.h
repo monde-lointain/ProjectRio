@@ -20,6 +20,9 @@ enum class MessageType
   TrainingModeFielderCoordinates,
   TrainingModeBallCoordinates,
   TrainingModeBatting,
+  GameStateInfo,
+  GameStatePreviousPlayInfo,
+  GameStatePreviousPlayResult,
 
   // This entry must be kept last so that persistent typed messages are
   // displayed before other messages

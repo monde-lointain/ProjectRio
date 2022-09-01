@@ -43,11 +43,6 @@ void DefaultGeckoCodes::InjectNetplayEventCode()
   Memory::Write_U8(0x1, aUnlockEverything_8);
   Memory::Write_U8(0x1, aUnlockEverything_8 + 1);
 
-  // Manual select
-  Memory::Write_U8(0x0, aManualSelect_1);
-  for (int i = 1; i <= 0x8; i++)
-    Memory::Write_U8(i, aManualSelect_2 + i);
-
   // handle asm writes for netplay codes
   for (DefaultGeckoCode geckocode : sNetplayCodes)
     WriteAsm(geckocode);

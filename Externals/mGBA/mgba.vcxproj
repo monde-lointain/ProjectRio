@@ -19,6 +19,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>mgba\include;mgba\src;mgba\src\third-party\lzma;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>BUILD_STATIC;M_CORE_GB;M_CORE_GBA;USE_LZMA;_7ZIP_PPMD_SUPPPORT;HAVE_STRDUP;HAVE_SETLOCALE;HAVE_CHMOD;HAVE_UMASK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdcpp20</LanguageStandard>
     </ClCompile>
     <PreBuildEvent>
       <Command>"$(CScript)" /nologo /E:JScript "make_version.c.js"</Command>

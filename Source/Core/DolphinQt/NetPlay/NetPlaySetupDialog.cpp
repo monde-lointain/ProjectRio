@@ -690,8 +690,6 @@ void NetPlaySetupDialog::UpdateListBrowser()
 
   m_table_widget->setRowCount(session_count);
 
-  int online_count = 0;
-
   for (int i = 0; i < session_count; i++)
   {
     const auto& entry = m_sessions[i];
@@ -707,8 +705,6 @@ void NetPlaySetupDialog::UpdateListBrowser()
     auto* version = new QTableWidgetItem(QString::fromStdString(entry.version));
 
     const bool enabled = Common::GetRioRevStr() == entry.version;
-    if (enabled)
-      online_count += entry.player_count;
 
     for (const auto& item : {region, name, is_ranked, gamemode, password, player_count, version})
       item->setFlags(enabled ? Qt::ItemIsEnabled | Qt::ItemIsSelectable : Qt::NoItemFlags);
@@ -722,12 +718,12 @@ void NetPlaySetupDialog::UpdateListBrowser()
     m_table_widget->setItem(i, 6, version);
   }
 
-
-  m_online_count->setText(
-    (online_count == 1 ? tr("There is %1 player in a lobby") : tr("There are %1 players in a lobby")).arg(online_count));
-
   m_status_label->setText(
       (session_count == 1 ? tr("%1 session found") : tr("%1 sessions found")).arg(session_count));
+
+  m_online_count->setText((Config::ONLINE_COUNT == 1 ? tr("There is %1 player in a lobby") :
+                                               tr("There are %1 players in a lobby"))
+                              .arg(Config::ONLINE_COUNT));
 }
 
 void NetPlaySetupDialog::OnSelectionChangedBrowser()

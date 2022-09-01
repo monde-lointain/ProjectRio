@@ -13,6 +13,11 @@
 
 #include "Common/Swap.h"
 
+// Package for rendering info on screen
+#include "VideoCommon/OnScreenDisplay.h"
+#include <fmt/chrono.h>
+#include <fmt/format.h>
+
 #include <iostream>
 
 void StatTracker::Run(){
@@ -20,6 +25,154 @@ void StatTracker::Run(){
 }
 
 void StatTracker::lookForTriggerEvents(){
+    if (m_game_state != m_game_state_prev) {
+        state_logger.writeToFile(c_game_state[m_game_state]);
+        m_game_state_prev = m_game_state;
+    }
+
+    if (m_event_state != m_event_state_prev) {
+        // Write state on every change
+        state_logger.writeToFile(c_event_state[m_event_state]);
+        if (m_game_info.currentEventVld()){
+            // Add state of current event to event.history for logging purposes
+            m_game_info.getCurrentEvent().history.push_back(m_event_state);
+
+            if (m_event_state == EVENT_STATE::PLAY_OVER) {
+            // Write state details on play over
+                state_logger.writeToFile(fmt::format(
+                    "Game State: {}\n"
+                    "Event State: {}\n"
+                    "Event Num: {}\n"
+                    "Inning: {}\n"
+                    "Half Inning: {}\n"
+                    "Batter: {}\n"
+                    "Pitcher: {}\n"
+                    "Event History: \n{}\n",
+                    c_game_state[m_game_state],
+                    c_event_state[m_event_state],
+                    m_game_info.getCurrentEvent().event_num,
+                    m_game_info.getCurrentEvent().inning,
+                    m_game_info.getCurrentEvent().half_inning,
+                    (m_game_info.getCurrentEvent().runner_batter) ? cCharIdToCharName.at(m_game_info.getCurrentEvent().runner_batter->char_id) : "None",
+                    (m_game_info.getCurrentEvent().pitch) ? cCharIdToCharName.at(m_game_info.getCurrentEvent().pitch->pitcher_char_id) : "Pitch Not Thrown Yet",
+                    m_game_info.getCurrentEvent().stringifyHistory()
+                ));
+            
+                            
+                if (m_game_info.getCurrentEvent().result_of_atbat != 0) {
+                    u8 batter_port;
+                    u8 half_inning = m_game_info.getCurrentEvent().half_inning;
+                    if (half_inning == 0) {
+                        batter_port = m_game_info.away_port;
+                    } else {
+                        batter_port = m_game_info.home_port;
+                    };
+
+                    u8 batter_screen_side_port;
+                    u8 pitcher_screen_side_port;
+                    if (m_game_info.team0_port == batter_port) {
+                        batter_screen_side_port = m_game_info.team0_port;
+                    } else {
+                        batter_screen_side_port = m_game_info.team1_port;
+                    };
+
+                    u8 batter_char_id = m_game_info.character_summaries[batter_screen_side_port][m_game_info.getCurrentEvent().batter_roster_loc].char_id;
+                    u8 pitcher_char_id = m_game_info.character_summaries[pitcher_screen_side_port][m_game_info.getCurrentEvent().pitcher_roster_loc].char_id;
+
+                    std::string batter_name = cCharIdToCharName.at(batter_char_id);
+                    std::string pitcher_name = cCharIdToCharName.at(pitcher_char_id);
+
+                    if (mTrackerInfo.mDisplay)
+                    {
+                      OSD::AddTypedMessage(
+                          OSD::MessageType::GameStatePreviousPlayResult,
+                          fmt::format("====PREVIOUS EVENT RESULT====\n"
+                                      "Result of At Bat: {}\n"
+                                      "RBI: {}\n"
+                                      "Outs: {}\n"
+                                      "Pitcher: {}\n"
+                                      "Batter: {}\n",
+                                      m_game_info.getCurrentEvent().result_of_atbat,
+                                      m_game_info.getCurrentEvent().rbi,
+                                      m_game_info.getCurrentEvent().outs, pitcher_name,
+                                      batter_name),
+                          10000, OSD::Color::RED);
+                    }
+
+                     if (mTrackerInfo.mDisplay)
+                    {
+                      OSD::AddTypedMessage(
+                          OSD::MessageType::GameStatePreviousPlayInfo,
+                          fmt::format(
+                              "====PREVIOUS EVENT SUMMARY====\n"
+                              "Event Num: {}\n"
+                              "Inning: {}\n"
+                              "Half Inning: {}\n"
+                              "Batter: {}\n"
+                              "Pitcher: {}\n"
+                              "Event History: \n{}\n",
+                              m_game_info.getCurrentEvent().event_num,
+                              m_game_info.getCurrentEvent().inning,
+                              m_game_info.getCurrentEvent().half_inning,
+                              (m_game_info.getCurrentEvent().runner_batter) ?
+                                  cCharIdToCharName.at(
+                                      m_game_info.getCurrentEvent().runner_batter->char_id) :
+                                  "None",
+                              (m_game_info.getCurrentEvent().pitch) ?
+                                  cCharIdToCharName.at(
+                                      m_game_info.getCurrentEvent().pitch->pitcher_char_id) :
+                                  "Pitch Not Thrown Yet",
+                              m_game_info.getCurrentEvent().stringifyHistory()),
+                          10000, OSD::Color::BLUE);
+                    }
+                };
+            }
+        }
+        // Update previous event state variable for checking purposes
+        m_event_state_prev = m_event_state;
+    }
+
+    if (m_game_state == GAME_STATE::INGAME) {
+        if (m_game_info.currentEventVld()){
+          if (mTrackerInfo.mDisplay)
+          {
+            OSD::AddTypedMessage(
+                OSD::MessageType::GameStateInfo,
+                fmt::format(
+                    "====CURRENT EVENT SUMMARY====\n"
+                    "Game State: {}\n"
+                    "Event State: {}\n"
+                    "Event Num: {}\n"
+                    "Inning: {}\n"
+                    "Half Inning: {}\n"
+                    "Batter: {}\n"
+                    "Pitcher: {}\n"
+                    "Event History: \n{}\n",
+                    c_game_state[m_game_state], c_event_state[m_event_state],
+                    m_game_info.getCurrentEvent().event_num, m_game_info.getCurrentEvent().inning,
+                    m_game_info.getCurrentEvent().half_inning,
+                    (m_game_info.getCurrentEvent().runner_batter) ?
+                        cCharIdToCharName.at(m_game_info.getCurrentEvent().runner_batter->char_id) :
+                        "None",
+                    (m_game_info.getCurrentEvent().pitch) ?
+                        cCharIdToCharName.at(m_game_info.getCurrentEvent().pitch->pitcher_char_id) :
+                        "Pitch Not Thrown Yet",
+                    m_game_info.getCurrentEvent().stringifyHistory()),
+                3000, OSD::Color::CYAN);
+          }
+        }
+    } else {
+      if (mTrackerInfo.mDisplay)
+      {
+        OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(
+            "Game State: {}\n"
+            "Event State: {}\n",
+            c_game_state[m_game_state],
+            c_event_state[m_event_state]            
+        ), 200, OSD::Color::CYAN);
+        }
+    }
+
     //At Bat State Machine
     if (m_game_state == GAME_STATE::INGAME){
         switch(m_event_state){
@@ -40,6 +193,8 @@ void StatTracker::lookForTriggerEvents(){
                     }
 
                     m_game_info.events[m_game_info.event_num] = Event();
+
+                    m_game_info.getCurrentEvent().event_num = m_game_info.event_num;
 
                     logEventState(m_game_info.getCurrentEvent());
                     logGameInfo();
@@ -333,8 +488,12 @@ void StatTracker::lookForTriggerEvents(){
             case (EVENT_STATE::GAME_OVER):
                 std::cout << "Game Over. Waiting for next game\n";
                 break;
+            case (EVENT_STATE::UNDEFINED):
+                std::cout << "UNDEFINED STATE\n";
+                m_event_state = EVENT_STATE::INIT;
+                break;                
             default:
-                std::cout << "Unknown State\n";
+                std::cout << "Unknown Event State\n";
                 m_event_state = EVENT_STATE::INIT;
                 break;
         }
@@ -404,6 +563,14 @@ void StatTracker::lookForTriggerEvents(){
                 std::cout << "ENDGAME->PREGAME\n";
             }
             break;
+        case (GAME_STATE::UNDEFINED):
+            std::cout << "UNDEFINED GAME STATE\n";
+            m_event_state = EVENT_STATE::INIT;
+            break;
+        default:
+            std::cout << "Unknown Game State\n";
+            m_event_state = EVENT_STATE::INIT;
+            break;        
     }
 }
 
@@ -1643,6 +1810,11 @@ void StatTracker::setLagSpikes(int nLagSpikes)
 {
   //std::cout << "Number of Lag Spikes=" << nLagSpikes << "\n";
   m_game_info.lag_spikes = nLagSpikes;
+}
+
+void StatTracker::setDisplayStats(bool bDisplay)
+{
+  mTrackerInfo.mDisplay = bDisplay;
 }
 
 void StatTracker::setNetplayerUserInfo(std::map<int, LocalPlayers::LocalPlayers::Player> userInfo)
