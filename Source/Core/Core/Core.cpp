@@ -558,6 +558,11 @@ void SetNetplayerUserInfo()
   {
     s_stat_tracker->setNetplayerUserInfo(NetPlay::NetPlayClient::getNetplayerUserInfo());
   }
+  else {
+    s_stat_tracker = std::make_unique<StatTracker>();
+    s_stat_tracker->init();
+    s_stat_tracker->setNetplayerUserInfo(NetPlay::NetPlayClient::getNetplayerUserInfo());
+  }
 }
 
 
@@ -768,6 +773,7 @@ static void CpuThread(const std::optional<std::string>& savestate_path, bool del
   if (!s_stat_tracker) {
     s_stat_tracker = std::make_unique<StatTracker>();
     s_stat_tracker->init();
+    std::cout << "Init stat tracker" << std::endl;
   }
 
   if (savestate_path)
@@ -1566,6 +1572,11 @@ void setRecordStatus(bool inNewStatus)
   if (s_stat_tracker) {
     s_stat_tracker->setRecordStatus(inNewStatus);
   }
+  else {
+    s_stat_tracker = std::make_unique<StatTracker>();
+    s_stat_tracker->init();
+    s_stat_tracker->setRecordStatus(inNewStatus);
+  }
 }
 
 void setSubmitStatus(bool inNewStatus)
@@ -1579,6 +1590,11 @@ void setRankedStatus(bool inNewStatus)
   if (s_stat_tracker) {
     s_stat_tracker->setRankedStatus(inNewStatus);
   }
+  else {
+    s_stat_tracker = std::make_unique<StatTracker>();
+    s_stat_tracker->init();
+    s_stat_tracker->setRankedStatus(inNewStatus);
+  }
 }
 
 void SetDisplayStats()
@@ -1587,6 +1603,12 @@ void SetDisplayStats()
   {
       s_stat_tracker->setDisplayStats(g_ActiveConfig.bShowStats);
   }
+  else {
+    s_stat_tracker = std::make_unique<StatTracker>();
+    s_stat_tracker->init();
+    s_stat_tracker->setDisplayStats(g_ActiveConfig.bShowStats);
+  }
 }
+
 
 }  // namespace Core
