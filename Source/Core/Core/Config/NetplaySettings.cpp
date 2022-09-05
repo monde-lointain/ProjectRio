@@ -60,6 +60,7 @@ const Info<bool> NETPLAY_HIDE_REMOTE_GBAS{{System::Main, "NetPlay", "HideRemoteG
 const Info<bool> NETPLAY_RANKED{{System::Main, "NetPlay", "Ranked"}, false};
 const Info<std::string> NETPLAY_GAME_MODE{{System::Main, "NetPlay", "GameMode"}, "Superstars OFF"};
 
+int ONLINE_COUNT = 0;
 // get game tags from entry.name string -- each tag seperated by "%%"
 // first tag is the name of the lobby, second is ranked, third is superstars
 std::vector<std::string> LobbyNameVector(const std::string& name)

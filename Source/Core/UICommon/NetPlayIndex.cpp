@@ -90,7 +90,7 @@ NetPlayIndex::List(const std::map<std::string, std::string>& filters)
 
   std::vector<NetPlaySession> sessions;
 
-  Config::ONLINE_COUNT = 0;
+  //Config::ONLINE_COUNT = 0;
   for (const auto& entry : entries2.get<picojson::array>())
   {
     if (entry.get("version").to_str() == Common::GetRioRevStr())
