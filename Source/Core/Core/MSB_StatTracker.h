@@ -35,9 +35,8 @@ static std::map<GAME_STATE, std::string> c_game_state = {
 
 enum class EVENT_STATE
 {
-    INIT,
-    PITCH_STARTED,
-    CONTACT,
+    START_AB,
+    PITCH_RESULT,
     CONTACT_RESULT,
     LOG_FIELDER,
     NO_CONTACT,
@@ -50,12 +49,10 @@ enum class EVENT_STATE
 };
 
 static std::map<EVENT_STATE, std::string> c_event_state = {
-    {EVENT_STATE::INIT, "INIT"},
-    {EVENT_STATE::PITCH_STARTED, "PITCH_STARTED"},
-    {EVENT_STATE::CONTACT, "CONTACT"},
+    {EVENT_STATE::START_AB, "START_AB"},
+    {EVENT_STATE::PITCH_RESULT, "PITCH_RESULT"},
     {EVENT_STATE::CONTACT_RESULT, "CONTACT_RESULT"},
     {EVENT_STATE::LOG_FIELDER, "LOG_FIELDER"},
-    {EVENT_STATE::NO_CONTACT, "NO_CONTACT"},
     {EVENT_STATE::MONITOR_RUNNERS, "MONITOR_RUNNERS"},
     {EVENT_STATE::PLAY_OVER, "PLAY_OVER"},
     {EVENT_STATE::FINAL_RESULT, "FINAL_RESULT"},
@@ -293,10 +290,12 @@ static const int cNumOfPositions = 9;
 static const u32 aGameId           = 0x802EBF8C;
 static const u32 aEndOfGameFlag    = 0x80892AB3;
 static const u32 aWhoQuit          = 0x802EBF93;
+static const u32 aGameControlStateCurr = 0x80892aaa;
+static const u32 aGameControlStatePrev = 0x80892aab;
 
 static const u32 aAB_PitchThrown     = 0x8088A81B;
-static const u32 aAB_ContactResult   = 0x808926B3; //0=InAir, 1=Landed, 2=Fielded, 3=Caught, FF=Foul
-static const u32 aAB_ContactMade     = 0x80892ADA;
+static const u32 aAB_ContactResult   = 0x808926B3; //0=InAir, 1=Landed, 2=Landed (almost caught), 3=Caught, FF=Foul
+static const u32 aAB_ContactMade     = 0x808909a1; //Boolean, from Roeming
 static const u32 aAB_PickoffAttempt  = 0x80892857;
 
 static const u32 aAB_GameIsLive  = 0x8036F3A9; //0 at beginning of game and inbetween innings/changes
@@ -411,13 +410,12 @@ static const u32 aAB_BallPos_Z_Upon_Hit = 0x808909CC;
 static const u32 aAB_BatterPos_X_Upon_Hit = 0x80890910;
 static const u32 aAB_BatterPos_Z_Upon_Hit = 0x80890914;
 
-static const u32 aAB_ChargeSwing    = 0x8089099B;
-static const u32 aAB_Bunt           = 0x8089099B; //Bunt when =3 on contact
+static const u32 aAB_TypeOfSwing    = 0x8089099B; //1=Slap, 2=Charge, 3=Bunt. Set on contact
 static const u32 aAB_ChargeUp       = 0x80890968;
 static const u32 aAB_ChargeDown     = 0x8089096C;
 static const u32 aAB_BatterHand     = 0x8089098B; //Right=0, Left=1
 static const u32 aAB_InputDirection = 0x808909B9; //0=None, 1=PullingStickTowardsHitting, 2=PushStickAway
-static const u32 aAB_StarSwing      = 0x808909B4;
+static const u32 aAB_StarSwing      = 0x808909b1; 
 static const u32 aAB_MoonShot       = 0x808909B5;
 static const u32 aAB_TypeOfContact  = 0x808909A2; //0=Sour, 1=Nice, 2=Perfect, 3=Nice, 4=Sour
 static const u32 aAB_RBI            = 0x80893B9A; //RBI for the AB
@@ -570,7 +568,6 @@ public:
 
     struct Contact {
         //Hit Status
-        u8 type_of_swing;
         u8 type_of_contact;
         u8 swing;
         u8 charge_swing;
@@ -581,8 +578,6 @@ public:
         u8 moon_shot;
         u8 input_direction_push_pull;
         u8 input_direction_stick;
-        u8 batter_handedness;
-        u8 hit_by_pitch;
 
         u16 frameOfSwingUponContact;
     
@@ -660,6 +655,8 @@ public:
         //7=Unknown
         u8 pitch_result; 
 
+        //Info about the batter.
+        u8 type_of_swing;
         std::optional<Contact> contact;
     };
 
@@ -920,12 +917,12 @@ public:
 
         //Reset state machines
         m_game_state  = GAME_STATE::PREGAME;
-        m_event_state = EVENT_STATE::INIT;
+        m_event_state = EVENT_STATE::START_AB;
     }
 
     GAME_STATE  m_game_state  = GAME_STATE::PREGAME;
     GAME_STATE  m_game_state_prev = GAME_STATE::UNDEFINED;
-    EVENT_STATE m_event_state = EVENT_STATE::INIT;
+    EVENT_STATE m_event_state = EVENT_STATE::START_AB;
     EVENT_STATE m_event_state_prev = EVENT_STATE::UNDEFINED;
 
     struct state_members{
