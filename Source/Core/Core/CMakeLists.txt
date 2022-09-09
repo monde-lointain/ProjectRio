@@ -414,6 +414,7 @@ add_library(core
   IOS/WFS/WFSI.h
   IOS/WFS/WFSSRV.cpp
   IOS/WFS/WFSSRV.h
+  TrackerAdr.h
   LibusbUtils.cpp
   LibusbUtils.h
   MSB_StatTracker.cpp
