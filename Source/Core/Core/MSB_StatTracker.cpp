@@ -176,7 +176,7 @@ void StatTracker::lookForTriggerEvents(){
     //At Bat State Machine
     if (m_game_state == GAME_STATE::INGAME){
         switch(m_event_state){
-            case (EVENT_STATE::START_AB):
+            case (EVENT_STATE::INIT_EVENT):
                 //Create new event, collect runner data
 
                 //Capture the rising edge of the AtBat Scene
@@ -280,17 +280,16 @@ void StatTracker::lookForTriggerEvents(){
 
                 //Conditions to leave the state: Contact, Ball beyond batter, HBP
                 //Contact
-                if (Memory::Read_U32(aAB_ContactMade)){
+                if (Memory::Read_U8(aAB_ContactMade)){
                     logPitch(m_game_info.getCurrentEvent());
                     logContact(m_game_info.getCurrentEvent());
                     m_event_state = EVENT_STATE::CONTACT_RESULT;
                 }
-                //If the ball gets behind the batter, record miss
-                else if (Memory::Read_U8(aAB_PitcherHasCtrlofPitch) == 1) {
-                    if ((Memory::Read_U16(aAB_FramesUnitlBallArrivesBatter) <= 0)){
-                        logPitch(m_game_info.getCurrentEvent());
-                        m_event_state = EVENT_STATE::MONITOR_RUNNERS;
-                    }
+                //If the ball gets behind the batter while mid pitch OR play flag is false (safety incase we miss the first cond), record miss
+                else if (((Memory::Read_U8(aAB_PitcherHasCtrlofPitch) == 1) && (Memory::Read_U16(aAB_FramesUnitlBallArrivesBatter) <= 0))
+                    || !Memory::Read_U8(aAB_PitchThrown)){
+                    logPitch(m_game_info.getCurrentEvent());
+                    m_event_state = EVENT_STATE::MONITOR_RUNNERS;
                 }
                 else if (Memory::Read_U8(aAB_HitByPitch) == 1){
                     //Log HBP
@@ -317,22 +316,14 @@ void StatTracker::lookForTriggerEvents(){
                 }
 
                 // === Monitor === 
-
-                //Log ball pos. Record highest point
+                //Log ball pos.
                 //Ball is still in air
                 else{
                     Contact* contact = &m_game_info.getCurrentEvent().pitch->contact.value();
-                    contact->prev_ball_x_pos = contact->ball_x_pos;
-                    contact->prev_ball_y_pos = contact->ball_y_pos;
-                    contact->prev_ball_z_pos = contact->ball_z_pos;
-                    contact->ball_x_pos = Memory::Read_U32(aAB_BallPos_X);
-                    contact->ball_y_pos = Memory::Read_U32(aAB_BallPos_Y);
-                    contact->ball_z_pos = Memory::Read_U32(aAB_BallPos_Z);
-
-                    //Capture Max Ball Height. TODO get addr from Roeming
-                    if (floatConverter(contact->ball_y_pos) > floatConverter(contact->ball_y_pos_max_height)){
-                        contact->ball_y_pos_max_height = contact->ball_y_pos;
-                    }
+                    //Final Result Ball
+                    contact->ball_x_pos.read_value();
+                    contact->ball_y_pos.read_value();
+                    contact->ball_z_pos.read_value();
                 }
                 //Could bobble before the ball hits the ground.
                 //Search for bobble if we haven't recorded one yet and the ball hasn't been collected yet
@@ -441,10 +432,12 @@ void StatTracker::lookForTriggerEvents(){
                     m_game_info.partial = 0;
                 }
 
+                // === Transitions ===
+
                 if (Memory::Read_U8(aGameControlStateCurr) == 0x1){
                     //Increment event count
                     ++m_game_info.event_num;
-                    m_event_state = EVENT_STATE::START_AB;
+                    m_event_state = EVENT_STATE::INIT_EVENT;
                     std::cout << "Logging Final Result\n" << "Starting next AB\n\n";
                 }
                 if ((Memory::Read_U8(aGameControlStateCurr) == 0xE) || (Memory::Read_U8(aEndOfGameFlag) == 1)){ //MVP screen
@@ -453,17 +446,22 @@ void StatTracker::lookForTriggerEvents(){
                     m_event_state = EVENT_STATE::GAME_OVER;
                     std::cout << "Logging Final Result\n" << "Game Over\n\n";
                 }
+                if ((m_game_info.previous_state.value().balls < 4 || m_game_info.previous_state.value().strikes < 3) && m_game_info.getCurrentEvent().result_of_atbat == 0) {
+                    ++m_game_info.event_num;
+                    m_event_state = EVENT_STATE::INIT_EVENT;
+                    std::cout << "Logging Final Result\n" << "Starting next pitch of AB\n\n";
+                }
                 break;
             case (EVENT_STATE::GAME_OVER):
                 std::cout << "Game Over. Waiting for next game\n";
                 break;
             case (EVENT_STATE::UNDEFINED):
                 std::cout << "UNDEFINED STATE\n";
-                m_event_state = EVENT_STATE::START_AB;
+                m_event_state = EVENT_STATE::INIT_EVENT;
                 break;                
             default:
                 std::cout << "Unknown Event State\n";
-                m_event_state = EVENT_STATE::START_AB;
+                m_event_state = EVENT_STATE::INIT_EVENT;
                 break;
         }
     }
@@ -528,11 +526,11 @@ void StatTracker::lookForTriggerEvents(){
             break;
         case (GAME_STATE::UNDEFINED):
             std::cout << "UNDEFINED GAME STATE\n";
-            m_event_state = EVENT_STATE::START_AB;
+            m_event_state = EVENT_STATE::INIT_EVENT;
             break;
         default:
             std::cout << "Unknown Game State\n";
-            m_event_state = EVENT_STATE::START_AB;
+            m_event_state = EVENT_STATE::INIT_EVENT;
             break;        
     }
 }
@@ -692,32 +690,37 @@ void StatTracker::logContact(Event& in_event){
     std::cout << "  Pitch Type: " << std::to_string(in_event.pitch->pitch_type) << "\n";
     Contact* contact = &in_event.pitch->contact.value();
 
-    contact->type_of_contact   = Memory::Read_U8(aAB_TypeOfContact);
+    contact->power.read_value();
+    contact->vert_angle.read_value();
+    contact->horiz_angle.read_value();
+    contact->ball_x_velo.read_value();
+    contact->ball_y_velo.read_value();
+    contact->ball_z_velo.read_value();
+    contact->ball_contact_x_pos.read_value();
+    contact->ball_contact_y_pos.read_value();
+    contact->ball_contact_z_pos.read_value();
+    contact->bat_contact_x_pos.read_value();
+    contact->bat_contact_y_pos.read_value();
+    contact->bat_contact_z_pos.read_value();
+    contact->contact_absolute.read_value();
+    contact->contact_quality.read_value();
+    contact->rng1.read_value();
+    contact->rng2.read_value();
+    contact->rng3.read_value();
+    contact->type_of_contact.read_value();
+    contact->moon_shot.read_value();
+    contact->charge_power_up.read_value();
+    contact->charge_power_down.read_value();
+    contact->input_direction_push_pull.read_value();
+    contact->frame_of_swing.read_value();
 
-    contact->charge_power_up   = Memory::Read_U32(aAB_ChargeUp);
-    contact->charge_power_down = Memory::Read_U32(aAB_ChargeDown);
-    
-    contact->moon_shot         = Memory::Read_U8(aAB_MoonShot);
-    contact->input_direction_push_pull   = Memory::Read_U8(aAB_InputDirection);
+    //More ball flight info
+    contact->ball_max_height.read_value();
+    contact->ball_hang_time.read_value();
 
     u32 aStickInput = aAB_ControlStickInput + ((Memory::Read_U8(aAB_BatterPort) - 1) * cControl_Offset);
     std::cout << " Stick Addr=" << std::hex << aStickInput << " Stick Value=" << Memory::Read_U16(aStickInput) << "\n";
-    contact->input_direction_stick   = (Memory::Read_U16(aStickInput) & 0xF); //Mask off the lower 4 bits which are the control stick directions
-
-    contact->horiz_power       = Memory::Read_U16(aAB_HorizPower);
-    contact->vert_power        = Memory::Read_U16(aAB_VertPower);
-    contact->ball_angle        = Memory::Read_U16(aAB_BallAngle);
-
-    contact->ball_x_velocity   = Memory::Read_U32(aAB_BallVel_X);
-    contact->ball_y_velocity   = Memory::Read_U32(aAB_BallVel_Y);
-    contact->ball_z_velocity   = Memory::Read_U32(aAB_BallVel_Z);
-
-    //contact->ball_x_accel   = Memory::Read_U32(aAB_BallAccel_X);
-    //contact->ball_y_accel   = Memory::Read_U32(aAB_BallAccel_Y);
-    //contact->ball_z_accel   = Memory::Read_U32(aAB_BallAccel_Z);
-
-    //Frame collect
-    contact->frameOfSwingUponContact = Memory::Read_U16(aAB_FrameOfSwingAnimUponContact);
+    contact->input_direction_stick.set_value(Memory::Read_U16(aStickInput) & 0xF); //Mask off the lower 4 bits which are the control stick directions
 }
 
 void StatTracker::logContactMiss(Event& in_event){
@@ -777,11 +780,11 @@ void StatTracker::logPitch(Event& in_event){
     in_event.pitch->star_pitch         = ((Memory::Read_U8(aAB_StarPitch_NonCaptain) > 0) || (Memory::Read_U8(aAB_StarPitch_Captain) > 0));
     in_event.pitch->pitch_speed        = Memory::Read_U8(aAB_PitchSpeed);
 
-    in_event.pitch->ball_x_pos_upon_hit = Memory::Read_U32(aAB_BallPos_X_Upon_Hit);
-    in_event.pitch->ball_z_pos_upon_hit = Memory::Read_U32(aAB_BallPos_Z_Upon_Hit);
+    in_event.pitch->ball_x_pos_upon_hit = 0xFF;
+    in_event.pitch->ball_z_pos_upon_hit = 0xFF;
 
-    in_event.pitch->batter_x_pos_upon_hit = Memory::Read_U32(aAB_BatterPos_X_Upon_Hit);
-    in_event.pitch->batter_z_pos_upon_hit = Memory::Read_U32(aAB_BatterPos_Z_Upon_Hit);
+    in_event.pitch->batter_x_pos_upon_hit = 0xFF;
+    in_event.pitch->batter_z_pos_upon_hit = 0xFF;
     
     // === Batter info ===
 
@@ -816,9 +819,9 @@ void StatTracker::logContactResult(Contact* in_contact){
     if (result == 1 || result == 2){
         in_contact->primary_contact_result = result+1; //Landed Fair
         m_event_state = EVENT_STATE::LOG_FIELDER;
-        in_contact->ball_x_pos = Memory::Read_U32(aAB_BallPos_X);
-        in_contact->ball_y_pos = Memory::Read_U32(aAB_BallPos_Y);
-        in_contact->ball_z_pos = Memory::Read_U32(aAB_BallPos_Z);
+        in_contact->ball_x_pos.read_value();
+        in_contact->ball_y_pos.read_value();
+        in_contact->ball_z_pos.read_value();
 
         //If 2, ball has been caught. Log this as final fielder. If ball has been bobbled they will be logged as bobble
         in_contact->collect_fielder = logFielderWithBall();
@@ -829,9 +832,9 @@ void StatTracker::logContactResult(Contact* in_contact){
 
         //If the ball is caught, use the balls position from the frame before to avoid the ball_pos
         //from matching the fielders
-        in_contact->ball_x_pos = in_contact->prev_ball_x_pos;
-        in_contact->ball_y_pos = in_contact->prev_ball_y_pos;
-        in_contact->ball_z_pos = in_contact->prev_ball_z_pos; 
+        in_contact->ball_x_pos.set_value_to_prev();
+        in_contact->ball_y_pos.set_value_to_prev();
+        in_contact->ball_z_pos.set_value_to_prev();
 
         //Ball has been caught. Log this as final fielder. If ball has been bobbled they will be logged as bobble
         in_contact->collect_fielder = logFielderWithBall();
@@ -850,16 +853,16 @@ void StatTracker::logContactResult(Contact* in_contact){
     else if (result == 0xFF){ // Known bug: this will be true for foul or HR. Correct when adjusting secondary contact later
         in_contact->primary_contact_result = 1; //Foul
         in_contact->secondary_contact_result = 3; //Foul
-        in_contact->ball_x_pos = Memory::Read_U32(aAB_BallPos_X);
-        in_contact->ball_y_pos = Memory::Read_U32(aAB_BallPos_Y);
-        in_contact->ball_z_pos = Memory::Read_U32(aAB_BallPos_Z);
+        in_contact->ball_x_pos.read_value();
+        in_contact->ball_y_pos.read_value();
+        in_contact->ball_z_pos.read_value();
     }
     else{
         in_contact->primary_contact_result = result;
         in_contact->secondary_contact_result = 0xFF; //???
-        in_contact->ball_x_pos = Memory::Read_U32(aAB_BallPos_X);
-        in_contact->ball_y_pos = Memory::Read_U32(aAB_BallPos_Y);
-        in_contact->ball_z_pos = Memory::Read_U32(aAB_BallPos_Z);
+        in_contact->ball_x_pos.read_value();
+        in_contact->ball_y_pos.read_value();
+        in_contact->ball_z_pos.read_value();
     }
 }
 
@@ -887,11 +890,11 @@ void StatTracker::logFinalResults(Event& in_event){
         }
     }
 
-    //multi_out
-    in_event.pitch->contact->multi_out = (Memory::Read_U8(aAB_NumOutsDuringPlay) > 1);
+    //num_outs_during_play
+    in_event.pitch->contact->num_outs_during_play.read_value();
 
     //Any out, increment all fielders batter out counts
-    if (Memory::Read_U8(aAB_NumOutsDuringPlay) > 0) {
+    if (in_event.pitch->contact->num_outs_during_play.get_value() > 0) {
         m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].incrementBatterOutForPosition();
     }
 
@@ -1154,34 +1157,49 @@ std::string StatTracker::getStatJSON(bool inDecode){
             json_stream << "        \"Type of Swing\": "      << decode("Swing", pitch->type_of_swing, inDecode);
             
             //=== Contact ===
-            if (pitch->contact.has_value() && pitch->contact->type_of_contact != 0xFF){
+            if (pitch->contact.has_value() && pitch->contact->type_of_contact.get_value() != 0xFF){
                 json_stream << ",\n";
 
                 Contact* contact = &pitch->contact.value();
                 json_stream << "        \"Contact\": {\n";
-                json_stream << "          \"Type of Contact\": "                  << decode("Contact", contact->type_of_contact, inDecode) << ",\n";
-                json_stream << "          \"Charge Power Up\": "                  << floatConverter(contact->charge_power_up) << ",\n";
-                json_stream << "          \"Charge Power Down\": "                << floatConverter(contact->charge_power_down) << ",\n";
-                json_stream << "          \"Star Swing Five-Star\": "             << std::to_string(contact->moon_shot) << ",\n"; 
-                json_stream << "          \"Input Direction - Push/Pull\": "      << decode("Stick", contact->input_direction_push_pull, inDecode) << ",\n";
-                json_stream << "          \"Input Direction - Stick\": "          << decode("StickVec", contact->input_direction_stick, inDecode) << ",\n";
-                json_stream << "          \"Frame of Swing Upon Contact\": "      << std::dec << contact->frameOfSwingUponContact << ",\n";
-                json_stream << "          \"Ball Angle\": \""                     << std::dec << contact->ball_angle << "\",\n";
-                json_stream << "          \"Ball Vertical Power\": \""            << std::dec << contact->vert_power << "\",\n";
-                json_stream << "          \"Ball Horizontal Power\": \""          << std::dec << contact->horiz_power << "\",\n";
-                json_stream << "          \"Ball Velocity - X\": "                << floatConverter(contact->ball_x_velocity) << ",\n";
-                json_stream << "          \"Ball Velocity - Y\": "                << floatConverter(contact->ball_y_velocity) << ",\n";
-                json_stream << "          \"Ball Velocity - Z\": "                << floatConverter(contact->ball_z_velocity) << ",\n";
-                //json_stream << "          \"Ball Acceleration - X\": "            << ball_x_accel << ",\n";
-                //json_stream << "          \"Ball Acceleration - Y\": "            << ball_y_accel << ",\n";
-                //json_stream << "          \"Ball Acceleration - Z\": "            << ball_z_accel << ",\n";
-                json_stream << "          \"Ball Landing Position - X\": "        << floatConverter(contact->ball_x_pos) << ",\n";
-                json_stream << "          \"Ball Landing Position - Y\": "        << floatConverter(contact->ball_y_pos) << ",\n";
-                json_stream << "          \"Ball Landing Position - Z\": "        << floatConverter(contact->ball_z_pos) << ",\n";
+                json_stream << "          \"" << contact->type_of_contact.name << "\":" << decode("Contact", contact->type_of_contact.get_value(), inDecode) << ",\n";
+                json_stream << "          \"" << contact->charge_power_up.name << "\": " << floatConverter(contact->charge_power_up.get_value()) << ",\n";
+                json_stream << "          \"" << contact->charge_power_down.name << "\": " << floatConverter(contact->charge_power_down.get_value()) << ",\n";
+                json_stream << "          \"" << contact->moon_shot.name << "\": " << contact->moon_shot.get_key_value_string().second << ",\n"; 
+                json_stream << "          \"" << contact->input_direction_push_pull.name << "\": " << decode("Stick", contact->input_direction_push_pull.get_value(), inDecode) << ",\n";
+                json_stream << "          \"" << contact->input_direction_stick.name << "\": " << decode("StickVec", contact->input_direction_stick.get_value(), inDecode) << ",\n";
+                json_stream << "          \"" << contact->frame_of_swing.name << "\": " << std::dec << contact->frame_of_swing.get_value() << ",\n";
 
-                json_stream << "          \"Ball Max Height\": "                  << floatConverter(contact->ball_y_pos_max_height) << ",\n";
+                json_stream << "          \"" << contact->power.name << "\": " << std::dec << contact->power.get_value() <<"\",\n";
+                json_stream << "          \"" << contact->vert_angle.name << "\": " << std::dec << contact->vert_angle.get_value() << "\",\n";
+                json_stream << "          \"" << contact->horiz_angle.name << "\": " << std::dec << contact->horiz_angle.get_value() << "\",\n";
 
-                json_stream << "          \"Multi-out\": "                        << std::to_string(contact->multi_out) << ",\n";
+                json_stream << "          \"" << contact->contact_absolute.name << "\": " << floatConverter(contact->contact_absolute.get_value()) << "\",\n";
+                json_stream << "          \"" << contact->contact_quality.name << "\": " << floatConverter(contact->horiz_angle.get_value()) << "\",\n";
+                
+                json_stream << "          \"" << contact->rng1.name << "\": " << std::dec << contact->rng1.get_value() <<"\",\n";
+                json_stream << "          \"" << contact->rng2.name << "\": " << std::dec << contact->rng2.get_value() << "\",\n";
+                json_stream << "          \"" << contact->rng3.name << "\": " << std::dec << contact->rng3.get_value() << "\",\n";
+
+                json_stream << "          \"" << contact->ball_x_velo.name << "\": " << floatConverter(contact->ball_x_velo.get_value()) << ",\n";
+                json_stream << "          \"" << contact->ball_y_velo.name << "\": " << floatConverter(contact->ball_y_velo.get_value()) << ",\n";
+                json_stream << "          \"" << contact->ball_z_velo.name << "\": " << floatConverter(contact->ball_z_velo.get_value()) << ",\n";
+
+                json_stream << "          \"" << contact->ball_contact_x_pos.name << "\": " << floatConverter(contact->ball_contact_x_pos.get_value()) << ",\n";
+                json_stream << "          \"" << contact->ball_contact_y_pos.name << "\": " << floatConverter(contact->ball_contact_y_pos.get_value()) << ",\n";
+                json_stream << "          \"" << contact->ball_contact_z_pos.name << "\": " << floatConverter(contact->ball_contact_z_pos.get_value()) << ",\n";
+                
+                json_stream << "          \"" << contact->bat_contact_x_pos.name << "\": " << floatConverter(contact->bat_contact_x_pos.get_value()) << ",\n";
+                json_stream << "          \"" << contact->bat_contact_y_pos.name << "\": " << floatConverter(contact->bat_contact_y_pos.get_value()) << ",\n";
+                json_stream << "          \"" << contact->bat_contact_z_pos.name << "\": " << floatConverter(contact->bat_contact_z_pos.get_value()) << ",\n";
+                
+                json_stream << "          \"" << contact->ball_x_pos.name << "\": " << floatConverter(contact->ball_x_pos.get_value()) << ",\n";
+                json_stream << "          \"" << contact->ball_y_pos.name << "\": " << floatConverter(contact->ball_y_pos.get_value()) << ",\n";
+                json_stream << "          \"" << contact->ball_z_pos.name << "\": " << floatConverter(contact->ball_z_pos.get_value()) << ",\n";
+
+                json_stream << "          \"" << contact->ball_max_height.name << "\": " << floatConverter(contact->ball_max_height.get_value()) << ",\n";
+                json_stream << "          \"" << contact->ball_hang_time.name << "\": " << std::dec << contact->ball_hang_time.get_value() << "\",\n";
+                json_stream << "          \"" << contact->num_outs_during_play.name << "\": " << contact->num_outs_during_play.get_key_value_string().second << ",\n";
                 json_stream << "          \"Contact Result - Primary\": "         << decode("PrimaryContactResult", contact->primary_contact_result, inDecode) << ",\n";
                 json_stream << "          \"Contact Result - Secondary\": "       << decode("SecondaryContactResult", contact->secondary_contact_result, inDecode);
 
@@ -1459,34 +1477,40 @@ std::string StatTracker::getHUDJSON(std::string in_event_num, Event& in_curr_eve
         json_stream << "      \"Type of Swing\": "      << decode("Swing", pitch->type_of_swing, inDecode);
         
         //=== Contact ===
-        if (pitch->contact.has_value() && pitch->contact->type_of_contact != 0xFF){
+        if (pitch->contact.has_value() && pitch->contact->type_of_contact.get_value() != 0xFF){
             json_stream << ",\n";
 
             Contact* contact = &pitch->contact.value();
             json_stream << "      \"Contact\": {\n";
-            json_stream << "        \"Type of Contact\": "                  << decode("Contact", contact->type_of_contact, inDecode) << ",\n";
-            json_stream << "        \"Charge Power Up\": "                  << floatConverter(contact->charge_power_up) << ",\n";
-            json_stream << "        \"Charge Power Down\": "                << floatConverter(contact->charge_power_down) << ",\n";
-            json_stream << "        \"Star Swing Five-Star\": "             << std::to_string(contact->moon_shot) << ",\n";
-            json_stream << "        \"Input Direction - Push/Pull\": "      << decode("Stick", contact->input_direction_push_pull, inDecode) << ",\n";
-            json_stream << "        \"Input Direction - Stick\": "          << decode("StickVec", contact->input_direction_stick, inDecode) << ",\n";
-            json_stream << "        \"Frame of Swing Upon Contact\": "      << std::dec << contact->frameOfSwingUponContact << ",\n";
-            json_stream << "        \"Ball Angle\": \""                     << std::dec << contact->ball_angle << "\",\n";
-            json_stream << "        \"Ball Vertical Power\": \""            << std::dec << contact->vert_power << "\",\n";
-            json_stream << "        \"Ball Horizontal Power\": \""          << std::dec << contact->horiz_power << "\",\n";
-            json_stream << "        \"Ball Velocity - X\": "                << floatConverter(contact->ball_x_velocity) << ",\n";
-            json_stream << "        \"Ball Velocity - Y\": "                << floatConverter(contact->ball_y_velocity) << ",\n";
-            json_stream << "        \"Ball Velocity - Z\": "                << floatConverter(contact->ball_z_velocity) << ",\n";
-            //json_stream << "        \"Ball Acceleration - X\": "            << ball_x_accel << ",\n";
-            //json_stream << "        \"Ball Acceleration - Y\": "            << ball_y_accel << ",\n";
-            //json_stream << "        \"Ball Acceleration - Z\": "            << ball_z_accel << ",\n";
-            json_stream << "        \"Ball Landing Position - X\": "        << floatConverter(contact->ball_x_pos) << ",\n";
-            json_stream << "        \"Ball Landing Position - Y\": "        << floatConverter(contact->ball_y_pos) << ",\n";
-            json_stream << "        \"Ball Landing Position - Z\": "        << floatConverter(contact->ball_z_pos) << ",\n";
-
-            json_stream << "        \"Ball Max Height\": "                  << floatConverter(contact->ball_y_pos_max_height) << ",\n";
-
-            json_stream << "        \"Multi-out\": "                        << std::to_string(contact->multi_out) << ",\n";
+            json_stream << "        \"" << contact->type_of_contact.name << "\":" << decode("Contact", contact->type_of_contact.get_value(), inDecode) << ",\n";
+            json_stream << "        \"" << contact->charge_power_up.name << "\": " << floatConverter(contact->charge_power_up.get_value()) << ",\n";
+            json_stream << "        \"" << contact->charge_power_down.name << "\": " << floatConverter(contact->charge_power_down.get_value()) << ",\n";
+            json_stream << "        \"" << contact->moon_shot.name << "\": " << contact->moon_shot.get_key_value_string().second << ",\n"; 
+            json_stream << "        \"" << contact->input_direction_push_pull.name << "\": " << decode("Stick", contact->input_direction_push_pull.get_value(), inDecode) << ",\n";
+            json_stream << "        \"" << contact->input_direction_stick.name << "\": " << decode("StickVec", contact->input_direction_stick.get_value(), inDecode) << ",\n";
+            json_stream << "        \"" << contact->frame_of_swing.name << "\": " << std::dec << contact->frame_of_swing.get_value() << ",\n";
+            json_stream << "        \"" << contact->power.name << "\": " << std::dec << contact->power.get_value() <<"\",\n";
+            json_stream << "        \"" << contact->vert_angle.name << "\": " << std::dec << contact->vert_angle.get_value() << "\",\n";
+            json_stream << "        \"" << contact->horiz_angle.name << "\": " << std::dec << contact->horiz_angle.get_value() << "\",\n";
+            json_stream << "        \"" << contact->contact_absolute.name << "\": " << floatConverter(contact->contact_absolute.get_value()) << "\",\n";
+            json_stream << "        \"" << contact->contact_quality.name << "\": " << floatConverter(contact->horiz_angle.get_value()) << "\",\n";
+            json_stream << "        \"" << contact->rng1.name << "\": " << std::dec << contact->rng1.get_value() <<"\",\n";
+            json_stream << "        \"" << contact->rng2.name << "\": " << std::dec << contact->rng2.get_value() << "\",\n";
+            json_stream << "        \"" << contact->rng3.name << "\": " << std::dec << contact->rng3.get_value() << "\",\n";
+            json_stream << "        \"" << contact->ball_x_velo.name << "\": " << floatConverter(contact->ball_x_velo.get_value()) << ",\n";
+            json_stream << "        \"" << contact->ball_y_velo.name << "\": " << floatConverter(contact->ball_y_velo.get_value()) << ",\n";
+            json_stream << "        \"" << contact->ball_z_velo.name << "\": " << floatConverter(contact->ball_z_velo.get_value()) << ",\n";
+            json_stream << "        \"" << contact->ball_contact_x_pos.name << "\": " << floatConverter(contact->ball_contact_x_pos.get_value()) << ",\n";
+            json_stream << "        \"" << contact->ball_contact_y_pos.name << "\": " << floatConverter(contact->ball_contact_y_pos.get_value()) << ",\n";
+            json_stream << "        \"" << contact->ball_contact_z_pos.name << "\": " << floatConverter(contact->ball_contact_z_pos.get_value()) << ",\n";
+            json_stream << "        \"" << contact->bat_contact_x_pos.name << "\": " << floatConverter(contact->bat_contact_x_pos.get_value()) << ",\n";
+            json_stream << "        \"" << contact->bat_contact_y_pos.name << "\": " << floatConverter(contact->bat_contact_y_pos.get_value()) << ",\n";
+            json_stream << "        \"" << contact->bat_contact_z_pos.name << "\": " << floatConverter(contact->bat_contact_z_pos.get_value()) << ",\n";
+            json_stream << "        \"" << contact->ball_x_pos.name << "\": " << floatConverter(contact->ball_x_pos.get_value()) << ",\n";
+            json_stream << "        \"" << contact->ball_y_pos.name << "\": " << floatConverter(contact->ball_y_pos.get_value()) << ",\n";
+            json_stream << "        \"" << contact->ball_z_pos.name << "\": " << floatConverter(contact->ball_z_pos.get_value()) << ",\n";
+            json_stream << "        \"" << contact->ball_max_height.name << "\": " << floatConverter(contact->ball_max_height.get_value()) << ",\n";
+            json_stream << "        \"" << contact->num_outs_during_play.name << "\": " << contact->num_outs_during_play.get_key_value_string().second << ",\n";
             json_stream << "        \"Contact Result - Primary\": "         << decode("PrimaryContactResult", contact->primary_contact_result, inDecode) << ",\n";
             json_stream << "        \"Contact Result - Secondary\": "       << decode("SecondaryContactResult", contact->secondary_contact_result, inDecode);
 

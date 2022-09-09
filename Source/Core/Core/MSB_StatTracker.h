@@ -18,6 +18,8 @@
 
 #include "Core/Logger.h"
 
+#include "Core/TrackerAdr.h"
+
 enum class GAME_STATE
 {
   PREGAME,
@@ -35,11 +37,10 @@ static std::map<GAME_STATE, std::string> c_game_state = {
 
 enum class EVENT_STATE
 {
-    START_AB,
+    INIT_EVENT,
     PITCH_RESULT,
     CONTACT_RESULT,
     LOG_FIELDER,
-    NO_CONTACT,
     MONITOR_RUNNERS,
     PLAY_OVER,
     FINAL_RESULT,
@@ -49,7 +50,7 @@ enum class EVENT_STATE
 };
 
 static std::map<EVENT_STATE, std::string> c_event_state = {
-    {EVENT_STATE::START_AB, "START_AB"},
+    {EVENT_STATE::INIT_EVENT, "INIT_EVENT"},
     {EVENT_STATE::PITCH_RESULT, "PITCH_RESULT"},
     {EVENT_STATE::CONTACT_RESULT, "CONTACT_RESULT"},
     {EVENT_STATE::LOG_FIELDER, "LOG_FIELDER"},
@@ -392,9 +393,9 @@ static const u32 aAB_PitchCurveInput       = 0x80890A24; //0 if no curve is appl
 static const u32 aAB_PitcherHasCtrlofPitch = 0x80890B12; //Above addr is valid when this addr =1
 
 //At-Bat Hit
-static const u32 aAB_HorizPower     = 0x808926D6;
-static const u32 aAB_VertPower      = 0x808926D2;
-static const u32 aAB_BallAngle      = 0x808926D4;
+static const u32 aAB_BallPower      = 0x808926D6;
+static const u32 aAB_VertAngle      = 0x808926D2;
+static const u32 aAB_HorizAngle      = 0x808926D4;
 
 static const u32 aAB_BallVel_X      = 0x80890E50;
 static const u32 aAB_BallVel_Y      = 0x80890E54;
@@ -404,12 +405,20 @@ static const u32 aAB_BallAccel_X    = 0x80890E5C;
 static const u32 aAB_BallAccel_Y    = 0x80890E60;
 static const u32 aAB_BallAccel_Z    = 0x80890E64;
 
-static const u32 aAB_BallPos_X_Upon_Hit = 0x808909C8;
-static const u32 aAB_BallPos_Z_Upon_Hit = 0x808909CC;
+static const u32 aAB_BallContactPos_X = 0x80890934;
+static const u32 aAB_BallContactPos_Y = 0x80890938;
+static const u32 aAB_BallContactPos_Z = 0x8089093c;
 
-static const u32 aAB_BatterPos_X_Upon_Hit = 0x80890910;
-static const u32 aAB_BatterPos_Z_Upon_Hit = 0x80890914;
+static const u32 aAB_BatContactPos_X = 0x8089095c;
+static const u32 aAB_BatContactPos_Y = 0x80890960;
+static const u32 aAB_BatContactPos_Z = 0x80890964;
 
+static const u32 aAB_ContactRandInt1 = 0x802ec010;
+static const u32 aAB_ContactRandInt2 = 0x802ec012;
+static const u32 aAB_ContactRandInt3 = 0x802ec014;
+
+static const u32 aAB_ContactAbsolute = 0x80890950;
+static const u32 aAB_ContactQuality  = 0x80890954;
 static const u32 aAB_TypeOfSwing    = 0x8089099B; //1=Slap, 2=Charge, 3=Bunt. Set on contact
 static const u32 aAB_ChargeUp       = 0x80890968;
 static const u32 aAB_ChargeDown     = 0x8089096C;
@@ -445,7 +454,7 @@ static const u32 aAB_HitByPitch = 0x808909A3;
 static const u32 aAB_FinalResult = 0x80893BAA;
 
 //Frame Data. Capture once play is over
-static const u32 aAB_FrameOfSwingAnimUponContact = 0x80890976; //(halfword) frame of swing animation; stops increasing when contact is made
+static const u32 aAB_FrameOfSwing = 0x80890976; //(halfword) frame of swing animation; stops increasing when contact is made
 static const u32 aAB_FrameOfPitchSeqUponSwing    = 0x80890978; //(halfword) frame of pitch that the batter swung
 
 static const u32 aAB_FieldingPort = 0x802EBF94;
@@ -567,38 +576,54 @@ public:
     };
 
     struct Contact {
-        //Hit Status
-        u8 type_of_contact;
-        u8 swing;
-        u8 charge_swing;
-        u8 bunt;
-        u32 charge_power_up;
-        u32 charge_power_down;
-        u8 star_swing;
-        u8 moon_shot;
-        u8 input_direction_push_pull;
-        u8 input_direction_stick;
+        //Vars with 1:1 Adrs
+        TrackerAdr<u16> power       = TrackerAdr<u16>("BallPower", aAB_BallPower, 0xFFFF);
+        TrackerAdr<u16> vert_angle  = TrackerAdr<u16>("VertAngle", aAB_VertAngle, 0xFFFF);
+        TrackerAdr<u16> horiz_angle = TrackerAdr<u16>("BallPower", aAB_HorizAngle, 0xFFFF);
 
-        u16 frameOfSwingUponContact;
-    
-        //  Ball Calcs
-        u16 ball_angle;
-        u16 horiz_power;
-        u16 vert_power;
-        u32 ball_x_velocity;
-        u32 ball_y_velocity;
-        u32 ball_z_velocity;
+        TrackerAdr<u32> ball_x_velo = TrackerAdr<u32>("Ball Velocity - X", aAB_BallVel_X, 0xFFFFFFFF);
+        TrackerAdr<u32> ball_y_velo = TrackerAdr<u32>("Ball Velocity - Y", aAB_BallVel_Y, 0xFFFFFFFF);
+        TrackerAdr<u32> ball_z_velo = TrackerAdr<u32>("Ball Velocity - Z", aAB_BallVel_Z, 0xFFFFFFFF);
+
+        TrackerAdr<u32> ball_contact_x_pos = TrackerAdr<u32>("Ball Contact Pos - X", aAB_BallContactPos_X, 0xFFFFFFFF);
+        TrackerAdr<u32> ball_contact_y_pos = TrackerAdr<u32>("Ball Contact Pos - Y", aAB_BallContactPos_Y, 0xFFFFFFFF);
+        TrackerAdr<u32> ball_contact_z_pos = TrackerAdr<u32>("Ball Contact Pos - Z", aAB_BallContactPos_Z, 0xFFFFFFFF);
+
+        TrackerAdr<u32> bat_contact_x_pos = TrackerAdr<u32>("Ball Contact Pos - X", aAB_BallContactPos_X, 0xFFFFFFFF);
+        TrackerAdr<u32> bat_contact_y_pos = TrackerAdr<u32>("Ball Contact Pos - Y", aAB_BallContactPos_Y, 0xFFFFFFFF);
+        TrackerAdr<u32> bat_contact_z_pos = TrackerAdr<u32>("Ball Contact Pos - Z", aAB_BallContactPos_Z, 0xFFFFFFFF);
+
+        TrackerAdr<u32> contact_absolute = TrackerAdr<u32>("Contact Absolute", aAB_ContactAbsolute, 0xFFFFFFFF);
+        TrackerAdr<u32> contact_quality = TrackerAdr<u32>("Contact Quality", aAB_ContactQuality, 0xFFFFFFFF);
+
+        TrackerAdr<u16> rng1 = TrackerAdr<u16>("RNG1", aAB_ContactRandInt1, 0xFFFF);
+        TrackerAdr<u16> rng2 = TrackerAdr<u16>("RNG2", aAB_ContactRandInt2, 0xFFFF);
+        TrackerAdr<u16> rng3 = TrackerAdr<u16>("RNG3", aAB_ContactRandInt3, 0xFFFF);
+
+        //Hit Status
+        TrackerAdr<u8> type_of_contact = TrackerAdr<u8>("Type of Contact", aAB_TypeOfContact, 0xFF);
+        TrackerAdr<u8> moon_shot = TrackerAdr<u8>("Star Swing Five-Star", aAB_MoonShot, 0xFF);
+
+        //Charge Power
+        TrackerAdr<u32> charge_power_up = TrackerAdr<u32>("Charge Power Up", aAB_ChargeUp, 0xFFFFFFFF);
+        TrackerAdr<u32> charge_power_down = TrackerAdr<u32>("Charge Power Down", aAB_ChargeDown, 0xFFFFFFFF);
+        
+        TrackerValue<u8> input_direction_stick = TrackerValue<u8>("Input Direction - Stick", 0xFF);
+        TrackerAdr<u8> input_direction_push_pull = TrackerAdr<u8>("Input Direction - Push/Pull", aAB_InputDirection, 0xFF);
+
+        TrackerAdr<u16> frame_of_swing = TrackerAdr<u16>("Frame of Swing Upon Contact", aAB_FrameOfSwing, 0xFFFF);
         
         //Final Result Ball
-        u32 ball_x_pos, prev_ball_x_pos;
-        u32 ball_y_pos, prev_ball_y_pos;
-        u32 ball_z_pos, prev_ball_z_pos;
+        TrackerAdr<u32> ball_x_pos = TrackerAdr<u32>("Ball Landing Position - X", aAB_BallPos_X, 0xFFFFFFFF);
+        TrackerAdr<u32> ball_y_pos = TrackerAdr<u32>("Ball Landing Position - Y", aAB_BallPos_Y, 0xFFFFFFFF);
+        TrackerAdr<u32> ball_z_pos = TrackerAdr<u32>("Ball Landing Position - Z", aAB_BallPos_Z, 0xFFFFFFFF);
 
         //More ball flight info
-        u32 ball_y_pos_max_height = 0;
+        TrackerAdr<u32> ball_max_height = TrackerAdr<u32>("Ball Max Height", 0x8089250c, 0xFFFFFFFF);
+        TrackerAdr<u16> ball_hang_time = TrackerAdr<u16>("Ball Hang Time", 0x80892696, 0xFFFF);
 
         //Double play or more
-        u8 multi_out;
+        TrackerAdr<u8> num_outs_during_play = TrackerAdr<u8>("Num Outs During Play", aAB_NumOutsDuringPlay, 0xFF);
 
         //0=Out
         //1=Foul
@@ -917,12 +942,12 @@ public:
 
         //Reset state machines
         m_game_state  = GAME_STATE::PREGAME;
-        m_event_state = EVENT_STATE::START_AB;
+        m_event_state = EVENT_STATE::INIT_EVENT;
     }
 
     GAME_STATE  m_game_state  = GAME_STATE::PREGAME;
     GAME_STATE  m_game_state_prev = GAME_STATE::UNDEFINED;
-    EVENT_STATE m_event_state = EVENT_STATE::START_AB;
+    EVENT_STATE m_event_state = EVENT_STATE::INIT_EVENT;
     EVENT_STATE m_event_state_prev = EVENT_STATE::UNDEFINED;
 
     struct state_members{
