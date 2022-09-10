@@ -717,6 +717,9 @@ public:
         u8 rbi;
         u8 result_of_atbat;
 
+        //Partial game. indicates this game has not been finished
+        std::pair<bool, bool> write_hud_ab = {true, true};
+
         std::vector<EVENT_STATE> history;
         std::string stringifyHistory() {
             std::string stringifiedHistory;
@@ -765,9 +768,6 @@ public:
 
         //Quit?
         u8 quitter_team = 0xFF;
-
-        //Partial game. indicates this game has not been finished
-        u8 partial;
 
         //Bookkeeping
         //int pitch_num = 0;
@@ -1045,7 +1045,6 @@ public:
     //If mid-game, dump game
     void dumpGame(){
         if (m_game_state == GAME_STATE::INGAME){
-            m_game_info.game_active = false;
             m_game_info.quitter_team = 2;
             logGameInfo();
 
@@ -1059,17 +1058,10 @@ public:
             
             File::WriteStringToFile(jsonPath, json);
 
-            //jsonPath = getStatJsonPath("crash.");
-            //json = getStatJSON(false);
+            jsonPath = getStatJsonPath("crash.");
+            json = getStatJSON(false, true);
             
-            //File::WriteStringToFile(jsonPath, json);
-
-            //Clean up partial files
-            jsonPath = getStatJsonPath("partial.");
-            File::Delete(jsonPath);
-            jsonPath = getStatJsonPath("partial.decoded.");
-            File::Delete(jsonPath);
-
+            File::WriteStringToFile(jsonPath, json);
             init();
         }
     }

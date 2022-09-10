@@ -211,10 +211,14 @@ void StatTracker::lookForTriggerEvents(){
                         initPlayerInfo();
                     }
 
-                    std::string hud_file_path = File::GetUserPath(D_HUDFILES_IDX) + "decoded.hud.json";
-                    std::string json = getHUDJSON(std::to_string(m_game_info.event_num) + "a", m_game_info.getCurrentEvent(), m_game_info.previous_state, true);
-                    File::Delete(hud_file_path);
-                    File::WriteStringToFile(hud_file_path, json);
+                    if (m_game_info.getCurrentEvent().write_hud_ab.first) {
+                        std::string hud_file_path = File::GetUserPath(D_HUDFILES_IDX) + "decoded.hud.json";
+                        std::string json = getHUDJSON(std::to_string(m_game_info.event_num) + "a", m_game_info.getCurrentEvent(), m_game_info.previous_state, true);
+                        File::Delete(hud_file_path);
+                        File::WriteStringToFile(hud_file_path, json);
+                        //No longer need to write HUD B
+                        m_game_info.getCurrentEvent().write_hud_ab.first = false;
+                    }
 
                     if(Memory::Read_U8(aAB_PitchThrown)){
                         std::cout << "Pitch detected!\n";
@@ -385,7 +389,7 @@ void StatTracker::lookForTriggerEvents(){
                 logFinalResults(m_game_info.getCurrentEvent());
 
                 //Log post event HUD to file
-                if (true){
+                if (m_game_info.getCurrentEvent().write_hud_ab.second){
 
                     //Fill in current state for HUD
                     logGameInfo();
@@ -397,26 +401,9 @@ void StatTracker::lookForTriggerEvents(){
                     std::string json = getHUDJSON(std::to_string(m_game_info.event_num) + "b", m_game_info.getCurrentEvent(), m_game_info.previous_state, true);
                     File::Delete(hud_file_path);
                     File::WriteStringToFile(hud_file_path, json);
-                }
 
-                //If End of Inning log entire file
-                if ((Memory::Read_U8(aAB_NumOutsDuringPlay) + m_game_info.getCurrentEvent().outs) >= 3){
-                    m_game_info.partial = 1;
-                    logGameInfo();
-                    std::string jsonPath = getStatJsonPath("partial.decoded.");
-                    File::Delete(jsonPath);
-                    std::string json = getStatJSON(true);
-                        
-                    File::WriteStringToFile(jsonPath, json);
-
-                    jsonPath = getStatJsonPath("partial.");
-                    File::Delete(jsonPath);
-                    json = getStatJSON(false);
-
-                    File::WriteStringToFile(jsonPath, json);
-                    std::cout << "Logging partial to " << jsonPath << "\n";
-
-                    m_game_info.partial = 0;
+                    //No longer need to write HUD B
+                    m_game_info.getCurrentEvent().write_hud_ab.second = false;
                 }
 
                 // === Transitions ===
@@ -478,7 +465,6 @@ void StatTracker::lookForTriggerEvents(){
                 m_game_state = GAME_STATE::INGAME;
                 std::cout << "PREGAME->INGAME (GameID=" << std::to_string(m_game_info.game_id) << ", Ranked=" << m_game_info.ranked <<")\n";
                 std::cout << "                (Netplay=" << m_game_info.netplay << ", Host=" << m_game_info.host << ")\n"
-                          << "                (AwayTeam=" << m_game_info.getAwayTeamPlayer().GetUsername() << ", HomeTeam=" << m_game_info.getHomeTeamPlayer().GetUsername() << ")\n"; 
             }
             break;
         case (GAME_STATE::INGAME):
@@ -492,12 +478,17 @@ void StatTracker::lookForTriggerEvents(){
                 File::WriteStringToFile(jsonPath, json);
 
                 jsonPath = getStatJsonPath("");
-                json = getStatJSON(false);
+                json = getStatJSON(false, true);
+                //TODO: See if user has signed up for beta test features in future
+                File::WriteStringToFile(jsonPath, json);
+
                 //File::WriteStringToFile(jsonPath, json);
                 //https://projectrio-api-1.api.projectrio.app/populate_db
+                
+                submit_json = getStatJSON(false, false);
                 if (shouldSubmitGame()) {
                     const Common::HttpRequest::Response response =
-                    m_http.Post("https://projectrio-api-1.api.projectrio.app/populate_db/", json,
+                    m_http.Post("https://projectrio-api-1.api.projectrio.app/populate_db/", submit_json,
                         {
                             {"Content-Type", "application/json"},
                         }
@@ -505,13 +496,6 @@ void StatTracker::lookForTriggerEvents(){
                 }
 
                 std::cout << "Logging to " << jsonPath << "\n";
-
-                //Clean up partial files
-                jsonPath = getStatJsonPath("partial.");
-                File::Delete(jsonPath);
-                jsonPath = getStatJsonPath("partial.decoded.");
-                File::Delete(jsonPath);
-
                 std::cout << "INGAME->ENDGAME\n";
 
 
@@ -911,10 +895,10 @@ std::string StatTracker::getStatJsonPath(std::string prefix){
     return full_file_path;
 }
 
-std::string StatTracker::getStatJSON(bool inDecode){
+std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey = true){
     //TODO switch to IDs when submitting game
-    std::string away_player_info = (inDecode) ? m_game_info.getAwayTeamPlayer().GetUsername() : m_game_info.getAwayTeamPlayer().GetUserID();
-    std::string home_player_info = (inDecode) ? m_game_info.getHomeTeamPlayer().GetUsername() : m_game_info.getHomeTeamPlayer().GetUserID();
+    std::string away_player_info = (inDecode || hide_riokey) ? m_game_info.getAwayTeamPlayer().GetUsername() : m_game_info.getAwayTeamPlayer().GetUserID();
+    std::string home_player_info = (inDecode || hide_riokey) ? m_game_info.getHomeTeamPlayer().GetUsername() : m_game_info.getHomeTeamPlayer().GetUserID();
 
     std::stringstream json_stream;
 
@@ -1817,24 +1801,20 @@ void StatTracker::onGameQuit(){
     File::WriteStringToFile(jsonPath, json);
 
     jsonPath = getStatJsonPath("quit.");
-    json = getStatJSON(false);
+    json = getStatJSON(false, true);
     
     File::WriteStringToFile(jsonPath, json);
 
+
+    submit_json = getStatJSON(false, false);
     if (shouldSubmitGame()) {
         const Common::HttpRequest::Response response =
-        m_http.Post("https://projectrio-api-1.api.projectrio.app/populate_db/", json,
+        m_http.Post("https://projectrio-api-1.api.projectrio.app/populate_db/", submit_json,
             {
                 {"Content-Type", "application/json"},
             }
         );
     }
-
-    //Clean up partial files
-    jsonPath = getStatJsonPath("partial.");
-    File::Delete(jsonPath);
-    jsonPath = getStatJsonPath("partial.decoded.");
-    File::Delete(jsonPath);
 }
 
 std::optional<StatTracker::Runner> StatTracker::logRunnerInfo(u8 base){
