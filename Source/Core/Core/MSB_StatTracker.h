@@ -1023,11 +1023,28 @@ public:
     //Returns path to save json
     std::string getStatJsonPath(std::string prefix);
 
+    std::pair<u8,u8> getBatterFielderPorts(){
+        std::array<u8, 2> ports = {Memory::Read_U8(0x800e874c), Memory::Read_U8(0x800e874d)};
+
+        u8 BattingPort = ports[Memory::Read_U32(0x80892990)];
+        u8 FieldingPort = ports[Memory::Read_U32(0x80892994)];
+
+        return std::make_pair(BattingPort, FieldingPort);
+    }
+
+    std::pair<u8,u8> getHomeAwayPort(){
+        std::array<u8, 2> ports = {Memory::Read_U8(0x800e874c), Memory::Read_U8(0x800e874d)};
+        m_game_info.home_port = ports[0];
+        m_game_info.away_port = ports[1];
+
+        return std::make_pair(m_game_info.home_port, m_game_info.away_port);
+    }
+
     void initPlayerInfo();
 
     //If mid-game, dump game
     void dumpGame(){
-        if ((Memory::Read_U32(aGameId) != 0) && (m_game_state == GAME_STATE::INGAME)){
+        if (m_game_state == GAME_STATE::INGAME){
             m_game_info.game_active = false;
             m_game_info.quitter_team = 2;
             logGameInfo();
