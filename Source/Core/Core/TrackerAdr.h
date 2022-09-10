@@ -41,7 +41,7 @@ public:
         return std::make_pair(name, std::to_string(get_value()));
     }
 
-    void write(std::ostream stream, char sep=" "){
+    void write(std::ostream stream, std::string sep=" "){
         stream << name << sep << std::to_string(get_value());
     }
 };
