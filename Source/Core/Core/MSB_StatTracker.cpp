@@ -72,8 +72,10 @@ void StatTracker::lookForTriggerEvents(){
                     u8 pitcher_screen_side_port;
                     if (m_game_info.team0_port == batter_port) {
                         batter_screen_side_port = m_game_info.team0_port;
+                        pitcher_screen_side_port = m_game_info.team1_port;
                     } else {
                         batter_screen_side_port = m_game_info.team1_port;
+                        pitcher_screen_side_port = m_game_info.team0_port;
                     };
 
                     u8 batter_char_id = m_game_info.character_summaries[batter_screen_side_port][m_game_info.getCurrentEvent().batter_roster_loc].char_id;
@@ -181,9 +183,6 @@ void StatTracker::lookForTriggerEvents(){
 
                 //Capture the rising edge of the AtBat Scene
                 if (Memory::Read_U8(aGameControlStateCurr) == 0x1 && Memory::Read_U8(aGameControlStatePrev) != 0x1){
-                    if (m_game_info.event_num == 0) {
-                        initPlayerInfo();
-                    }
 
                     m_game_info.events[m_game_info.event_num] = Event();
                     m_game_info.getCurrentEvent().event_num = m_game_info.event_num;
@@ -223,6 +222,11 @@ void StatTracker::lookForTriggerEvents(){
                 if (Memory::Read_U8(aAB_PitchThrown) || Memory::Read_U8(aAB_PickoffAttempt)){
                     //If HUD not produced for this event, produce HUD JSON
                     logGameInfo();
+
+
+                    if (m_game_info.event_num == 0) {
+                        initPlayerInfo();
+                    }
 
                     std::string hud_file_path = File::GetUserPath(D_HUDFILES_IDX) + "decoded.hud.json";
                     std::string json = getHUDJSON(std::to_string(m_game_info.event_num) + "a", m_game_info.getCurrentEvent(), m_game_info.previous_state, true);
@@ -434,19 +438,22 @@ void StatTracker::lookForTriggerEvents(){
 
                 // === Transitions ===
 
-                if (Memory::Read_U8(aGameControlStateCurr) == 0x1){
+                if (Memory::Read_U8(aGameControlStateCurr) == 0x7){
                     //Increment event count
                     ++m_game_info.event_num;
+                    //Save position as prev position
+                    u8 fielding_team_id = !m_game_info.previous_state.value().half_inning;
+                    m_fielder_tracker[fielding_team_id].newBatter();
+                    m_fielder_tracker[fielding_team_id].incrementBatterOutForPosition();
                     m_event_state = EVENT_STATE::INIT_EVENT;
                     std::cout << "Logging Final Result\n" << "Starting next AB\n\n";
                 }
-                if ((Memory::Read_U8(aGameControlStateCurr) == 0xE) || (Memory::Read_U8(aEndOfGameFlag) == 1)){ //MVP screen
+                else if ((Memory::Read_U8(aGameControlStateCurr) == 0xE) || (Memory::Read_U8(aEndOfGameFlag) == 1)){ //MVP screen
                     //Increment event count
-                    ++m_game_info.event_num;
                     m_event_state = EVENT_STATE::GAME_OVER;
                     std::cout << "Logging Final Result\n" << "Game Over\n\n";
                 }
-                if ((m_game_info.previous_state.value().balls < 4 || m_game_info.previous_state.value().strikes < 3) && m_game_info.getCurrentEvent().result_of_atbat == 0) {
+                else if ((m_game_info.previous_state.value().balls < 4 || m_game_info.previous_state.value().strikes < 3) && m_game_info.getCurrentEvent().result_of_atbat == 0) {
                     ++m_game_info.event_num;
                     m_event_state = EVENT_STATE::INIT_EVENT;
                     std::cout << "Logging Final Result\n" << "Starting next pitch of AB\n\n";
@@ -893,11 +900,6 @@ void StatTracker::logFinalResults(Event& in_event){
     //num_outs_during_play
     in_event.pitch->contact->num_outs_during_play.read_value();
 
-    //Any out, increment all fielders batter out counts
-    if (in_event.pitch->contact->num_outs_during_play.get_value() > 0) {
-        m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].incrementBatterOutForPosition();
-    }
-
     //If the runner got out at first (forced), increment outs for the fielder who first touched the ball
     if (in_event.runner_batter->out_type == 2) {
         //First fielder to touch the ball
@@ -1175,7 +1177,7 @@ std::string StatTracker::getStatJSON(bool inDecode){
                 json_stream << "          \"" << contact->horiz_angle.name << "\": " << std::dec << contact->horiz_angle.get_value() << "\",\n";
 
                 json_stream << "          \"" << contact->contact_absolute.name << "\": " << floatConverter(contact->contact_absolute.get_value()) << "\",\n";
-                json_stream << "          \"" << contact->contact_quality.name << "\": " << floatConverter(contact->horiz_angle.get_value()) << "\",\n";
+                json_stream << "          \"" << contact->contact_quality.name << "\": " << floatConverter(contact->contact_quality.get_value()) << "\",\n";
                 
                 json_stream << "          \"" << contact->rng1.name << "\": " << std::dec << contact->rng1.get_value() <<"\",\n";
                 json_stream << "          \"" << contact->rng2.name << "\": " << std::dec << contact->rng2.get_value() << "\",\n";
@@ -1493,7 +1495,7 @@ std::string StatTracker::getHUDJSON(std::string in_event_num, Event& in_curr_eve
             json_stream << "        \"" << contact->vert_angle.name << "\": " << std::dec << contact->vert_angle.get_value() << "\",\n";
             json_stream << "        \"" << contact->horiz_angle.name << "\": " << std::dec << contact->horiz_angle.get_value() << "\",\n";
             json_stream << "        \"" << contact->contact_absolute.name << "\": " << floatConverter(contact->contact_absolute.get_value()) << "\",\n";
-            json_stream << "        \"" << contact->contact_quality.name << "\": " << floatConverter(contact->horiz_angle.get_value()) << "\",\n";
+            json_stream << "        \"" << contact->contact_quality.name << "\": " << floatConverter(contact->contact_quality.get_value()) << "\",\n";
             json_stream << "        \"" << contact->rng1.name << "\": " << std::dec << contact->rng1.get_value() <<"\",\n";
             json_stream << "        \"" << contact->rng2.name << "\": " << std::dec << contact->rng2.get_value() << "\",\n";
             json_stream << "        \"" << contact->rng3.name << "\": " << std::dec << contact->rng3.get_value() << "\",\n";
@@ -1701,7 +1703,7 @@ void StatTracker::readPlayerNames(bool local_game) {
   if (local_game)
   {
     // Player 1
-    if (team0_port == 1)
+    if (team0_port == 0)
         m_game_info.team0_player = LocalPlayers::m_local_player_1;
     else {
         m_game_info.team0_player = LocalPlayers::LocalPlayers::Player();
@@ -1710,13 +1712,13 @@ void StatTracker::readPlayerNames(bool local_game) {
     }
 
     // other player
-    if (team1_port == 2)
+    if (team1_port == 1)
         m_game_info.team1_player = LocalPlayers::m_local_player_2;
-    else if (team1_port == 3)
+    else if (team1_port == 2)
         m_game_info.team1_player = LocalPlayers::m_local_player_3;
-    else if (team1_port == 4)
+    else if (team1_port == 3)
         m_game_info.team1_player = LocalPlayers::m_local_player_4;
-    else {
+    else { // 4/5 are CPUs
         m_game_info.team1_player = LocalPlayers::LocalPlayers::Player();
         m_game_info.team1_player.username = "CPU";
         m_game_info.team1_player.userid = "CPU";
@@ -1730,15 +1732,6 @@ void StatTracker::readPlayerNames(bool local_game) {
   }
 }
 
-void StatTracker::setDefaultNames(bool local_game){
-    //if (m_game_info.team0_port >= 5) m_game_info.team0_player_name = "CPU";
-    //if (m_game_info.team1_port >= 5) m_game_info.team1_player_name = "CPU";
-
-    //if (!local_game) {
-    //    if (m_game_info.team0_player.GetUsername().empty()) m_game_info.team0_player = "Netplayer~" + m_game_info.netplay_opponent_alias;
-    //    if (m_game_info.team1_player.GetUsername().empty()) m_game_info.team1_player = "Netplayer~" + m_game_info.netplay_opponent_alias;
-    //}
-}
 void StatTracker::setRankedStatus(bool inBool) {
     std::cout << "Ranked Status=" << inBool << "\n";
     m_state.m_ranked_status = inBool;
@@ -1792,25 +1785,28 @@ void StatTracker::initPlayerInfo(){
     m_game_info.start_local_date_time.pop_back();
     //Collect port info for players
     if (m_game_info.team0_port == 0xFF && m_game_info.team1_port == 0xFF){
-        u8 fielder_port = Memory::Read_U8(aAB_FieldingPort);
-        u8 batter_port = Memory::Read_U8(aAB_BattingPort);
+        //From Roeming
+        std::array<u8, 2> ports = {Memory::Read_U8(0x800e874c), Memory::Read_U8(0x800e874d)};
+        m_game_info.away_port = ports[0];
+        m_game_info.home_port = ports[1];
+
+        //u32 TeamBatting = Memory::Read_U32(0x80892990);
+        //u32 TeamPitching = Memory::Read_U32(0x80892994);
+        u8 BattingPort = ports[Memory::Read_U32(0x80892990)];
+        u8 FieldingPort = ports[Memory::Read_U32(0x80892994)];
+        //
         
         //The lower value will always be team0. If CPU vs CPU is on Team0 == 5 and Team1 == 6
-        if (fielder_port < batter_port) {
-            m_game_info.team0_port = fielder_port;
-            m_game_info.team1_port = batter_port;
+        if (BattingPort < FieldingPort) {
+            m_game_info.team0_port = FieldingPort;
+            m_game_info.team1_port = BattingPort;
         }
         else {
-            m_game_info.team0_port = batter_port;
-            m_game_info.team1_port = fielder_port;
+            m_game_info.team0_port = BattingPort;
+            m_game_info.team1_port = FieldingPort;
         }
 
-        //Map home and away ports for scores
-        m_game_info.away_port = batter_port;
-        m_game_info.home_port = fielder_port;
-
         readPlayerNames(!m_game_info.netplay);
-        setDefaultNames(!m_game_info.netplay);
 
         std::string away_player_name;
         std::string home_player_name;
@@ -1823,7 +1819,7 @@ void StatTracker::initPlayerInfo(){
             home_player_name = m_game_info.team0_player.GetUsername();
         }
 
-        std::cout << "Info:  Fielder Port=" << std::to_string(fielder_port) << ", Batter Port=" << std::to_string(batter_port) << "\n";
+        std::cout << "Info:  Fielder Port=" << std::to_string(FieldingPort) << ", Batter Port=" << std::to_string(BattingPort) << "\n";
         std::cout << "Info:  Team0 Port=" << std::to_string(m_game_info.team0_port) << ", Team1 Port=" << std::to_string(m_game_info.team1_port) << "\n";
         std::cout << "Info:  Away Port=" << std::to_string(m_game_info.away_port) << ", Home Port=" << std::to_string(m_game_info.home_port) << "\n";
         std::cout << "Info:  Away Player=" << (away_player_name) << ", Home Player=" << (home_player_name) << "\n\n";

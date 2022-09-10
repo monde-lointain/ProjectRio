@@ -577,9 +577,9 @@ public:
 
     struct Contact {
         //Vars with 1:1 Adrs
-        TrackerAdr<u16> power       = TrackerAdr<u16>("BallPower", aAB_BallPower, 0xFFFF);
-        TrackerAdr<u16> vert_angle  = TrackerAdr<u16>("VertAngle", aAB_VertAngle, 0xFFFF);
-        TrackerAdr<u16> horiz_angle = TrackerAdr<u16>("BallPower", aAB_HorizAngle, 0xFFFF);
+        TrackerAdr<u16> power       = TrackerAdr<u16>("Ball Power", aAB_BallPower, 0xFFFF);
+        TrackerAdr<u16> vert_angle  = TrackerAdr<u16>("Vert Angle", aAB_VertAngle, 0xFFFF);
+        TrackerAdr<u16> horiz_angle = TrackerAdr<u16>("Horiz Angle", aAB_HorizAngle, 0xFFFF);
 
         TrackerAdr<u32> ball_x_velo = TrackerAdr<u32>("Ball Velocity - X", aAB_BallVel_X, 0xFFFFFFFF);
         TrackerAdr<u32> ball_y_velo = TrackerAdr<u32>("Ball Velocity - Y", aAB_BallVel_Y, 0xFFFFFFFF);
@@ -589,9 +589,9 @@ public:
         TrackerAdr<u32> ball_contact_y_pos = TrackerAdr<u32>("Ball Contact Pos - Y", aAB_BallContactPos_Y, 0xFFFFFFFF);
         TrackerAdr<u32> ball_contact_z_pos = TrackerAdr<u32>("Ball Contact Pos - Z", aAB_BallContactPos_Z, 0xFFFFFFFF);
 
-        TrackerAdr<u32> bat_contact_x_pos = TrackerAdr<u32>("Ball Contact Pos - X", aAB_BallContactPos_X, 0xFFFFFFFF);
-        TrackerAdr<u32> bat_contact_y_pos = TrackerAdr<u32>("Ball Contact Pos - Y", aAB_BallContactPos_Y, 0xFFFFFFFF);
-        TrackerAdr<u32> bat_contact_z_pos = TrackerAdr<u32>("Ball Contact Pos - Z", aAB_BallContactPos_Z, 0xFFFFFFFF);
+        TrackerAdr<u32> bat_contact_x_pos = TrackerAdr<u32>("Bat Contact Pos - X", aAB_BatContactPos_X, 0xFFFFFFFF);
+        TrackerAdr<u32> bat_contact_y_pos = TrackerAdr<u32>("Bat Contact Pos - Y", aAB_BatContactPos_Y, 0xFFFFFFFF);
+        TrackerAdr<u32> bat_contact_z_pos = TrackerAdr<u32>("Bat Contact Pos - Z", aAB_BatContactPos_Z, 0xFFFFFFFF);
 
         TrackerAdr<u32> contact_absolute = TrackerAdr<u32>("Contact Absolute", aAB_ContactAbsolute, 0xFFFFFFFF);
         TrackerAdr<u32> contact_quality = TrackerAdr<u32>("Contact Quality", aAB_ContactQuality, 0xFFFFFFFF);
