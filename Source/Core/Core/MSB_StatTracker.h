@@ -433,8 +433,9 @@ static const u32 aAB_TypeOfContact  = 0x808909A2; //0=Sour, 1=Nice, 2=Perfect, 3
 static const u32 aAB_RBI            = 0x80893B9A; //RBI for the AB
 static const u32 aAB_FramesUnitlBallArrivesBatter  = 0x80890AF2;
 static const u32 aAB_TotalFramesOfPitch            = 0x80890AF4;
+static const u32 aAB_MissedBall                    = 0x80890b18;
 
-static const u32 aAB_ControlStickInput = 0x8089392C; //P1
+static const u32 aAB_ControlStickInput = 0x80893928; //P1
 static const u8 cControl_Offset = 0x10;
 
 //static const u32 aBattingRandInt1 = 0x802ec010; // short

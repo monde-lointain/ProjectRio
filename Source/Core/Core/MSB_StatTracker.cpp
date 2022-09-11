@@ -282,8 +282,7 @@ void StatTracker::lookForTriggerEvents(){
                     m_event_state = EVENT_STATE::CONTACT_RESULT;
                 }
                 //If the ball gets behind the batter while mid pitch OR play flag is false (safety incase we miss the first cond), record miss
-                else if (((Memory::Read_U8(aAB_PitcherHasCtrlofPitch) == 1) && (Memory::Read_U16(aAB_FramesUnitlBallArrivesBatter) <= 0))
-                    || !Memory::Read_U8(aAB_PitchThrown)){
+                else if (Memory::Read_U8(aAB_MissedBall)){
                     logPitch(m_game_info.getCurrentEvent());
                     m_event_state = EVENT_STATE::MONITOR_RUNNERS;
                 }
