@@ -942,7 +942,7 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
             json_stream << "        \"Star Pitches Thrown\": " << std::to_string(def_stat.star_pitches_thrown) << ",\n";
             json_stream << "        \"Big Plays\": "           << std::to_string(def_stat.big_plays) << ",\n";
             json_stream << "        \"Outs Pitched\": "        << std::to_string(def_stat.outs_pitched) << ",\n";
-            json_stream << "        \"Pitches Per Position\": [\n";
+            json_stream << "        \"Batters Per Position\": [\n";
 
             if (m_fielder_tracker[team].batterOutsAtAnyPosition(roster, 0)){
                 json_stream << "          {\n";
