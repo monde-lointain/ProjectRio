@@ -391,6 +391,9 @@ static const u32 aAB_StarPitch_NonCaptain  = 0x80890B34;
 static const u32 aAB_PitchSpeed            = 0x80890B0A;
 static const u32 aAB_PitchCurveInput       = 0x80890A24; //0 if no curve is applied, otherwise its non-zero
 static const u32 aAB_PitcherHasCtrlofPitch = 0x80890B12; //Above addr is valid when this addr =1
+static const u32 aAB_PitchBallPosZStrikezone  = 0x80890A14;
+static const u32 aAB_PitchStrikezoneEdgeLeft  = 0x80890A3C;
+static const u32 aAB_PitchStrikezoneEdgeRight = 0x80890A40;
 
 //At-Bat Hit
 static const u32 aAB_BallPower      = 0x808926D6;
@@ -659,12 +662,9 @@ public:
         u8 batter_roster_loc;
         u8 batter_id;
 
-        //Ball and batter pos for pitch visualization
-        u32 ball_x_pos_upon_hit;
-        u32 ball_z_pos_upon_hit;
-
-        u32 batter_x_pos_upon_hit;
-        u32 batter_z_pos_upon_hit;
+        //Ball pos for pitch visualization
+        u32 ball_z_strike_vs_ball;
+        u8 ball_in_strikezone;
 
         //For integrosity - TODO
         u8 db = 0;
@@ -955,6 +955,7 @@ public:
         bool m_ranked_status = false;
         bool m_netplay_session = false;
         bool m_is_host = false;
+        std::optional<int> m_tag_set;
         std::string m_netplay_opponent_alias = "";
     } m_state;
 
@@ -971,6 +972,8 @@ public:
     void setLagSpikes(int nLagSpikes);
     void setNetplayerUserInfo(std::map<int, LocalPlayers::LocalPlayers::Player> userInfo);
     void setDisplayStats(bool bDisplay);
+    // void setTags(std::vector tags);
+    // void setTagSet(int tagset);
 
     void Run();
     void lookForTriggerEvents();
@@ -1017,7 +1020,7 @@ public:
     std::string decode(std::string type, u8 value, bool decode);
 
     //Returns JSON, PathToWriteTo
-    std::string getStatJSON(bool inDecode);
+    std::string getStatJSON(bool inDecode, bool hide_riokey = true);
     std::string getEventJSON(u16 in_event_num, Event& in_event, bool inDecode);
     std::string getHUDJSON(std::string in_event_num, Event& in_curr_event, std::optional<Event> in_prev_event, bool inDecode);
     //Returns path to save json

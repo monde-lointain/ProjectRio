@@ -201,6 +201,11 @@ void StatTracker::lookForTriggerEvents(){
                 //Trigger Events to look for
                 //1. Are runners stealing and pitcher stepped off the mound
                 //2. Has pitch started?
+                //3. Has game been paused, reinit 
+                if (Memory::Read_U8(aGameControlStateCurr) == 0xb){
+                    std::cout << "Game paused, need to re-init event " << std::to_string(m_game_info.event_num) << "\n";
+                    m_event_state = EVENT_STATE::INIT_EVENT;
+                }
                 //Watch for Runners Stealing
                 if (Memory::Read_U8(aAB_PitchThrown) || Memory::Read_U8(aAB_PickoffAttempt)){
                     //If HUD not produced for this event, produce HUD JSON
@@ -462,9 +467,17 @@ void StatTracker::lookForTriggerEvents(){
                 m_game_info.host    = m_state.m_is_host;
                 m_game_info.netplay_opponent_alias = m_state.m_netplay_opponent_alias;
 
+                //If TagSet provided, get tags from server
+                if (m_state.m_tag_set.has_value()){
+                    const Common::HttpRequest::Response response = m_http.Get("https://projectrio-api-1.api.projectrio.app/tag_set/"+std::to_string(m_state.m_tag_set.value()));
+                    // if (response.has_value()){
+                    //     //Parse out the strings
+                    // }
+                }
+
                 m_game_state = GAME_STATE::INGAME;
                 std::cout << "PREGAME->INGAME (GameID=" << std::to_string(m_game_info.game_id) << ", Ranked=" << m_game_info.ranked <<")\n";
-                std::cout << "                (Netplay=" << m_game_info.netplay << ", Host=" << m_game_info.host << ")\n"
+                std::cout << "                (Netplay=" << m_game_info.netplay << ", Host=" << m_game_info.host << ")\n";
             }
             break;
         case (GAME_STATE::INGAME):
@@ -485,10 +498,10 @@ void StatTracker::lookForTriggerEvents(){
                 //File::WriteStringToFile(jsonPath, json);
                 //https://projectrio-api-1.api.projectrio.app/populate_db
                 
-                submit_json = getStatJSON(false, false);
+                json = getStatJSON(false, false);
                 if (shouldSubmitGame()) {
                     const Common::HttpRequest::Response response =
-                    m_http.Post("https://projectrio-api-1.api.projectrio.app/populate_db/", submit_json,
+                    m_http.Post("https://projectrio-api-1.api.projectrio.app/populate_db/", json,
                         {
                             {"Content-Type", "application/json"},
                         }
@@ -748,11 +761,12 @@ void StatTracker::logPitch(Event& in_event){
     in_event.pitch->star_pitch         = ((Memory::Read_U8(aAB_StarPitch_NonCaptain) > 0) || (Memory::Read_U8(aAB_StarPitch_Captain) > 0));
     in_event.pitch->pitch_speed        = Memory::Read_U8(aAB_PitchSpeed);
 
-    in_event.pitch->ball_x_pos_upon_hit = 0xFF;
-    in_event.pitch->ball_z_pos_upon_hit = 0xFF;
+    in_event.pitch->ball_z_strike_vs_ball = Memory::Read_U32(aAB_PitchBallPosZStrikezone);
 
-    in_event.pitch->batter_x_pos_upon_hit = 0xFF;
-    in_event.pitch->batter_z_pos_upon_hit = 0xFF;
+    float ballposz_strikezone = floatConverter(in_event.pitch->ball_z_strike_vs_ball);
+    float strikezone_left = floatConverter(Memory::Read_U32(aAB_PitchStrikezoneEdgeLeft));
+    float strikezone_right = floatConverter(Memory::Read_U32(aAB_PitchStrikezoneEdgeRight));
+    in_event.pitch->ball_in_strikezone = (strikezone_left < ballposz_strikezone && ballposz_strikezone < strikezone_right) ? 1 : 0;
     
     // === Batter info ===
 
@@ -895,7 +909,7 @@ std::string StatTracker::getStatJsonPath(std::string prefix){
     return full_file_path;
 }
 
-std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey = true){
+std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
     //TODO switch to IDs when submitting game
     std::string away_player_info = (inDecode || hide_riokey) ? m_game_info.getAwayTeamPlayer().GetUsername() : m_game_info.getAwayTeamPlayer().GetUserID();
     std::string home_player_info = (inDecode || hide_riokey) ? m_game_info.getHomeTeamPlayer().GetUsername() : m_game_info.getHomeTeamPlayer().GetUserID();
@@ -1108,12 +1122,9 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey = true){
             json_stream << "        \"Charge Type\": "        << decode("ChargePitch", pitch->charge_type, inDecode) << ",\n";
             json_stream << "        \"Star Pitch\": "         << std::to_string(pitch->star_pitch) << ",\n";
             json_stream << "        \"Pitch Speed\": "        << std::to_string(pitch->pitch_speed) << ",\n";
-            json_stream << "        \"Ball Position - X\": "   << floatConverter(pitch->ball_x_pos_upon_hit) << ",\n";
-            json_stream << "        \"Ball Position - Z\": "   << floatConverter(pitch->ball_z_pos_upon_hit) << ",\n";
-            json_stream << "        \"Batter Position - X\": " << floatConverter(pitch->batter_x_pos_upon_hit) << ",\n";
-            json_stream << "        \"Batter Position - Z\": " << floatConverter(pitch->batter_z_pos_upon_hit) << ",\n";
+            json_stream << "        \"Ball Position - Strikezone\": "   << floatConverter(pitch->ball_z_strike_vs_ball) << ",\n";
+            json_stream << "        \"In Strikezone\": "      << std::to_string(pitch->ball_in_strikezone) << ",\n";
             json_stream << "        \"DB\": "                 << std::to_string(pitch->db) << ",\n";
-            json_stream << "        \"Pitch Result\": "       << decode("PitchResult", pitch->pitch_result, inDecode) << ",\n";
             json_stream << "        \"Type of Swing\": "      << decode("Swing", pitch->type_of_swing, inDecode);
             
             //=== Contact ===
@@ -1134,8 +1145,8 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey = true){
                 json_stream << "          \"" << contact->vert_angle.name << "\": " << std::dec << contact->vert_angle.get_value() << ",\n";
                 json_stream << "          \"" << contact->horiz_angle.name << "\": " << std::dec << contact->horiz_angle.get_value() << ",\n";
 
-                json_stream << "          \"" << contact->contact_absolute.name << "\": " << floatConverter(contact->contact_absolute.get_value()) << "\",\n";
-                json_stream << "          \"" << contact->contact_quality.name << "\": " << floatConverter(contact->contact_quality.get_value()) << "\",\n";
+                json_stream << "          \"" << contact->contact_absolute.name << "\": " << floatConverter(contact->contact_absolute.get_value()) << ",\n";
+                json_stream << "          \"" << contact->contact_quality.name << "\": " << floatConverter(contact->contact_quality.get_value()) << ",\n";
                 
                 json_stream << "          \"" << contact->rng1.name << "\": " << std::dec << contact->rng1.get_value() << ",\n";
                 json_stream << "          \"" << contact->rng2.name << "\": " << std::dec << contact->rng2.get_value() << ",\n";
@@ -1158,7 +1169,7 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey = true){
                 json_stream << "          \"" << contact->ball_z_pos.name << "\": " << floatConverter(contact->ball_z_pos.get_value()) << ",\n";
 
                 json_stream << "          \"" << contact->ball_max_height.name << "\": " << floatConverter(contact->ball_max_height.get_value()) << ",\n";
-                json_stream << "          \"" << contact->ball_hang_time.name << "\": " << std::dec << contact->ball_hang_time.get_value() << "\",\n";
+                json_stream << "          \"" << contact->ball_hang_time.name << "\": " << std::dec << contact->ball_hang_time.get_value() << ",\n";
                 json_stream << "          \"" << contact->num_outs_during_play.name << "\": " << contact->num_outs_during_play.get_key_value_string().second << ",\n";
                 json_stream << "          \"Contact Result - Primary\": "         << decode("PrimaryContactResult", contact->primary_contact_result, inDecode) << ",\n";
                 json_stream << "          \"Contact Result - Secondary\": "       << decode("SecondaryContactResult", contact->secondary_contact_result, inDecode);
@@ -1425,12 +1436,9 @@ std::string StatTracker::getHUDJSON(std::string in_event_num, Event& in_curr_eve
         json_stream << "      \"Charge Type\": "        << decode("ChargePitch", pitch->charge_type, inDecode) << ",\n";
         json_stream << "      \"Star Pitch\": "         << std::to_string(pitch->star_pitch) << ",\n";
         json_stream << "      \"Pitch Speed\": "        << std::to_string(pitch->pitch_speed) << ",\n";
-        json_stream << "      \"Ball Position - X\": "   << floatConverter(pitch->ball_x_pos_upon_hit) << ",\n";
-        json_stream << "      \"Ball Position - Z\": "   << floatConverter(pitch->ball_z_pos_upon_hit) << ",\n";
-        json_stream << "      \"Batter Position - X\": " << floatConverter(pitch->batter_x_pos_upon_hit) << ",\n";
-        json_stream << "      \"Batter Position - Z\": " << floatConverter(pitch->batter_z_pos_upon_hit) << ",\n";
+        json_stream << "      \"Ball Position - Strikezone\": "   << floatConverter(pitch->ball_z_strike_vs_ball) << ",\n";
+        json_stream << "      \"In Strikezone\": "      << std::to_string(pitch->ball_in_strikezone) << ",\n";
         json_stream << "      \"DB\": "                 << std::to_string(pitch->db) << ",\n";
-        json_stream << "      \"Pitch Result\": "       << decode("PitchResult", pitch->pitch_result, inDecode) << ",\n";
         json_stream << "      \"Type of Swing\": "      << decode("Swing", pitch->type_of_swing, inDecode);
         
         //=== Contact ===
@@ -1466,6 +1474,7 @@ std::string StatTracker::getHUDJSON(std::string in_event_num, Event& in_curr_eve
             json_stream << "        \"" << contact->ball_x_pos.name << "\": " << floatConverter(contact->ball_x_pos.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_y_pos.name << "\": " << floatConverter(contact->ball_y_pos.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_z_pos.name << "\": " << floatConverter(contact->ball_z_pos.get_value()) << ",\n";
+            json_stream << "        \"" << contact->ball_hang_time.name << "\": " << std::dec << contact->ball_hang_time.get_value() << ",\n";
             json_stream << "        \"" << contact->ball_max_height.name << "\": " << floatConverter(contact->ball_max_height.get_value()) << ",\n";
             json_stream << "        \"" << contact->num_outs_during_play.name << "\": " << contact->num_outs_during_play.get_key_value_string().second << ",\n";
             json_stream << "        \"Contact Result - Primary\": "         << decode("PrimaryContactResult", contact->primary_contact_result, inDecode) << ",\n";
@@ -1806,10 +1815,10 @@ void StatTracker::onGameQuit(){
     File::WriteStringToFile(jsonPath, json);
 
 
-    submit_json = getStatJSON(false, false);
+    json = getStatJSON(false, false);
     if (shouldSubmitGame()) {
         const Common::HttpRequest::Response response =
-        m_http.Post("https://projectrio-api-1.api.projectrio.app/populate_db/", submit_json,
+        m_http.Post("https://projectrio-api-1.api.projectrio.app/populate_db/", json,
             {
                 {"Content-Type", "application/json"},
             }
