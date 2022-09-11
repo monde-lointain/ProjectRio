@@ -270,7 +270,7 @@ void TrainingMode()
   bool ContactMade = Memory::Read_U8(aContactMade) == 1 ? true : false;
 
   // Batting Training Mode stats
-  if (ContactMade)
+  if (ContactMade && !previousContactMade)
   {
     u8 BatterPort = Memory::Read_U8(aBatterPort);
     if (BatterPort > 0)
@@ -322,6 +322,10 @@ void TrainingMode()
       inputDirection = "Down/Right";
     else if (inputDirection_Value == 10)
       inputDirection = "Up/Right";
+    else if (inputDirection_Value == 3)
+      inputDirection = "Left/Right";
+    else if (inputDirection_Value == 12)
+      inputDirection = "Up/Down";
     else
       inputDirection = "Unknown";
 
@@ -416,6 +420,8 @@ void TrainingMode()
       FielderVel_Net, ms_to_mph(FielderVel_Net)
     ), 200, OSD::Color::CYAN);
   }
+
+  previousContactMade = ContactMade;
 }
 
 void DisplayBatterFielder()
