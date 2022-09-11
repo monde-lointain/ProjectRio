@@ -814,6 +814,7 @@ public:
         u8 previous_pos = 0xFF;
 
         std::array<int, cNumOfPositions> pitch_count_by_position = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+        std::array<int, cNumOfPositions> batter_count_by_position = {0, 0, 0, 0, 0, 0, 0, 0, 0};
         std::array<int, cNumOfPositions> out_count_by_position   = {0, 0, 0, 0, 0, 0, 0, 0, 0};
         std::array<int, cNumOfPositions> batter_outs_by_position   = {0, 0, 0, 0, 0, 0, 0, 0, 0};
     };
@@ -913,14 +914,31 @@ public:
             return false;
         }
 
+        bool battersAtAnyPosition(u8 roster_loc, int starting_pos) {
+            for (int pos=starting_pos; pos < cRosterSize; ++pos){
+                if (fielder_map[roster_loc].batter_count_by_position[pos] > 0) { 
+                    return true;
+                }
+            }
+            return false;
+        }
+
         void incrementOutForPosition(u8 roster_loc, u8 pos){
             ++fielder_map[roster_loc].out_count_by_position[pos];
         }
 
-        void incrementBatterOutForPosition(){
+        void incrementBatterOutForPosition(int num_outs){
             for (u8 roster=0; roster < cRosterSize; ++roster){
                 //Increment the number of batter outs this player has seen at this position
-                ++fielder_map[roster].batter_outs_by_position[fielder_map[roster].current_pos];
+                fielder_map[roster].batter_outs_by_position[fielder_map[roster].current_pos] = fielder_map[roster].batter_outs_by_position[fielder_map[roster].current_pos] + num_outs;
+            }
+            return;
+        }
+
+        void incrementBattersForPosition(){
+            for (u8 roster=0; roster < cRosterSize; ++roster){
+                //Increment the number of batter outs this player has seen at this position
+                ++fielder_map[roster].batter_count_by_position[fielder_map[roster].current_pos];
             }
             return;
         }
@@ -983,7 +1001,6 @@ public:
     void logOffensiveStats(int team_id, int roster_id);
     
     void logEventState(Event& in_event);
-    void logContactMiss(Event& in_event);
     void logContact(Event& in_event);
     void logPitch(Event& in_event);
     void logContactResult(Contact* in_contact);

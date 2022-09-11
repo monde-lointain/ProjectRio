@@ -418,8 +418,8 @@ void StatTracker::lookForTriggerEvents(){
                     ++m_game_info.event_num;
                     //Save position as prev position
                     u8 fielding_team_id = !m_game_info.previous_state.value().half_inning;
+                    m_fielder_tracker[fielding_team_id].incrementBattersForPosition();
                     m_fielder_tracker[fielding_team_id].newBatter();
-                    m_fielder_tracker[fielding_team_id].incrementBatterOutForPosition();
                     m_event_state = EVENT_STATE::INIT_EVENT;
                     std::cout << "Logging Final Result\n" << "Starting next AB\n\n";
                 }
@@ -708,48 +708,6 @@ void StatTracker::logContact(Event& in_event){
     contact->input_direction_stick.set_value(Memory::Read_U16(aStickInput) & 0xF); //Mask off the lower 4 bits which are the control stick directions
 }
 
-void StatTracker::logContactMiss(Event& in_event){
-    std::cout << "Logging Miss\n";
-
-    Pitch* pitch = &in_event.pitch.value();
-
-    //0=HBP
-    //1=BB
-    //2=Ball
-    //3=Strike-looking
-    //4=Strike-swing
-    //5=Strike-bunting
-    //6=Contact
-    //7=Unknown
-    
-    /*
-    if (!any_strike){
-        if (Memory::Read_U8(aAB_HitByPitch)){ pitch->pitch_result = 0; }
-        else if (in_event.balls == 3) { pitch->pitch_result = 1; }
-        else {
-            pitch->pitch_result = 2;
-        };
-    }
-    else{
-        if (miss_type == 0){
-            contact->swing = 0;
-            pitch->pitch_result = 3;
-        }
-        else if (miss_type == 1){
-            contact->swing = 1;
-            pitch->pitch_result = 4;
-        }
-        else if (miss_type == 2){
-            contact->swing = 0;
-            pitch->pitch_result = 5;
-        }
-        else{
-            pitch->pitch_result = 7;
-        }
-    }
-    */
-}
-
 void StatTracker::logPitch(Event& in_event){
     std::cout << "Logging Pitching\n";
 
@@ -874,6 +832,7 @@ void StatTracker::logFinalResults(Event& in_event){
 
     //num_outs_during_play
     in_event.pitch->contact->num_outs_during_play.read_value();
+    m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].incrementBatterOutForPosition(in_event.pitch->contact->num_outs_during_play.get_value());
 
     //If the runner got out at first (forced), increment outs for the fielder who first touched the ball
     if (in_event.runner_batter->out_type == 2) {
@@ -985,12 +944,12 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
             json_stream << "        \"Outs Pitched\": "        << std::to_string(def_stat.outs_pitched) << ",\n";
             json_stream << "        \"Pitches Per Position\": [\n";
 
-            if (m_fielder_tracker[team].pitchesAtAnyPosition(roster, 0)){
+            if (m_fielder_tracker[team].batterOutsAtAnyPosition(roster, 0)){
                 json_stream << "          {\n";
                 for (int pos = 0; pos < cNumOfPositions; ++pos) {
-                    if (m_fielder_tracker[team].fielder_map[roster].pitch_count_by_position[pos] > 0){
-                        std::string comma = (m_fielder_tracker[team].pitchesAtAnyPosition(roster, pos+1)) ? "," : "";
-                        json_stream << "            \"" << cPosition.at(pos) << "\": " << std::to_string(m_fielder_tracker[team].fielder_map[roster].pitch_count_by_position[pos]) << comma << "\n";
+                    if (m_fielder_tracker[team].fielder_map[roster].batter_count_by_position[pos] > 0){
+                        std::string comma = (m_fielder_tracker[team].batterOutsAtAnyPosition(roster, pos+1)) ? "," : "";
+                        json_stream << "            \"" << cPosition.at(pos) << "\": " << std::to_string(m_fielder_tracker[team].fielder_map[roster].batter_count_by_position[pos]) << comma << "\n";
                     }
                 }
                 json_stream << "          }\n";
@@ -1319,14 +1278,14 @@ std::string StatTracker::getHUDJSON(std::string in_event_num, Event& in_curr_eve
             json_stream << "      \"Star Pitches Thrown\": " << std::to_string(def_stat.star_pitches_thrown) << ",\n";
             json_stream << "      \"Big Plays\": "           << std::to_string(def_stat.big_plays) << ",\n";
             json_stream << "      \"Outs Pitched\": "        << std::to_string(def_stat.outs_pitched) << ",\n";
-            json_stream << "      \"Pitches Per Position\": [\n";
+            json_stream << "      \"Batters Per Position\": [\n";
 
-            if (m_fielder_tracker[team].pitchesAtAnyPosition(roster, 0)){
+            if (m_fielder_tracker[team].batterOutsAtAnyPosition(roster, 0)){
                 json_stream << "        {\n";
                 for (int pos = 0; pos < cNumOfPositions; ++pos) {
-                    if (m_fielder_tracker[team].fielder_map[roster].pitch_count_by_position[pos] > 0){
-                        std::string comma = (m_fielder_tracker[team].pitchesAtAnyPosition(roster, pos+1)) ? "," : "";
-                        json_stream << "            \"" << cPosition.at(pos) << "\": " << std::to_string(m_fielder_tracker[team].fielder_map[roster].pitch_count_by_position[pos]) << comma << "\n";
+                    if (m_fielder_tracker[team].fielder_map[roster].batter_count_by_position[pos] > 0){
+                        std::string comma = (m_fielder_tracker[team].batterOutsAtAnyPosition(roster, pos+1)) ? "," : "";
+                        json_stream << "            \"" << cPosition.at(pos) << "\": " << std::to_string(m_fielder_tracker[team].fielder_map[roster].batter_count_by_position[pos]) << comma << "\n";
                     }
                 }
                 json_stream << "        }\n";
