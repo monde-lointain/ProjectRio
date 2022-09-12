@@ -179,6 +179,10 @@ void StatTracker::lookForTriggerEvents(){
                     m_game_info.getCurrentEvent().runner_2 = logRunnerInfo(2);
                     m_game_info.getCurrentEvent().runner_3 = logRunnerInfo(3);
 
+                    if (!m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].initialized){
+                        m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].initTracker(!m_game_info.getCurrentEvent().half_inning);
+                    }
+
                     m_event_state = EVENT_STATE::WAITING_FOR_EVENT;
 
                     std::cout << "Init event " << std::to_string(m_game_info.event_num) << "\n";
@@ -1094,18 +1098,18 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
                 json_stream << "          \"" << contact->moon_shot.name << "\": " << contact->moon_shot.get_key_value_string().second << ",\n"; 
                 json_stream << "          \"" << contact->input_direction_push_pull.name << "\": " << decode("Stick", contact->input_direction_push_pull.get_value(), inDecode) << ",\n";
                 json_stream << "          \"" << contact->input_direction_stick.name << "\": " << decode("StickVec", contact->input_direction_stick.get_value(), inDecode) << ",\n";
-                json_stream << "          \"" << contact->frame_of_swing.name << "\": " << std::dec << contact->frame_of_swing.get_value() << ",\n";
+                json_stream << "          \"" << contact->frame_of_swing.name << "\": \"" << std::dec << contact->frame_of_swing.get_value() << "\",\n";
 
-                json_stream << "          \"" << contact->power.name << "\": " << std::dec << contact->power.get_value() <<",\n";
-                json_stream << "          \"" << contact->vert_angle.name << "\": " << std::dec << contact->vert_angle.get_value() << ",\n";
-                json_stream << "          \"" << contact->horiz_angle.name << "\": " << std::dec << contact->horiz_angle.get_value() << ",\n";
+                json_stream << "          \"" << contact->power.name << "\": \"" << std::dec << contact->power.get_value() <<"\",\n";
+                json_stream << "          \"" << contact->vert_angle.name << "\": \"" << std::dec << contact->vert_angle.get_value() << "\",\n";
+                json_stream << "          \"" << contact->horiz_angle.name << "\": \"" << std::dec << contact->horiz_angle.get_value() << "\",\n";
 
                 json_stream << "          \"" << contact->contact_absolute.name << "\": " << floatConverter(contact->contact_absolute.get_value()) << ",\n";
                 json_stream << "          \"" << contact->contact_quality.name << "\": " << floatConverter(contact->contact_quality.get_value()) << ",\n";
                 
-                json_stream << "          \"" << contact->rng1.name << "\": " << std::dec << contact->rng1.get_value() << ",\n";
-                json_stream << "          \"" << contact->rng2.name << "\": " << std::dec << contact->rng2.get_value() << ",\n";
-                json_stream << "          \"" << contact->rng3.name << "\": " << std::dec << contact->rng3.get_value() << ",\n";
+                json_stream << "          \"" << contact->rng1.name << "\": \"" << std::dec << contact->rng1.get_value() << "\",\n";
+                json_stream << "          \"" << contact->rng2.name << "\": \"" << std::dec << contact->rng2.get_value() << "\",\n";
+                json_stream << "          \"" << contact->rng3.name << "\": \"" << std::dec << contact->rng3.get_value() << "\",\n";
 
                 json_stream << "          \"" << contact->ball_x_velo.name << "\": " << floatConverter(contact->ball_x_velo.get_value()) << ",\n";
                 json_stream << "          \"" << contact->ball_y_velo.name << "\": " << floatConverter(contact->ball_y_velo.get_value()) << ",\n";
@@ -1124,7 +1128,7 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
                 json_stream << "          \"" << contact->ball_z_pos.name << "\": " << floatConverter(contact->ball_z_pos.get_value()) << ",\n";
 
                 json_stream << "          \"" << contact->ball_max_height.name << "\": " << floatConverter(contact->ball_max_height.get_value()) << ",\n";
-                json_stream << "          \"" << contact->ball_hang_time.name << "\": " << std::dec << contact->ball_hang_time.get_value() << ",\n";
+                json_stream << "          \"" << contact->ball_hang_time.name << "\": \"" << std::dec << contact->ball_hang_time.get_value() << "\",\n";
                 json_stream << "          \"Contact Result - Primary\": "         << decode("PrimaryContactResult", contact->primary_contact_result, inDecode) << ",\n";
                 json_stream << "          \"Contact Result - Secondary\": "       << decode("SecondaryContactResult", contact->secondary_contact_result, inDecode);
 
@@ -1408,15 +1412,15 @@ std::string StatTracker::getHUDJSON(std::string in_event_num, Event& in_curr_eve
             json_stream << "        \"" << contact->moon_shot.name << "\": " << contact->moon_shot.get_key_value_string().second << ",\n"; 
             json_stream << "        \"" << contact->input_direction_push_pull.name << "\": " << decode("Stick", contact->input_direction_push_pull.get_value(), inDecode) << ",\n";
             json_stream << "        \"" << contact->input_direction_stick.name << "\": " << decode("StickVec", contact->input_direction_stick.get_value(), inDecode) << ",\n";
-            json_stream << "        \"" << contact->frame_of_swing.name << "\": " << std::dec << contact->frame_of_swing.get_value() << ",\n";
-            json_stream << "        \"" << contact->power.name << "\": " << std::dec << contact->power.get_value() <<",\n";
-            json_stream << "        \"" << contact->vert_angle.name << "\": " << std::dec << contact->vert_angle.get_value() << ",\n";
-            json_stream << "        \"" << contact->horiz_angle.name << "\": " << std::dec << contact->horiz_angle.get_value() << ",\n";
+            json_stream << "        \"" << contact->frame_of_swing.name << "\": \"" << std::dec << contact->frame_of_swing.get_value() << "\",\n";
+            json_stream << "        \"" << contact->power.name << "\": \"" << std::dec << contact->power.get_value() <<"\",\n";
+            json_stream << "        \"" << contact->vert_angle.name << "\": \"" << std::dec << contact->vert_angle.get_value() << "\",\n";
+            json_stream << "        \"" << contact->horiz_angle.name << "\": \"" << std::dec << contact->horiz_angle.get_value() << "\",\n";
             json_stream << "        \"" << contact->contact_absolute.name << "\": " << floatConverter(contact->contact_absolute.get_value()) << ",\n";
             json_stream << "        \"" << contact->contact_quality.name << "\": " << floatConverter(contact->contact_quality.get_value()) << ",\n";
-            json_stream << "        \"" << contact->rng1.name << "\": " << std::dec << contact->rng1.get_value() << ",\n";
-            json_stream << "        \"" << contact->rng2.name << "\": " << std::dec << contact->rng2.get_value() << ",\n";
-            json_stream << "        \"" << contact->rng3.name << "\": " << std::dec << contact->rng3.get_value() << ",\n";
+            json_stream << "        \"" << contact->rng1.name << "\": \"" << std::dec << contact->rng1.get_value() << "\",\n";
+            json_stream << "        \"" << contact->rng2.name << "\": \"" << std::dec << contact->rng2.get_value() << "\",\n";
+            json_stream << "        \"" << contact->rng3.name << "\": \"" << std::dec << contact->rng3.get_value() << "\",\n";
             json_stream << "        \"" << contact->ball_x_velo.name << "\": " << floatConverter(contact->ball_x_velo.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_y_velo.name << "\": " << floatConverter(contact->ball_y_velo.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_z_velo.name << "\": " << floatConverter(contact->ball_z_velo.get_value()) << ",\n";
