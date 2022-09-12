@@ -928,12 +928,14 @@ public:
 
         void incrementOutForPosition(u8 roster_loc, u8 pos){
             ++fielder_map[roster_loc].out_count_by_position[pos];
+            std::cout << " incrementOutForPosition: " << std::to_string(fielder_map[roster_loc].out_count_by_position[pos]);
         }
 
         void incrementBatterOutForPosition(int num_outs){
             for (u8 roster=0; roster < cRosterSize; ++roster){
                 //Increment the number of batter outs this player has seen at this position
                 fielder_map[roster].batter_outs_by_position[fielder_map[roster].current_pos] = fielder_map[roster].batter_outs_by_position[fielder_map[roster].current_pos] + num_outs;
+                std::cout << " incrementBatterOutForPosition: " << std::to_string(fielder_map[roster].batter_outs_by_position[fielder_map[roster].current_pos]);
             }
             return;
         }
@@ -942,6 +944,7 @@ public:
             for (u8 roster=0; roster < cRosterSize; ++roster){
                 //Increment the number of batter outs this player has seen at this position
                 ++fielder_map[roster].batter_count_by_position[fielder_map[roster].current_pos];
+                std::cout << " incrementBattersForPosition: " << std::to_string(fielder_map[roster].batter_count_by_position[fielder_map[roster].current_pos]);
             }
             return;
         }

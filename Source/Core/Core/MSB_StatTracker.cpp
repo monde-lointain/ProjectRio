@@ -372,20 +372,21 @@ void StatTracker::lookForTriggerEvents(){
             case (EVENT_STATE::PLAY_OVER):
                 if (!Memory::Read_U8(aAB_PitchThrown)){
                     m_game_info.getCurrentEvent().rbi = Memory::Read_U8(aAB_RBI);
+
+                    //runner_batter out, contact_secondary
+                    logFinalResults(m_game_info.getCurrentEvent());
+
+                    //Determine if this was pitch was a DB
+                    if (m_game_info.getCurrentEvent().pitch->potential_db){
+                        m_game_info.getCurrentEvent().pitch->db = 1;                    
+                        std::cout << "Logging DB!\n";
+                    }
+
                     m_event_state = EVENT_STATE::FINAL_RESULT;
                     std::cout << "Play over\n";
                 }
                 break;
             case (EVENT_STATE::FINAL_RESULT):
-                //Determine if this was pitch was a DB
-                if (m_game_info.getCurrentEvent().pitch->potential_db){
-                    m_game_info.getCurrentEvent().pitch->db = 1;                    
-                    std::cout << "Logging DB!\n";
-                }
-
-                //runner_batter out, contact_secondary
-                logFinalResults(m_game_info.getCurrentEvent());
-
                 //Log post event HUD to file
                 if (m_game_info.getCurrentEvent().write_hud_ab.second){
 
@@ -410,7 +411,7 @@ void StatTracker::lookForTriggerEvents(){
                     //Increment event count
                     ++m_game_info.event_num;
                     //Save position as prev position
-                    u8 fielding_team_id = !m_game_info.previous_state.value().half_inning;
+                    u8 fielding_team_id = (m_game_info.previous_state.value().half_inning == 1) ? 0 : 1;
                     m_fielder_tracker[fielding_team_id].incrementBattersForPosition();
                     m_fielder_tracker[fielding_team_id].newBatter();
                     m_event_state = EVENT_STATE::INIT_EVENT;
@@ -776,7 +777,7 @@ void StatTracker::logContactResult(Contact* in_contact){
         m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].incrementOutForPosition(in_contact->collect_fielder->fielder_roster_loc, in_contact->collect_fielder->fielder_pos);
         //Indicate if fielder had been swapped for this batterid = 
         //fielding team is !half_inning
-        u8 fielding_team_id = !m_game_info.getCurrentEvent().half_inning;
+        u8 fielding_team_id = (m_game_info.previous_state.value().half_inning == 1) ? 0 : 1;
         in_contact->collect_fielder->fielder_swapped_for_batter = m_fielder_tracker[fielding_team_id].wasFielderSwappedForBatter(in_contact->collect_fielder->fielder_roster_loc);
 
         std::cout << "Was fielder swapped. Team_id=" << std::to_string(fielding_team_id) 
