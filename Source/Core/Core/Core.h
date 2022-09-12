@@ -203,7 +203,7 @@ union{
   float fnum;
 } float_converter;
 
-bool previousContactMade = false;
+static bool previousContactMade = false;
 
 static const u32 aOpponentPort = 0x802EBF92;
 static const u32 aFielderPort = 0x802EBF94;
