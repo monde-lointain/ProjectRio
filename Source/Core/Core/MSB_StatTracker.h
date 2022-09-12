@@ -278,8 +278,10 @@ static const std::map<u8, std::string> cAtBatResult = {
 
 static const std::map<u8, std::string> cManualSelectDecode = {
     {0x0,  "No Selected Char"},
-    {0x1,  "Selected Other Char"},
-    {0x2,  "Selected This Char"},
+    {0x1,  "Pitcher"},
+    {0x2,  "Catcher"},
+    {0x3,  "Closest to Ball"},
+    {0x4,  "Closest to Drop"},
 };
 
 //Const for structs
@@ -476,7 +478,7 @@ static const u32 aFielder_Knockout = 0x8088F578; //Pitcher
 static const u32 aFielder_Pos_X = 0x8088F368; //Pitcher
 static const u32 aFielder_Pos_Z = 0x8088F370; //Pitcher
 static const u32 aFielder_Pos_Y = 0x8088F374; //Pitcher
-static const u32 aFielder_ManualSelectLock = 0x8088F449; //Pitcher
+static const u32 aFielder_ManualSelectArg = 0x802EBF97; //Pitcher
 static const u32 cFielder_Offset = 0x268;
 
 //Runner addrs
@@ -572,7 +574,7 @@ public:
         u8 fielder_swapped_for_batter;
         u8 fielder_action = 0; //2=slide, 3=walljump
         u8 fielder_jump = 0; //1=Jump
-        u8 fielder_manual_select_lock; //0=No one selected, 1=Other player selected, 2=This player selected
+        u8 fielder_manual_select_arg; //0=No one selected, 1=Other player selected, 2=This player selected
         u32 fielder_x_pos;
         u32 fielder_y_pos;
         u32 fielder_z_pos;
@@ -625,9 +627,6 @@ public:
         //More ball flight info
         TrackerAdr<u32> ball_max_height = TrackerAdr<u32>("Ball Max Height", 0x8089250c, 0xFFFFFFFF);
         TrackerAdr<u16> ball_hang_time = TrackerAdr<u16>("Ball Hang Time", 0x80892696, 0xFFFF);
-
-        //Double play or more
-        TrackerAdr<u8> num_outs_during_play = TrackerAdr<u8>("Num Outs During Play", aAB_NumOutsDuringPlay, 0xFF);
 
         //0=Out
         //1=Foul
@@ -714,6 +713,9 @@ public:
         std::optional<Pitch>  pitch;
 
         std::array<u8, cRosterSize> manual_select_locks;
+
+        //Double play or more
+        TrackerAdr<u8> num_outs_during_play = TrackerAdr<u8>("Num Outs During Play", aAB_NumOutsDuringPlay, 0xFF);
 
         u8 rbi;
         u8 result_of_atbat;
