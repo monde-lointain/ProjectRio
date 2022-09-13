@@ -1624,8 +1624,8 @@ void StatTracker::readPlayerNames(bool local_game) {
 
   else
   {
-    m_game_info.team0_player = m_game_info.NetplayerUserInfo[team0_port];
-    m_game_info.team1_player = m_game_info.NetplayerUserInfo[team1_port];
+    m_game_info.team0_player = m_game_info.NetplayerUserInfo[team0_port - 1];
+    m_game_info.team1_player = m_game_info.NetplayerUserInfo[team1_port - 1];
   }
 }
 
