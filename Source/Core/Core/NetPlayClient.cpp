@@ -2558,25 +2558,52 @@ void NetPlayClient::AutoGolfMode(bool isField, int BatPort, int FieldPort)
   netplay_client->AutoGolfModeLogic(isField, BatPort, FieldPort);
 }
 
+// TODO:
+// - add small delay before assigning golfer
 void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
 {
   int clientID = m_local_player->pid; // refers to netplay client (the computer that's connected)
 
-  // this little block makes it so that the auto golf logic will only complete if the client's been the golfer for more than
-  // 10 frames. this is to ensure that under laggier conditions, a golfer who's game is too far behind doesn't swap the golfer
-  // status back and forth for a short while, which can be extra jarring to players
+  // Golf Port is the player who should be the golfer
+  int GolfPort = isField ? FieldPort - 1 : BatPort - 1;  // subtract 1 since m_pad_map uses 0->3 instead of 1->4
+  if (GolfPort >= 4 || GolfPort < 0)  // something's wrong. probably a CPU player                                         
+    return;   // return to avoid array out-of-range errors
+
+  // if the player who should be the gofler isn't in the lobby, make the other player the gofler
+  if (!PortHasPlayerAssigned(GolfPort)) {
+    GolfPort = !isField ? FieldPort - 1 : BatPort - 1;
+    framesShouldBeGolfer = 12;
+    if (!PortHasPlayerAssigned(GolfPort)) { // if the other player isn't in the lobby, return
+      return;
+    }
+  }
+
+  if (nextGolferPort == GolfPort) {
+    framesShouldBeGolfer += 1;
+  } else {
+    framesShouldBeGolfer = 0;
+  }
+  nextGolferPort = GolfPort;
+
+  if (framesShouldBeGolfer < 12) {  // if port was supposed to be golfer for 12 frames
+    return;
+  }
+  framesShouldBeGolfer = 12;
+
+  // don't run the rest of the code unless we're the golfer
   if (clientID != m_current_golfer) {
     framesAsGolfer = 0;
-    return;   // don't run code unless we're the golfer
+    return;
   }
+
+  // this little block makes it so that the auto golf logic will only complete if the client's been
+  // the golfer for more than 120 frames. this is to ensure that under laggier conditions, a golfer
+  // who's game is too far behind doesn't swap the golfer status back and forth for a short while,
+  // which can be extra jarring to players
   if (framesAsGolfer < 255) // don't want a memory overflow here
     framesAsGolfer += 1;
   if (framesAsGolfer <= 120) // delay this so that swapping bugs are way less likely; 2 second lockout window (120 frames)
     return;
-
-  int GolfPort = isField ? FieldPort - 1 : BatPort - 1;  // subtract 1 since m_pad_map uses 0->3 instead of 1->4
-  if (GolfPort >= 4 || GolfPort < 0 ||!PortHasPlayerAssigned(GolfPort))  // something's wrong. probably a CPU player                                         
-    return;   // return to avoid array out-of-range errors
 
   // if the current golfer is also the one who should be the golfer, return
   // this prevents bugs due to requesting a swap every frame, which i think caused problems in the old code
