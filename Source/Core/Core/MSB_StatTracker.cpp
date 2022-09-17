@@ -187,6 +187,15 @@ void StatTracker::lookForTriggerEvents(){
 
                     std::cout << "Init event " << std::to_string(m_game_info.event_num) << "\n";
                 }
+                else if (Memory::Read_U32(aGameId) == 0){
+                    onGameQuit();
+
+                    //Remove current event, wasn't finished
+                    auto it = m_game_info.events.find(m_game_info.event_num);
+                    m_game_info.events.erase(it);
+
+                    m_event_state = EVENT_STATE::GAME_OVER;
+                }
                 break;
             //Look for Pitch
             case (EVENT_STATE::WAITING_FOR_EVENT):
