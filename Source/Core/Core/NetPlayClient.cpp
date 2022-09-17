@@ -2584,10 +2584,11 @@ void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
   }
   nextGolferPort = GolfPort; // set it to whoever should be golfer this frame
 
-  if (framesShouldBeGolfer < 12) { // if 12 frames haven't passed yet, end function
+  // 30 frames is the amount of time that the game takes to change the camera from the batting view to the field view
+  if (framesShouldBeGolfer < 30) { // if 30 frames haven't passed yet, end function
     return;
   }
-  framesShouldBeGolfer = 12; // if port was supposed to be golfer for 12 frames or more, we continue
+  framesShouldBeGolfer = 30; // if port was supposed to be golfer for 30 frames or more, we continue
 
   // don't run the rest of the code unless we're the golfer
   if (clientID != m_current_golfer) {
