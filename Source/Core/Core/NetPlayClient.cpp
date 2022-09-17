@@ -2558,8 +2558,7 @@ void NetPlayClient::AutoGolfMode(bool isField, int BatPort, int FieldPort)
   netplay_client->AutoGolfModeLogic(isField, BatPort, FieldPort);
 }
 
-// TODO:
-// - add small delay before assigning golfer
+
 void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
 {
   int clientID = m_local_player->pid; // refers to netplay client (the computer that's connected)
@@ -2571,24 +2570,24 @@ void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
 
   // if the player who should be the gofler isn't in the lobby, make the other player the gofler
   if (!PortHasPlayerAssigned(GolfPort)) {
-    GolfPort = !isField ? FieldPort - 1 : BatPort - 1;
-    framesShouldBeGolfer = 12;
-    if (!PortHasPlayerAssigned(GolfPort)) { // if the other player isn't in the lobby, return
+    GolfPort = !isField ? FieldPort - 1 : BatPort - 1; // just the inverse logic, so the other port becomes golf port
+    if (!PortHasPlayerAssigned(GolfPort)) { // if the other player isn't in the lobby either, return
       return;
     }
   }
 
-  if (nextGolferPort == GolfPort) {
+  // nextGolferPort is who was supposed to be golfer last time the code ran (previous frame)
+  if (nextGolferPort == GolfPort) { // if same player is still supposed to be golfer, add 1 to the count
     framesShouldBeGolfer += 1;
   } else {
     framesShouldBeGolfer = 0;
   }
-  nextGolferPort = GolfPort;
+  nextGolferPort = GolfPort; // set it to whoever should be golfer this frame
 
-  if (framesShouldBeGolfer < 12) {  // if port was supposed to be golfer for 12 frames
+  if (framesShouldBeGolfer < 12) { // if 12 frames haven't passed yet, end function
     return;
   }
-  framesShouldBeGolfer = 12;
+  framesShouldBeGolfer = 12; // if port was supposed to be golfer for 12 frames or more, we continue
 
   // don't run the rest of the code unless we're the golfer
   if (clientID != m_current_golfer) {
