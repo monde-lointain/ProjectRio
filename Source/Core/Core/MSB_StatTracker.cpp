@@ -781,10 +781,9 @@ void StatTracker::logContactResult(Contact* in_contact){
         m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].incrementOutForPosition(in_contact->collect_fielder->fielder_roster_loc, in_contact->collect_fielder->fielder_pos);
         //Indicate if fielder had been swapped for this batterid = 
         //fielding team is !half_inning
-        u8 fielding_team_id = (m_game_info.previous_state.value().half_inning == 1) ? 0 : 1;
-        in_contact->collect_fielder->fielder_swapped_for_batter = m_fielder_tracker[fielding_team_id].wasFielderSwappedForBatter(in_contact->collect_fielder->fielder_roster_loc);
+        in_contact->collect_fielder->fielder_swapped_for_batter = m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].wasFielderSwappedForBatter(in_contact->collect_fielder->fielder_roster_loc);
 
-        std::cout << "Was fielder swapped. Team_id=" << std::to_string(fielding_team_id) 
+        std::cout << "Was fielder swapped. Team_id=" << std::to_string(!m_game_info.getCurrentEvent().half_inning) 
                   << " Fielder Roster=" << std::to_string(in_contact->collect_fielder->fielder_roster_loc)
                   << " Swapped=" << std::to_string(in_contact->collect_fielder->fielder_swapped_for_batter) << "\n";
     }
