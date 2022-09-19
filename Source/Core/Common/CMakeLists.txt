@@ -117,6 +117,7 @@ add_library(common
   StringUtil.h
   SymbolDB.cpp
   SymbolDB.h
+  TagSet.h
   Thread.cpp
   Thread.h
   Timer.cpp

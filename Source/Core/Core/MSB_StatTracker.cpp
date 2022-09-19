@@ -1959,37 +1959,102 @@ std::string StatTracker::decode(std::string type, u8 value, bool decode){
 
 static std::optional<picojson::value> ParseResponse(const std::vector<u8>& response)
 {
-  const std::string response_string(reinterpret_cast<const char*>(response.data()),
-                                    response.size());
-
-  picojson::value json;
-
-  const auto error = picojson::parse(json, response_string);
-
-  if (!error.empty())
-    return {};
-
-  return json;
+    const std::string response_string(reinterpret_cast<const char*>(response.data()),response.size());
+    picojson::value json;
+    const auto error = picojson::parse(json, response_string);
+    if (!error.empty())
+        return {};
+    return json;
 }
 
-std::map<int, string> getTagIdsFromTagSet(){
-    std::vector<int> ret_vec = {};
+TagSet StatTracker::getTagIdsFromTagSet(){
+    Common::HttpRequest http_req{std::chrono::minutes{3}};
+    // //const Common::HttpRequest::Response response = m_http.Get("https://projectrio-api-1.api.projectrio.app/tag_set/"+std::to_string(m_state.m_tag_set.value()));
+    const Common::HttpRequest::Response response = http_req.Get("http://127.0.0.1:5000/tag_set/1");
     
-    //const Common::HttpRequest::Response response = m_http.Get("https://projectrio-api-1.api.projectrio.app/tag_set/"+std::to_string(m_state.m_tag_set.value()));
-    const Common::HttpRequest::Response response = m_http.Get("https://projectrio-api-1.api.projectrio.app/tag_set/0");
-    
-    if (!response)
-      return ret_vec;
-
-    auto json = ParseResponse(response.value());
-
-    if (!json)
-    {
-      return ret_vec;
+    if (!response){
+        std::cout << "No Response" << "\n";
+        return TagSet();
     }
 
-    //Parse tagids and names
+    auto json = ParseResponse(response.value());
+    if (!json){
+        std::cout << "No JSON" << "\n"; 
+        return TagSet();
+    }
 
-    auto status = json->get("Tags");
+    const std::vector<picojson::value> tags = json->get("Tags").get<picojson::array>();
+    std::vector<Tag> tags_vector;
+    for (picojson::value tag : tags){   
+        int tag_id;
+        std::string tag_name;
+        bool active = false;
+        int date_created = -1;
+        std::string desc = "";
+        int community_id = -1;
+        std::string type = "";
 
+        if (tag.get("ID").is<double>()){
+            tag_id = int(tag.get("ID").get<double>());
+        }
+        else{
+            std::cout << "Invalid Tag ID" << "\n";
+            return TagSet();
+        }
+
+        if (tag.get("Name").is<std::string>()){
+            tag_name = tag.get("Name").get<std::string>();
+        }
+        else{
+            std::cout << "Invalid Name" << "\n";
+            return TagSet();
+        }
+
+        if (tag.get("Active").is<bool>()){ active = tag.get("Active").get<bool>(); }
+
+        if (tag.get("Date Created").is<double>()){ date_created = int(tag.get("Date Created").get<double>()); }
+        
+        if (tag.get("Desc").is<std::string>()){ desc = tag.get("Desc").get<std::string>(); }
+        
+        if (tag.get("Comm ID").is<double>()){ community_id = int(tag.get("Comm ID").get<double>()); }
+        
+        if (tag.get("Type").is<std::string>()){ tag.get("Type").get<std::string>(); }
+        
+        Tag tag_class = Tag{
+            tag_id,
+            tag_name,
+            active,
+            date_created,
+            desc,
+            community_id,
+            type
+        };
+        tags_vector.push_back(tag_class);
+    };
+
+
+    int id;
+    std::string name;
+
+    if (json->get("ID").is<double>()){
+        id = int(json->get("ID").get<double>());
+    }
+    else{
+        return TagSet();
+    };
+
+    if (json->get("Name").is<std::string>()){
+        name = json->get("Name").get<std::string>();
+    }
+    else{
+        return TagSet();
+    };
+    
+    TagSet tag_set = TagSet{
+        id,
+        name,
+        tags_vector
+    };
+
+    return tag_set;
 }

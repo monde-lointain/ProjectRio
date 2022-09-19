@@ -8,6 +8,7 @@
 #include <tuple>
 #include <iostream>
 #include "Core/HW/Memmap.h"
+#include <picojson.h>
 
 #include "Common/HttpRequest.h"
 
@@ -19,6 +20,8 @@
 #include "Core/Logger.h"
 
 #include "Core/TrackerAdr.h"
+
+#include "../Core/Common/TagSet.h"
 
 enum class GAME_STATE
 {
@@ -1091,4 +1094,6 @@ public:
             init();
         }
     }
+
+    TagSet getTagIdsFromTagSet();
 };
