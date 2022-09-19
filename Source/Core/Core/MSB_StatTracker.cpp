@@ -476,10 +476,7 @@ void StatTracker::lookForTriggerEvents(){
 
                 //If TagSet provided, get tags from server
                 if (m_state.m_tag_set.has_value()){
-                    const Common::HttpRequest::Response response = m_http.Get("https://projectrio-api-1.api.projectrio.app/tag_set/"+std::to_string(m_state.m_tag_set.value()));
-                    // if (response.has_value()){
-                    //     //Parse out the strings
-                    // }
+                    //Get tags from tag_set
                 }
 
                 m_game_state = GAME_STATE::INGAME;
@@ -1958,4 +1955,41 @@ std::string StatTracker::decode(std::string type, u8 value, bool decode){
         retVal += ". Invalid Value (" + std::to_string(value) + ").";
     }
     return ("\"" + retVal + "\"");
+}
+
+static std::optional<picojson::value> ParseResponse(const std::vector<u8>& response)
+{
+  const std::string response_string(reinterpret_cast<const char*>(response.data()),
+                                    response.size());
+
+  picojson::value json;
+
+  const auto error = picojson::parse(json, response_string);
+
+  if (!error.empty())
+    return {};
+
+  return json;
+}
+
+std::map<int, string> getTagIdsFromTagSet(){
+    std::vector<int> ret_vec = {};
+    
+    //const Common::HttpRequest::Response response = m_http.Get("https://projectrio-api-1.api.projectrio.app/tag_set/"+std::to_string(m_state.m_tag_set.value()));
+    const Common::HttpRequest::Response response = m_http.Get("https://projectrio-api-1.api.projectrio.app/tag_set/0");
+    
+    if (!response)
+      return ret_vec;
+
+    auto json = ParseResponse(response.value());
+
+    if (!json)
+    {
+      return ret_vec;
+    }
+
+    //Parse tagids and names
+
+    auto status = json->get("Tags");
+
 }
