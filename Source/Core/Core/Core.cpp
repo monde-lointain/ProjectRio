@@ -270,7 +270,7 @@ void TrainingMode()
   bool ContactMade = Memory::Read_U8(aContactMade) == 1 ? true : false;
 
   // Batting Training Mode stats
-  if (ContactMade)
+  if (ContactMade && !previousContactMade)
   {
     u8 BatterPort = Memory::Read_U8(aBatterPort);
     if (BatterPort > 0)
@@ -322,6 +322,10 @@ void TrainingMode()
       inputDirection = "Down/Right";
     else if (inputDirection_Value == 10)
       inputDirection = "Up/Right";
+    else if (inputDirection_Value == 3)
+      inputDirection = "Left/Right";
+    else if (inputDirection_Value == 12)
+      inputDirection = "Up/Down";
     else
       inputDirection = "Unknown";
 
@@ -416,6 +420,8 @@ void TrainingMode()
       FielderVel_Net, ms_to_mph(FielderVel_Net)
     ), 200, OSD::Color::CYAN);
   }
+
+  previousContactMade = ContactMade;
 }
 
 void DisplayBatterFielder()
@@ -556,6 +562,11 @@ void SetNetplayerUserInfo()
   // tell the stat tracker who the players are
   if (s_stat_tracker)
   {
+    s_stat_tracker->setNetplayerUserInfo(NetPlay::NetPlayClient::getNetplayerUserInfo());
+  }
+  else {
+    s_stat_tracker = std::make_unique<StatTracker>();
+    s_stat_tracker->init();
     s_stat_tracker->setNetplayerUserInfo(NetPlay::NetPlayClient::getNetplayerUserInfo());
   }
 }
@@ -768,6 +779,7 @@ static void CpuThread(const std::optional<std::string>& savestate_path, bool del
   if (!s_stat_tracker) {
     s_stat_tracker = std::make_unique<StatTracker>();
     s_stat_tracker->init();
+    std::cout << "Init stat tracker" << std::endl;
   }
 
   if (savestate_path)
@@ -1566,6 +1578,11 @@ void setRecordStatus(bool inNewStatus)
   if (s_stat_tracker) {
     s_stat_tracker->setRecordStatus(inNewStatus);
   }
+  else {
+    s_stat_tracker = std::make_unique<StatTracker>();
+    s_stat_tracker->init();
+    s_stat_tracker->setRecordStatus(inNewStatus);
+  }
 }
 
 void setSubmitStatus(bool inNewStatus)
@@ -1579,6 +1596,11 @@ void setRankedStatus(bool inNewStatus)
   if (s_stat_tracker) {
     s_stat_tracker->setRankedStatus(inNewStatus);
   }
+  else {
+    s_stat_tracker = std::make_unique<StatTracker>();
+    s_stat_tracker->init();
+    s_stat_tracker->setRankedStatus(inNewStatus);
+  }
 }
 
 void SetDisplayStats()
@@ -1587,6 +1609,12 @@ void SetDisplayStats()
   {
       s_stat_tracker->setDisplayStats(g_ActiveConfig.bShowStats);
   }
+  else {
+    s_stat_tracker = std::make_unique<StatTracker>();
+    s_stat_tracker->init();
+    s_stat_tracker->setDisplayStats(g_ActiveConfig.bShowStats);
+  }
 }
+
 
 }  // namespace Core

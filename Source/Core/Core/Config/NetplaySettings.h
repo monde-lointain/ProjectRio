@@ -56,6 +56,6 @@ extern const Info<std::string> NETPLAY_GAME_MODE;
 
 std::vector<std::string> LobbyNameVector(const std::string& name);
 
-int ONLINE_COUNT = 0;
+extern int ONLINE_COUNT;
 
 }  // namespace Config

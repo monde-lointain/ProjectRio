@@ -18,6 +18,8 @@
 
 #include "Core/Logger.h"
 
+#include "Core/TrackerAdr.h"
+
 enum class GAME_STATE
 {
   PREGAME,
@@ -35,12 +37,10 @@ static std::map<GAME_STATE, std::string> c_game_state = {
 
 enum class EVENT_STATE
 {
-    INIT,
-    PITCH_STARTED,
-    CONTACT,
+    INIT_EVENT,
+    PITCH_RESULT,
     CONTACT_RESULT,
     LOG_FIELDER,
-    NO_CONTACT,
     MONITOR_RUNNERS,
     PLAY_OVER,
     FINAL_RESULT,
@@ -50,12 +50,10 @@ enum class EVENT_STATE
 };
 
 static std::map<EVENT_STATE, std::string> c_event_state = {
-    {EVENT_STATE::INIT, "INIT"},
-    {EVENT_STATE::PITCH_STARTED, "PITCH_STARTED"},
-    {EVENT_STATE::CONTACT, "CONTACT"},
+    {EVENT_STATE::INIT_EVENT, "INIT_EVENT"},
+    {EVENT_STATE::PITCH_RESULT, "PITCH_RESULT"},
     {EVENT_STATE::CONTACT_RESULT, "CONTACT_RESULT"},
     {EVENT_STATE::LOG_FIELDER, "LOG_FIELDER"},
-    {EVENT_STATE::NO_CONTACT, "NO_CONTACT"},
     {EVENT_STATE::MONITOR_RUNNERS, "MONITOR_RUNNERS"},
     {EVENT_STATE::PLAY_OVER, "PLAY_OVER"},
     {EVENT_STATE::FINAL_RESULT, "FINAL_RESULT"},
@@ -280,8 +278,10 @@ static const std::map<u8, std::string> cAtBatResult = {
 
 static const std::map<u8, std::string> cManualSelectDecode = {
     {0x0,  "No Selected Char"},
-    {0x1,  "Selected Other Char"},
-    {0x2,  "Selected This Char"},
+    {0x1,  "Pitcher"},
+    {0x2,  "Catcher"},
+    {0x3,  "Closest to Ball"},
+    {0x4,  "Closest to Drop"},
 };
 
 //Const for structs
@@ -293,10 +293,12 @@ static const int cNumOfPositions = 9;
 static const u32 aGameId           = 0x802EBF8C;
 static const u32 aEndOfGameFlag    = 0x80892AB3;
 static const u32 aWhoQuit          = 0x802EBF93;
+static const u32 aGameControlStateCurr = 0x80892aaa;
+static const u32 aGameControlStatePrev = 0x80892aab;
 
 static const u32 aAB_PitchThrown     = 0x8088A81B;
-static const u32 aAB_ContactResult   = 0x808926B3; //0=InAir, 1=Landed, 2=Fielded, 3=Caught, FF=Foul
-static const u32 aAB_ContactMade     = 0x80892ADA;
+static const u32 aAB_ContactResult   = 0x808926B3; //0=InAir, 1=Landed, 2=Landed (almost caught), 3=Caught, FF=Foul
+static const u32 aAB_ContactMade     = 0x808909a1; //Boolean, from Roeming
 static const u32 aAB_PickoffAttempt  = 0x80892857;
 
 static const u32 aAB_GameIsLive  = 0x8036F3A9; //0 at beginning of game and inbetween innings/changes
@@ -391,11 +393,14 @@ static const u32 aAB_StarPitch_NonCaptain  = 0x80890B34;
 static const u32 aAB_PitchSpeed            = 0x80890B0A;
 static const u32 aAB_PitchCurveInput       = 0x80890A24; //0 if no curve is applied, otherwise its non-zero
 static const u32 aAB_PitcherHasCtrlofPitch = 0x80890B12; //Above addr is valid when this addr =1
+static const u32 aAB_PitchBallPosZStrikezone  = 0x80890A14;
+static const u32 aAB_PitchStrikezoneEdgeLeft  = 0x80890A3C;
+static const u32 aAB_PitchStrikezoneEdgeRight = 0x80890A40;
 
 //At-Bat Hit
-static const u32 aAB_HorizPower     = 0x808926D6;
-static const u32 aAB_VertPower      = 0x808926D2;
-static const u32 aAB_BallAngle      = 0x808926D4;
+static const u32 aAB_BallPower      = 0x808926D6;
+static const u32 aAB_VertAngle      = 0x808926D2;
+static const u32 aAB_HorizAngle      = 0x808926D4;
 
 static const u32 aAB_BallVel_X      = 0x80890E50;
 static const u32 aAB_BallVel_Y      = 0x80890E54;
@@ -405,26 +410,34 @@ static const u32 aAB_BallAccel_X    = 0x80890E5C;
 static const u32 aAB_BallAccel_Y    = 0x80890E60;
 static const u32 aAB_BallAccel_Z    = 0x80890E64;
 
-static const u32 aAB_BallPos_X_Upon_Hit = 0x808909C8;
-static const u32 aAB_BallPos_Z_Upon_Hit = 0x808909CC;
+static const u32 aAB_BallContactPos_X = 0x80890934;
+static const u32 aAB_BallContactPos_Y = 0x80890938;
+static const u32 aAB_BallContactPos_Z = 0x8089093c;
 
-static const u32 aAB_BatterPos_X_Upon_Hit = 0x80890910;
-static const u32 aAB_BatterPos_Z_Upon_Hit = 0x80890914;
+static const u32 aAB_BatContactPos_X = 0x8089095c;
+static const u32 aAB_BatContactPos_Y = 0x80890960;
+static const u32 aAB_BatContactPos_Z = 0x80890964;
 
-static const u32 aAB_ChargeSwing    = 0x8089099B;
-static const u32 aAB_Bunt           = 0x8089099B; //Bunt when =3 on contact
+static const u32 aAB_ContactRandInt1 = 0x802ec010;
+static const u32 aAB_ContactRandInt2 = 0x802ec012;
+static const u32 aAB_ContactRandInt3 = 0x802ec014;
+
+static const u32 aAB_ContactAbsolute = 0x80890950;
+static const u32 aAB_ContactQuality  = 0x80890954;
+static const u32 aAB_TypeOfSwing    = 0x8089099B; //1=Slap, 2=Charge, 3=Bunt. Set on contact
 static const u32 aAB_ChargeUp       = 0x80890968;
 static const u32 aAB_ChargeDown     = 0x8089096C;
 static const u32 aAB_BatterHand     = 0x8089098B; //Right=0, Left=1
 static const u32 aAB_InputDirection = 0x808909B9; //0=None, 1=PullingStickTowardsHitting, 2=PushStickAway
-static const u32 aAB_StarSwing      = 0x808909B4;
+static const u32 aAB_StarSwing      = 0x808909b1; 
 static const u32 aAB_MoonShot       = 0x808909B5;
 static const u32 aAB_TypeOfContact  = 0x808909A2; //0=Sour, 1=Nice, 2=Perfect, 3=Nice, 4=Sour
 static const u32 aAB_RBI            = 0x80893B9A; //RBI for the AB
 static const u32 aAB_FramesUnitlBallArrivesBatter  = 0x80890AF2;
 static const u32 aAB_TotalFramesOfPitch            = 0x80890AF4;
+static const u32 aAB_MissedBall                    = 0x80890b18;
 
-static const u32 aAB_ControlStickInput = 0x8089392C; //P1
+static const u32 aAB_ControlStickInput = 0x80893928; //P1
 static const u8 cControl_Offset = 0x10;
 
 //static const u32 aBattingRandInt1 = 0x802ec010; // short
@@ -447,7 +460,7 @@ static const u32 aAB_HitByPitch = 0x808909A3;
 static const u32 aAB_FinalResult = 0x80893BAA;
 
 //Frame Data. Capture once play is over
-static const u32 aAB_FrameOfSwingAnimUponContact = 0x80890976; //(halfword) frame of swing animation; stops increasing when contact is made
+static const u32 aAB_FrameOfSwing = 0x80890976; //(halfword) frame of swing animation; stops increasing when contact is made
 static const u32 aAB_FrameOfPitchSeqUponSwing    = 0x80890978; //(halfword) frame of pitch that the batter swung
 
 static const u32 aAB_FieldingPort = 0x802EBF94;
@@ -465,7 +478,7 @@ static const u32 aFielder_Knockout = 0x8088F578; //Pitcher
 static const u32 aFielder_Pos_X = 0x8088F368; //Pitcher
 static const u32 aFielder_Pos_Z = 0x8088F370; //Pitcher
 static const u32 aFielder_Pos_Y = 0x8088F374; //Pitcher
-static const u32 aFielder_ManualSelectLock = 0x8088F449; //Pitcher
+static const u32 aFielder_ManualSelectArg = 0x802EBF97; //Pitcher
 static const u32 cFielder_Offset = 0x268;
 
 //Runner addrs
@@ -561,7 +574,7 @@ public:
         u8 fielder_swapped_for_batter;
         u8 fielder_action = 0; //2=slide, 3=walljump
         u8 fielder_jump = 0; //1=Jump
-        u8 fielder_manual_select_lock; //0=No one selected, 1=Other player selected, 2=This player selected
+        u8 fielder_manual_select_arg; //0=No one selected, 1=Other player selected, 2=This player selected
         u32 fielder_x_pos;
         u32 fielder_y_pos;
         u32 fielder_z_pos;
@@ -569,41 +582,51 @@ public:
     };
 
     struct Contact {
-        //Hit Status
-        u8 type_of_swing;
-        u8 type_of_contact;
-        u8 swing;
-        u8 charge_swing;
-        u8 bunt;
-        u32 charge_power_up;
-        u32 charge_power_down;
-        u8 star_swing;
-        u8 moon_shot;
-        u8 input_direction_push_pull;
-        u8 input_direction_stick;
-        u8 batter_handedness;
-        u8 hit_by_pitch;
+        //Vars with 1:1 Adrs
+        TrackerAdr<u16> power       = TrackerAdr<u16>("Ball Power", aAB_BallPower, 0xFFFF);
+        TrackerAdr<u16> vert_angle  = TrackerAdr<u16>("Vert Angle", aAB_VertAngle, 0xFFFF);
+        TrackerAdr<u16> horiz_angle = TrackerAdr<u16>("Horiz Angle", aAB_HorizAngle, 0xFFFF);
 
-        u16 frameOfSwingUponContact;
-    
-        //  Ball Calcs
-        u16 ball_angle;
-        u16 horiz_power;
-        u16 vert_power;
-        u32 ball_x_velocity;
-        u32 ball_y_velocity;
-        u32 ball_z_velocity;
+        TrackerAdr<u32> ball_x_velo = TrackerAdr<u32>("Ball Velocity - X", aAB_BallVel_X, 0xFFFFFFFF);
+        TrackerAdr<u32> ball_y_velo = TrackerAdr<u32>("Ball Velocity - Y", aAB_BallVel_Y, 0xFFFFFFFF);
+        TrackerAdr<u32> ball_z_velo = TrackerAdr<u32>("Ball Velocity - Z", aAB_BallVel_Z, 0xFFFFFFFF);
+
+        TrackerAdr<u32> ball_contact_x_pos = TrackerAdr<u32>("Ball Contact Pos - X", aAB_BallContactPos_X, 0xFFFFFFFF);
+        TrackerAdr<u32> ball_contact_y_pos = TrackerAdr<u32>("Ball Contact Pos - Y", aAB_BallContactPos_Y, 0xFFFFFFFF);
+        TrackerAdr<u32> ball_contact_z_pos = TrackerAdr<u32>("Ball Contact Pos - Z", aAB_BallContactPos_Z, 0xFFFFFFFF);
+
+        TrackerAdr<u32> bat_contact_x_pos = TrackerAdr<u32>("Bat Contact Pos - X", aAB_BatContactPos_X, 0xFFFFFFFF);
+        TrackerAdr<u32> bat_contact_y_pos = TrackerAdr<u32>("Bat Contact Pos - Y", aAB_BatContactPos_Y, 0xFFFFFFFF);
+        TrackerAdr<u32> bat_contact_z_pos = TrackerAdr<u32>("Bat Contact Pos - Z", aAB_BatContactPos_Z, 0xFFFFFFFF);
+
+        TrackerAdr<u32> contact_absolute = TrackerAdr<u32>("Contact Absolute", aAB_ContactAbsolute, 0xFFFFFFFF);
+        TrackerAdr<u32> contact_quality = TrackerAdr<u32>("Contact Quality", aAB_ContactQuality, 0xFFFFFFFF);
+
+        TrackerAdr<u16> rng1 = TrackerAdr<u16>("RNG1", aAB_ContactRandInt1, 0xFFFF);
+        TrackerAdr<u16> rng2 = TrackerAdr<u16>("RNG2", aAB_ContactRandInt2, 0xFFFF);
+        TrackerAdr<u16> rng3 = TrackerAdr<u16>("RNG3", aAB_ContactRandInt3, 0xFFFF);
+
+        //Hit Status
+        TrackerAdr<u8> type_of_contact = TrackerAdr<u8>("Type of Contact", aAB_TypeOfContact, 0xFF);
+        TrackerAdr<u8> moon_shot = TrackerAdr<u8>("Star Swing Five-Star", aAB_MoonShot, 0xFF);
+
+        //Charge Power
+        TrackerAdr<u32> charge_power_up = TrackerAdr<u32>("Charge Power Up", aAB_ChargeUp, 0xFFFFFFFF);
+        TrackerAdr<u32> charge_power_down = TrackerAdr<u32>("Charge Power Down", aAB_ChargeDown, 0xFFFFFFFF);
+        
+        TrackerValue<u8> input_direction_stick = TrackerValue<u8>("Input Direction - Stick", 0xFF);
+        TrackerAdr<u8> input_direction_push_pull = TrackerAdr<u8>("Input Direction - Push/Pull", aAB_InputDirection, 0xFF);
+
+        TrackerAdr<u16> frame_of_swing = TrackerAdr<u16>("Frame of Swing Upon Contact", aAB_FrameOfSwing, 0xFFFF);
         
         //Final Result Ball
-        u32 ball_x_pos, prev_ball_x_pos;
-        u32 ball_y_pos, prev_ball_y_pos;
-        u32 ball_z_pos, prev_ball_z_pos;
+        TrackerAdr<u32> ball_x_pos = TrackerAdr<u32>("Ball Landing Position - X", aAB_BallPos_X, 0xFFFFFFFF);
+        TrackerAdr<u32> ball_y_pos = TrackerAdr<u32>("Ball Landing Position - Y", aAB_BallPos_Y, 0xFFFFFFFF);
+        TrackerAdr<u32> ball_z_pos = TrackerAdr<u32>("Ball Landing Position - Z", aAB_BallPos_Z, 0xFFFFFFFF);
 
         //More ball flight info
-        u32 ball_y_pos_max_height = 0;
-
-        //Double play or more
-        u8 multi_out;
+        TrackerAdr<u32> ball_max_height = TrackerAdr<u32>("Ball Max Height", 0x8089250c, 0xFFFFFFFF);
+        TrackerAdr<u16> ball_hang_time = TrackerAdr<u16>("Ball Hang Time", 0x80892696, 0xFFFF);
 
         //0=Out
         //1=Foul
@@ -639,12 +662,9 @@ public:
         u8 batter_roster_loc;
         u8 batter_id;
 
-        //Ball and batter pos for pitch visualization
-        u32 ball_x_pos_upon_hit;
-        u32 ball_z_pos_upon_hit;
-
-        u32 batter_x_pos_upon_hit;
-        u32 batter_z_pos_upon_hit;
+        //Ball pos for pitch visualization
+        u32 ball_z_strike_vs_ball;
+        u8 ball_in_strikezone;
 
         //For integrosity - TODO
         u8 db = 0;
@@ -660,6 +680,8 @@ public:
         //7=Unknown
         u8 pitch_result; 
 
+        //Info about the batter.
+        u8 type_of_swing;
         std::optional<Contact> contact;
     };
 
@@ -692,8 +714,14 @@ public:
 
         std::array<u8, cRosterSize> manual_select_locks;
 
+        //Double play or more
+        TrackerAdr<u8> num_outs_during_play = TrackerAdr<u8>("Num Outs During Play", aAB_NumOutsDuringPlay, 0xFF);
+
         u8 rbi;
         u8 result_of_atbat;
+
+        //Partial game. indicates this game has not been finished
+        std::pair<bool, bool> write_hud_ab = {true, true};
 
         std::vector<EVENT_STATE> history;
         std::string stringifyHistory() {
@@ -744,9 +772,6 @@ public:
         //Quit?
         u8 quitter_team = 0xFF;
 
-        //Partial game. indicates this game has not been finished
-        u8 partial;
-
         //Bookkeeping
         //int pitch_num = 0;
         int event_num = 0;
@@ -792,6 +817,7 @@ public:
         u8 previous_pos = 0xFF;
 
         std::array<int, cNumOfPositions> pitch_count_by_position = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+        std::array<int, cNumOfPositions> batter_count_by_position = {0, 0, 0, 0, 0, 0, 0, 0, 0};
         std::array<int, cNumOfPositions> out_count_by_position   = {0, 0, 0, 0, 0, 0, 0, 0, 0};
         std::array<int, cNumOfPositions> batter_outs_by_position   = {0, 0, 0, 0, 0, 0, 0, 0, 0};
     };
@@ -891,14 +917,34 @@ public:
             return false;
         }
 
-        void incrementOutForPosition(u8 roster_loc, u8 pos){
-            ++fielder_map[roster_loc].out_count_by_position[pos];
+        bool battersAtAnyPosition(u8 roster_loc, int starting_pos) {
+            for (int pos=starting_pos; pos < cRosterSize; ++pos){
+                if (fielder_map[roster_loc].batter_count_by_position[pos] > 0) { 
+                    return true;
+                }
+            }
+            return false;
         }
 
-        void incrementBatterOutForPosition(){
+        void incrementOutForPosition(u8 roster_loc, u8 pos){
+            ++fielder_map[roster_loc].out_count_by_position[pos];
+            //std::cout << " incrementOutForPosition: " << std::to_string(fielder_map[roster_loc].out_count_by_position[pos]);
+        }
+
+        void incrementBatterOutForPosition(int num_outs){
             for (u8 roster=0; roster < cRosterSize; ++roster){
                 //Increment the number of batter outs this player has seen at this position
-                ++fielder_map[roster].batter_outs_by_position[fielder_map[roster].current_pos];
+                fielder_map[roster].batter_outs_by_position[fielder_map[roster].current_pos] = fielder_map[roster].batter_outs_by_position[fielder_map[roster].current_pos] + num_outs;
+                // std::cout << " incrementBatterOutForPosition: " << std::to_string(fielder_map[roster].batter_outs_by_position[fielder_map[roster].current_pos]);
+            }
+            return;
+        }
+
+        void incrementBattersForPosition(){
+            for (u8 roster=0; roster < cRosterSize; ++roster){
+                //Increment the number of batter outs this player has seen at this position
+                ++fielder_map[roster].batter_count_by_position[fielder_map[roster].current_pos];
+                // std::cout << " incrementBattersForPosition: " << std::to_string(fielder_map[roster].batter_count_by_position[fielder_map[roster].current_pos]);
             }
             return;
         }
@@ -920,12 +966,12 @@ public:
 
         //Reset state machines
         m_game_state  = GAME_STATE::PREGAME;
-        m_event_state = EVENT_STATE::INIT;
+        m_event_state = EVENT_STATE::INIT_EVENT;
     }
 
     GAME_STATE  m_game_state  = GAME_STATE::PREGAME;
     GAME_STATE  m_game_state_prev = GAME_STATE::UNDEFINED;
-    EVENT_STATE m_event_state = EVENT_STATE::INIT;
+    EVENT_STATE m_event_state = EVENT_STATE::INIT_EVENT;
     EVENT_STATE m_event_state_prev = EVENT_STATE::UNDEFINED;
 
     struct state_members{
@@ -933,6 +979,7 @@ public:
         bool m_ranked_status = false;
         bool m_netplay_session = false;
         bool m_is_host = false;
+        std::optional<int> m_tag_set;
         std::string m_netplay_opponent_alias = "";
     } m_state;
 
@@ -949,6 +996,8 @@ public:
     void setLagSpikes(int nLagSpikes);
     void setNetplayerUserInfo(std::map<int, LocalPlayers::LocalPlayers::Player> userInfo);
     void setDisplayStats(bool bDisplay);
+    // void setTags(std::vector tags);
+    // void setTagSet(int tagset);
 
     void Run();
     void lookForTriggerEvents();
@@ -958,7 +1007,6 @@ public:
     void logOffensiveStats(int team_id, int roster_id);
     
     void logEventState(Event& in_event);
-    void logContactMiss(Event& in_event);
     void logContact(Event& in_event);
     void logPitch(Event& in_event);
     void logContactResult(Contact* in_contact);
@@ -995,18 +1043,34 @@ public:
     std::string decode(std::string type, u8 value, bool decode);
 
     //Returns JSON, PathToWriteTo
-    std::string getStatJSON(bool inDecode);
+    std::string getStatJSON(bool inDecode, bool hide_riokey = true);
     std::string getEventJSON(u16 in_event_num, Event& in_event, bool inDecode);
     std::string getHUDJSON(std::string in_event_num, Event& in_curr_event, std::optional<Event> in_prev_event, bool inDecode);
     //Returns path to save json
     std::string getStatJsonPath(std::string prefix);
 
+    std::pair<u8,u8> getBatterFielderPorts(){
+        std::array<u8, 2> ports = {Memory::Read_U8(0x800e874c), Memory::Read_U8(0x800e874d)};
+
+        u8 BattingPort = ports[Memory::Read_U32(0x80892990)];
+        u8 FieldingPort = ports[Memory::Read_U32(0x80892994)];
+
+        return std::make_pair(BattingPort, FieldingPort);
+    }
+
+    std::pair<u8,u8> getHomeAwayPort(){
+        std::array<u8, 2> ports = {Memory::Read_U8(0x800e874c), Memory::Read_U8(0x800e874d)};
+        m_game_info.home_port = ports[0];
+        m_game_info.away_port = ports[1];
+
+        return std::make_pair(m_game_info.home_port, m_game_info.away_port);
+    }
+
     void initPlayerInfo();
 
     //If mid-game, dump game
     void dumpGame(){
-        if ((Memory::Read_U32(aGameId) != 0) && (m_game_state == GAME_STATE::INGAME)){
-            m_game_info.game_active = false;
+        if (m_game_state == GAME_STATE::INGAME){
             m_game_info.quitter_team = 2;
             logGameInfo();
 
@@ -1020,17 +1084,10 @@ public:
             
             File::WriteStringToFile(jsonPath, json);
 
-            //jsonPath = getStatJsonPath("crash.");
-            //json = getStatJSON(false);
+            jsonPath = getStatJsonPath("crash.");
+            json = getStatJSON(false, true);
             
-            //File::WriteStringToFile(jsonPath, json);
-
-            //Clean up partial files
-            jsonPath = getStatJsonPath("partial.");
-            File::Delete(jsonPath);
-            jsonPath = getStatJsonPath("partial.decoded.");
-            File::Delete(jsonPath);
-
+            File::WriteStringToFile(jsonPath, json);
             init();
         }
     }

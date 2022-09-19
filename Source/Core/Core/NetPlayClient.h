@@ -337,6 +337,8 @@ private:
   void OnNightMsg(sf::Packet& packet);
 
   int framesAsGolfer = 0;
+  int framesShouldBeGolfer = 0; // how many frames nextGolferPort has been the same port
+  int nextGolferPort = 0; // the port that should become the golfer
 
   bool m_is_connected = false;
   ConnectionState m_connection_state = ConnectionState::Failure;
