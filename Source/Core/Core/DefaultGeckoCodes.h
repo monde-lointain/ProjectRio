@@ -10,15 +10,23 @@
 
 class DefaultGeckoCodes {
   public:
-    void RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bUseNightStadium);
+    void RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bIsNight);
 
   private:
 
+    // Default Rumble On [LittleCoaks]
     static const u32 aControllerRumble = 0x80366177;
+
+    // Boot to Main Menu [LittleCoaks]
     static const u32 aBootToMainMenu = 0x8063F964;
+
+    // Skip Memory Card Check on Main Menu [LittleCoaks]
     static const u32 aSkipMemCardCheck = 0x803C50E8;
+
+    // Unlimited Extra Innings [LittleCoaks]
     static const u32 aUnlimitedExtraInnings = 0x80699A10;
 
+    // Unlock Everything [LittleCoaks]
     static const u32 aUnlockEverything_1 = 0x800E870E;  // 0x0 loops of 0x2
     static const u32 aUnlockEverything_2 = 0x800E8710;  // 0x5 loops of 0x3
     static const u32 aUnlockEverything_3 = 0x800E8716;  // 0x5 loops of 0x1
@@ -28,9 +36,20 @@ class DefaultGeckoCodes {
     static const u32 aUnlockEverything_7 = 0x80361C04;  // 0x3 loops of 0x1
     static const u32 aUnlockEverything_8 = 0x80361C14;  // 0x1 loops of 0x1
 
+    // Pitch Clock [LittleCoaks]
     static const u32 aPitchClock_1 = 0x806b4490;
     static const u32 aPitchClock_2 = 0x806b42d0;
     static const u32 aPitchClock_3 = 0x806b46b8;
+
+    // Disable Music [LittleCoaks]
+    static const u32 aDisableMusic_1 = 0x80062ab0;  // write to 0x38000000
+    static const u32 aDisableMusic_2 = 0x806cccb0;  // write to 0x38000000
+
+    // Never Cull [Roeming]
+    static const u32 aNeverCull_1 = 0x8001dcf8;  // write to 0x38000007
+    static const u32 aNeverCull_2 = 0x806aa4e4;  // write to 0x38000001
+    static const u32 aNeverCull_3 = 0x806ab8b4;  // write to 0x38000001
+    static const u32 aNeverCull_4 = 0x806f7b7c;  // write to 0x38000003 if equal to 0x881a0093
 
 
     void InjectNetplayEventCode();
@@ -178,6 +197,33 @@ class DefaultGeckoCodes {
         0xB0860000, 0x80850004,
         0xB0860002, 0xA0850018, 0xB0860004}}; // Store Rand1 at 802ec010, Rand2 at 802ec012 and Rand3, at 802ec014
 
+    // Checksum Calculator [LitleCoaks]
+    const DefaultGeckoCode sChecksum = {
+        0x8069A160, 0x3c80800f,
+        {0x7C0802A6, 0x90010004, 0x9421FF00, 0xBC610008, 0x38800000, 0x3CA08089,
+         0x60A52AAA, 0x88A50000, 0x7C852214, 0x3CA08089, 0x60A52AAB, 0x88A50000,
+         0x7C852214, 0x3CA08089, 0x60A509A1, 0x88A50000, 0x7C852214, 0x3CA08089,
+         0x60A52857, 0x88A50000, 0x7C852214, 0x3CA08036, 0x60A5F3A9, 0x88A50000,
+         0x7C852214, 0x3CA08089, 0x60A509AA, 0x88A50000, 0x7C852214, 0x3CA08087,
+         0x60A52540, 0x88A50000, 0x7C852214, 0x3CA08089, 0x60A50971, 0x88A50000,
+         0x7C852214, 0x3CA08089, 0x60A528A3, 0x88A50000, 0x7C852214, 0x3CA08089,
+         0x60A5294D, 0x88A50000, 0x7C852214, 0x3CA08089, 0x60A5296F, 0x88A50000,
+         0x7C852214, 0x3CA08089, 0x60A5296B, 0x88A50000, 0x7C852214, 0x3CA08089,
+         0x60A52973, 0x88A50000, 0x7C852214, 0x3CA08089, 0x60A52AD6, 0x88A50000,
+         0x7C852214, 0x3CA08089, 0x60A52AD7, 0x88A50000, 0x7C852214, 0x3CA08089,
+         0x60A52AD8, 0x88A50000, 0x7C852214, 0x3CA08089, 0x60A509BA, 0x88A50000,
+         0x7C852214, 0x3CA08088, 0x60A5F09D, 0x88A50000, 0x7C852214, 0x3CA08088,
+         0x60A5F1F1, 0x88A50000, 0x7C852214, 0x3CA08088, 0x60A5F345, 0x88A50000,
+         0x7C852214, 0x3CA08089, 0x60A538AD, 0x88A50000, 0x7C852214, 0x3CA08089,
+         0x60A509A3, 0x88A50000, 0x7C852214, 0x3CA08089, 0x60A53BAA, 0x88A50000,
+         0x7C852214, 0x3CA08089, 0x60A528A4, 0x88A50000, 0x7C852214, 0x3CA08089,
+         0x60A528CA, 0x88A50000, 0x7C852214, 0x3CA08089, 0x60A50971, 0x88A50000,
+         0x7C852214, 0x3CA08089, 0x60A50AD9, 0x88A50000, 0x7C852214, 0x3CA08089,
+         0x60A50B38, 0x80A50000, 0x7C852214, 0x3CA08089, 0x60A50B3C, 0x80A50000,
+         0x7C852214, 0x3CA08089, 0x60A50B40, 0x80A50000, 0x7C852214, 0x3CA0802E,
+         0x60A5BFB8, 0x90850000, 0xB8610008, 0x80010104, 0x38210100, 0x7C0803A6,
+         0x3C80800F}};  // 0x802EBFB8 == checksum addr
+
 
     void WriteAsm(DefaultGeckoCode CodeBlock);
     u32 aWriteAddr;  // address where the first code gets written to
@@ -185,7 +231,7 @@ class DefaultGeckoCodes {
     std::vector<DefaultGeckoCode> sRequiredCodes =
     {sGenerateGameID, sClearGameID_1, sClearGameID_2, sClearGameID_3,
     sClearPortInfo, sClearHitResult, sClearPortInfo_1, sClearPortInfo_2,
-        sRememberWhoQuit_1, sRememberWhoQuit_2, sStoreRandBattingInts};
+        sRememberWhoQuit_1, sRememberWhoQuit_2, sStoreRandBattingInts, sChecksum};
 
     std::vector<DefaultGeckoCode> sNetplayCodes =
     {sAntiQuickPitch, sDefaultCompetitiveRules, sManualSelect,sRemoveDingus};

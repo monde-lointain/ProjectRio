@@ -1,6 +1,8 @@
 #include "Core/DefaultGeckoCodes.h"
+#include "NetPlayProto.h"
+#include "Config/NetplaySettings.h"
 
-void DefaultGeckoCodes::RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bUseNightStadium)
+void DefaultGeckoCodes::RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bIsNight)
 {
   aWriteAddr = 0x802ED200;  // starting asm write addr
 
@@ -16,8 +18,27 @@ void DefaultGeckoCodes::RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bo
   if (bIsRanked)
     AddRankedCodes();
 
-  if (bUseNightStadium)
-    WriteAsm(sNightStadium);
+  // Netplay Config Codes
+  if (NetPlay::IsNetPlayRunning())
+  {
+    if (bIsNight)
+      WriteAsm(sNightStadium);
+
+    if (Config::Get(Config::NETPLAY_DISABLE_MUSIC))
+    {
+      Memory::Write_U32(0x38000000, aDisableMusic_1);
+      Memory::Write_U32(0x38000000, aDisableMusic_2);
+    }
+
+    if (Config::Get(Config::NETPLAY_NEVER_CULL))
+    {
+      Memory::Write_U32(0x38000007, aNeverCull_1);
+      Memory::Write_U32(0x38000001, aNeverCull_2);
+      Memory::Write_U32(0x38000001, aNeverCull_3);
+      if (Memory::Read_U32(aNeverCull_4) == 0x881a0093)
+        Memory::Write_U32(0x38000003, aNeverCull_4);
+    }
+  }
 }
 
 void DefaultGeckoCodes::InjectNetplayEventCode()

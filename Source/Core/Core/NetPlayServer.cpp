@@ -1200,6 +1200,21 @@ unsigned int NetPlayServer::OnData(sf::Packet& packet, Client& player)
   }
   break;
 
+  case MessageID::Checksum:
+  {
+    u32 inChecksum;
+    u8 checksumId;
+    packet >> inChecksum;
+    packet >> checksumId;
+
+    sf::Packet spac;
+    spac << MessageID::Checksum;
+    spac << inChecksum;
+    spac << checksumId;
+    SendToClients(spac);
+  }
+  break;
+
   case MessageID::MD5Progress:
   {
     int progress;

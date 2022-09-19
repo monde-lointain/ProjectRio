@@ -487,9 +487,14 @@ void NetPlayClient::OnData(sf::Packet& packet)
   case MessageID::CoinFlip:
     OnCoinFlipMsg(packet);
     break;
+
   case MessageID::NightStadium:
     OnNightMsg(packet);
     break;  
+
+  case MessageID::Checksum:
+    OnChecksumMsg(packet);
+    break;
 
   default:
     PanicAlertFmtT("Unknown message received with id : {0}", static_cast<u8>(mid));
@@ -1558,6 +1563,19 @@ void NetPlayClient::OnNightMsg(sf::Packet& packet)
   m_night_stadium = is_night;
 }
 
+void NetPlayClient::OnChecksumMsg(sf::Packet& packet)
+{
+  u32 inChecksum;
+  u8 checksumId;
+  packet >> inChecksum;
+  packet >> checksumId;
+
+  if (ourChecksum[checksumId] != inChecksum)
+  {
+    m_dialog->OnDesync(0, "");
+  }
+}
+
 void NetPlayClient::Send(const sf::Packet& packet, const u8 channel_id)
 {
   ENetPacket* epac =
@@ -1796,6 +1814,15 @@ void NetPlayClient::SendActiveGeckoCodes()
   SendAsync(std::move(packet));
 }
 
+void NetPlayClient::SendNightStadium(bool is_night)
+{
+  sf::Packet packet;
+  packet << MessageID::NightStadium;
+  packet << is_night;
+
+  SendAsync(std::move(packet));
+}
+
 void NetPlayClient::GetActiveGeckoCodes()
 {
   // don't use any gecko codes if playing ranked
@@ -1829,15 +1856,6 @@ void NetPlayClient::SendCoinFlip(int randNum)
   sf::Packet packet;
   packet << MessageID::CoinFlip;
   packet << randNum;
-
-  SendAsync(std::move(packet));
-}
-
-void NetPlayClient::SendNightStadium(bool is_night)
-{
-  sf::Packet packet;
-  packet << MessageID::NightStadium;
-  packet << is_night;
 
   SendAsync(std::move(packet));
 }
@@ -2720,6 +2738,24 @@ void NetPlayClient::SendGameStatus()
 
   packet << static_cast<u32>(result);
   Send(packet);
+}
+
+void NetPlayClient::SendChecksum(u8 checksumId, u64 frame)
+{
+  u32 checksum = Memory::Read_U32(0x802EBFB8);
+  netplay_client->ourChecksum[checksumId] = checksum;
+
+  if (frame < 1000) // dont send the initial ones since they're whack
+    return;
+
+  u8 newId = checksumId + 11 & 0xf;  // send checksum from 5 seconds ago
+
+  sf::Packet packet;
+  packet << MessageID::Checksum;
+  packet << netplay_client->ourChecksum[newId]; 
+  packet << newId;
+
+  netplay_client->SendAsync(std::move(packet));
 }
 
 void NetPlayClient::SendTimeBase()

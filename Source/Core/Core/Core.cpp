@@ -162,8 +162,13 @@ double GetActualEmulationSpeed()
 void FrameUpdateOnCPUThread()
 {
   if (NetPlay::IsNetPlayRunning()) {
-    NetPlay::NetPlayClient::SendTimeBase();
-
+    //NetPlay::NetPlayClient::SendTimeBase();
+    u64 frame = Movie::GetCurrentFrame();
+    if (frame % 60)
+    {
+      u8 checksumId = (frame / 60) & 0xF;
+      NetPlay::NetPlayClient::SendChecksum(checksumId, frame);
+    }
     if (s_stat_tracker){
       //Figure out if client is hosting via netplay settings. Could use local player as well
       bool is_hosting = NetPlay::GetNetSettings().m_IsHosting;
@@ -205,8 +210,7 @@ void OnFrameEnd()
 
         // always enable netplay event code for ranked games
         // if not ranked, check if code is checked off
-        CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(),
-                                 isNight());
+        CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(), isNight());
 
         AutoGolfMode();
         TrainingMode();

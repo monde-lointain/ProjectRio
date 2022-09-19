@@ -175,6 +175,7 @@ enum class MessageID : u8
 
   TimeBase = 0xB0,
   DesyncDetected = 0xB1,
+  Checksum = 0xB2,
 
   ComputeMD5 = 0xC0,
   MD5Progress = 0xC1,
