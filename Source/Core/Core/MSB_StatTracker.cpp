@@ -1983,9 +1983,38 @@ TagSet StatTracker::getTagIdsFromTagSet(){
         return TagSet();
     }
 
-    const std::vector<picojson::value> tags = json->get("Tags").get<picojson::array>();
+
+    // Initializing variables needed for constructing TagSet
+    int id;
+    std::string name;
     std::vector<Tag> tags_vector;
-    for (picojson::value tag : tags){   
+    
+    if (json->get("ID").is<double>()){
+        // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
+        id = int(json->get("ID").get<double>());
+    }
+    else{
+        // If ID is not a double, return an empty TagSet because that is a breaking error
+        return TagSet();
+    };
+
+    if (json->get("Name").is<std::string>()){
+        name = json->get("Name").get<std::string>();
+    }
+    else{
+        // If Name is not a double, return an empty TagSet because that is a breaking error
+        return TagSet();
+    };
+
+
+    // Get a vector of picojson::values for creating Tags 
+    const std::vector<picojson::value> tags = json->get("Tags").get<picojson::array>();
+    // Loop through the vector of picojson::values, 
+    // validate that the json data meets specifications, 
+    // and populate the empty tags_vector with Tags
+    for (picojson::value tag : tags){
+        // Initialize variables needed for Tag creation with default values
+        // to use in case provided JSON data does not meet validation requirements
         int tag_id;
         std::string tag_name;
         bool active = false;
@@ -1995,9 +2024,11 @@ TagSet StatTracker::getTagIdsFromTagSet(){
         std::string type = "";
 
         if (tag.get("ID").is<double>()){
+            // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
             tag_id = int(tag.get("ID").get<double>());
         }
         else{
+            // If ID is not a double, return an empty TagSet because that is a breaking error
             std::cout << "Invalid Tag ID" << "\n";
             return TagSet();
         }
@@ -2006,16 +2037,19 @@ TagSet StatTracker::getTagIdsFromTagSet(){
             tag_name = tag.get("Name").get<std::string>();
         }
         else{
+            // If Name is not a string, return an empty TagSet because that is a breaking error
             std::cout << "Invalid Name" << "\n";
             return TagSet();
         }
 
         if (tag.get("Active").is<bool>()){ active = tag.get("Active").get<bool>(); }
 
+        // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
         if (tag.get("Date Created").is<double>()){ date_created = int(tag.get("Date Created").get<double>()); }
         
         if (tag.get("Desc").is<std::string>()){ desc = tag.get("Desc").get<std::string>(); }
         
+        // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
         if (tag.get("Comm ID").is<double>()){ community_id = int(tag.get("Comm ID").get<double>()); }
         
         if (tag.get("Type").is<std::string>()){ tag.get("Type").get<std::string>(); }
@@ -2032,24 +2066,6 @@ TagSet StatTracker::getTagIdsFromTagSet(){
         tags_vector.push_back(tag_class);
     };
 
-
-    int id;
-    std::string name;
-
-    if (json->get("ID").is<double>()){
-        id = int(json->get("ID").get<double>());
-    }
-    else{
-        return TagSet();
-    };
-
-    if (json->get("Name").is<std::string>()){
-        name = json->get("Name").get<std::string>();
-    }
-    else{
-        return TagSet();
-    };
-    
     TagSet tag_set = TagSet{
         id,
         name,
