@@ -330,15 +330,27 @@ void GeckoCodeWidget::DownloadCodes()
   }
 
   size_t added_count = 0;
+  size_t updated_count = 0;
 
   for (const auto& code : codes)
   {
     auto it = std::find(m_gecko_codes.begin(), m_gecko_codes.end(), code);
+    bool add_anyway = false; // i'm tired and will use this lazy fix
 
-    if (it == m_gecko_codes.end())
+    for (const auto& tcode : m_gecko_codes)
+    {
+      if (tcode.name == code.name && it == m_gecko_codes.end())
+      {
+        m_gecko_codes.erase(std::find(m_gecko_codes.begin(), m_gecko_codes.end(), tcode));
+        updated_count++;
+        add_anyway = true;
+      }
+    }
+
+    if (it == m_gecko_codes.end() || add_anyway)
     {
       m_gecko_codes.push_back(code);
-      added_count++;
+      if (!add_anyway) added_count++;
     }
   }
 
@@ -347,8 +359,9 @@ void GeckoCodeWidget::DownloadCodes()
 
   ModalMessageBox::information(
       this, tr("Download complete"),
-      tr("Downloaded %1 codes. (added %2)")
-          .arg(QString::number(codes.size()), QString::number(added_count)));
+      tr("Downloaded %1 codes. (added %2, updated %3)")
+                                   .arg(QString::number(codes.size()), QString::number(added_count),
+                                        QString::number(updated_count)));
 }
 
 void GeckoCodeWidget::MakeEnabledList()
