@@ -188,6 +188,21 @@ void FrameUpdateOnCPUThread()
       s_stat_tracker->setNetplaySession(false);
     }
   }
+
+  if (s_stat_tracker)
+  {
+    s_stat_tracker->Run();
+  }
+
+  SetNetplayerUserInfo();
+  SetDisplayStats();
+
+  CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(), isNight());
+
+  AutoGolfMode();
+  TrainingMode();
+  DisplayBatterFielder();
+  SetAvgPing();
 }
 
 void OnFrameEnd()
@@ -196,27 +211,6 @@ void OnFrameEnd()
   if (s_memory_watcher)
     s_memory_watcher->Step();
 #endif
-
-  // prevent cpu thread racing
-  RunAsCPUThread(
-      [&] {
-        SetNetplayerUserInfo();
-        SetDisplayStats();
-
-        if (s_stat_tracker)
-        {
-          s_stat_tracker->Run();
-        }
-
-        // always enable netplay event code for ranked games
-        // if not ranked, check if code is checked off
-        CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(), isNight());
-
-        AutoGolfMode();
-        TrainingMode();
-        DisplayBatterFielder();
-        SetAvgPing();
-      });
 }
 
 void AutoGolfMode()
@@ -227,7 +221,7 @@ void AutoGolfMode()
     u8 FielderPort = Memory::Read_U8(aFielderPort);
     bool isField = Memory::Read_U8(aIsField) == 1;
 
-    if (BatterPort == 0)
+    if (Memory::Read_U8(aMatchStarted) == 0)
       return;  // means game hasn't started yet
 
     // makes the player who paused the golfer
