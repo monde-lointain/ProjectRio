@@ -224,7 +224,7 @@ void NetPlayDialog::CreateMainLayout()
   m_disable_music_action->setCheckable(true);
   m_never_cull_action = m_gecko_menu->addAction(tr("Never Cull"));
   m_never_cull_action->setToolTip(
-      tr("Characters and stadium hazards never disappear.\nUseful for content creators/widescreen "
+      tr("Characters and stadium hazards never disappear when\noffscreen. Useful for content creators/widescreen "
          "users.\nWARNING: can cause lag on weaker systems."));
   m_never_cull_action->setCheckable(true);
 
