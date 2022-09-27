@@ -78,6 +78,8 @@ void DefaultGeckoCodes::AddRankedCodes()
   Memory::Write_U32(0x60000000, aPitchClock_3);
 
   WriteAsm(sPitchClock);
+ 
+  Memory::Write_U32(0x386001bb, aBatSound);
 }
 
 

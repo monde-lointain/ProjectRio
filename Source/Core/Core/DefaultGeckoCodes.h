@@ -41,6 +41,9 @@ class DefaultGeckoCodes {
     static const u32 aPitchClock_2 = 0x806b42d0;
     static const u32 aPitchClock_3 = 0x806b46b8;
 
+    // Bat Sound Effect on Start Game [LittleCoaks]
+    static const u32 aBatSound = 0x80042cd0;  // write to 0x386001bb
+
     // Disable Music [LittleCoaks]
     static const u32 aDisableMusic_1 = 0x80062ab0;  // write to 0x38000000
     static const u32 aDisableMusic_2 = 0x806cccb0;  // write to 0x38000000
@@ -188,7 +191,7 @@ class DefaultGeckoCodes {
         0x880E0000, 0x70000010,
         0x2C000000, 0x41820008, 0x38000001}};
 
-    // Store Random Batting Ints[Roeming]
+    // Store Random Batting Ints [Roeming]
     const DefaultGeckoCode sStoreRandBattingInts = {
         0x80651E68, 0x98040091,
         {0x98040091, 0x3CA08089,
