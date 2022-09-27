@@ -1,6 +1,7 @@
 #include "Core/DefaultGeckoCodes.h"
 #include "NetPlayProto.h"
 #include "Config/NetplaySettings.h"
+#include <VideoCommon/VideoConfig.h>
 
 void DefaultGeckoCodes::RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bIsNight)
 {
@@ -17,6 +18,9 @@ void DefaultGeckoCodes::RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bo
 
   if (bIsRanked)
     AddRankedCodes();
+
+  if (g_ActiveConfig.bTrainingModeOverlay && !bIsRanked)
+    WriteAsm(sEasyBattingZ);
 
   // Netplay Config Codes
   if (NetPlay::IsNetPlayRunning())

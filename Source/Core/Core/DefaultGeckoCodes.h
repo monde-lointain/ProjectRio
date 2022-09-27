@@ -227,6 +227,11 @@ class DefaultGeckoCodes {
          0x60A5BFB8, 0x90850000, 0xB8610008, 0x80010104, 0x38210100, 0x7C0803A6,
          0x3C80800F}};  // 0x802EBFB8 == checksum addr
 
+    const DefaultGeckoCode sEasyBattingZ = {
+        0x806A82B0, 0x28000000,
+        {0x3CA08089, 0x38852990, 0x80040000, 0x1C000004, 0x38852A78, 0x7C840214,
+        0x80040000, 0x1C000010,0x3885392C, 0x7C840214, 0xA0040000, 0x70000010, 0x28000000}
+    };
 
     void WriteAsm(DefaultGeckoCode CodeBlock);
     u32 aWriteAddr;  // address where the first code gets written to
