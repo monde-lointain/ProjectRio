@@ -1642,7 +1642,22 @@ void StatTracker::setRankedStatus(bool inBool) {
 void StatTracker::setRecordStatus(bool inBool) {
     std::cout << "Record Status=" << inBool << "\n";
     mTrackerInfo.mRecord = inBool;
+
+    std::vector<Tag::TagSet> tag_sets = Tag::getAvailableTagSets(m_http, "YYoXDBoQg6rBc23T4xs_qmPWZxubBO9v9cq8UjJkmD0");
+    std::cout << tag_sets[0].tag_ids_string() << "\n";
+    std::cout << tag_sets[0].tag_names_string() << "\n";
+
+    std::optional<Tag::TagSet> tag_set = Tag::getTagSet(m_http, 1);
+    if (tag_set) {
+        std::cout << tag_set.value().id << "\n";
+    }
 }
+
+void StatTracker::setTagSetId(Tag::TagSet tag_set) {
+    std::cout << "TagSet Id=" << tag_set.id << "," << "TagSet Name=" << tag_set.name << "\n";
+    m_state.tag_set_id = tag_set.id;
+}
+
 
 bool StatTracker::shouldSubmitGame() {
     bool cpuInGame = (m_game_info.getAwayTeamPlayer().GetUserID() == "CPU") || (m_game_info.getHomeTeamPlayer().GetUserID() == "CPU");
@@ -1955,122 +1970,4 @@ std::string StatTracker::decode(std::string type, u8 value, bool decode){
         retVal += ". Invalid Value (" + std::to_string(value) + ").";
     }
     return ("\"" + retVal + "\"");
-}
-
-static std::optional<picojson::value> ParseResponse(const std::vector<u8>& response)
-{
-    const std::string response_string(reinterpret_cast<const char*>(response.data()),response.size());
-    picojson::value json;
-    const auto error = picojson::parse(json, response_string);
-    if (!error.empty())
-        return {};
-    return json;
-}
-
-TagSet StatTracker::getTagIdsFromTagSet(){
-    Common::HttpRequest http_req{std::chrono::minutes{3}};
-    // //const Common::HttpRequest::Response response = m_http.Get("https://projectrio-api-1.api.projectrio.app/tag_set/"+std::to_string(m_state.m_tag_set.value()));
-    const Common::HttpRequest::Response response = http_req.Get("http://127.0.0.1:5000/tag_set/1");
-    
-    if (!response){
-        std::cout << "No Response" << "\n";
-        return TagSet();
-    }
-
-    auto json = ParseResponse(response.value());
-    if (!json){
-        std::cout << "No JSON" << "\n"; 
-        return TagSet();
-    }
-
-
-    // Initializing variables needed for constructing TagSet
-    int id;
-    std::string name;
-    std::vector<Tag> tags_vector;
-    
-    if (json->get("ID").is<double>()){
-        // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
-        id = int(json->get("ID").get<double>());
-    }
-    else{
-        // If ID is not a double, return an empty TagSet because that is a breaking error
-        return TagSet();
-    };
-
-    if (json->get("Name").is<std::string>()){
-        name = json->get("Name").get<std::string>();
-    }
-    else{
-        // If Name is not a double, return an empty TagSet because that is a breaking error
-        return TagSet();
-    };
-
-
-    // Get a vector of picojson::values for creating Tags 
-    const std::vector<picojson::value> tags = json->get("Tags").get<picojson::array>();
-    // Loop through the vector of picojson::values, 
-    // validate that the json data meets specifications, 
-    // and populate the empty tags_vector with Tags
-    for (picojson::value tag : tags){
-        // Initialize variables needed for Tag creation with default values
-        // to use in case provided JSON data does not meet validation requirements
-        int tag_id;
-        std::string tag_name;
-        bool active = false;
-        int date_created = -1;
-        std::string desc = "";
-        int community_id = -1;
-        std::string type = "";
-
-        if (tag.get("ID").is<double>()){
-            // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
-            tag_id = int(tag.get("ID").get<double>());
-        }
-        else{
-            // If ID is not a double, return an empty TagSet because that is a breaking error
-            std::cout << "Invalid Tag ID" << "\n";
-            return TagSet();
-        }
-
-        if (tag.get("Name").is<std::string>()){
-            tag_name = tag.get("Name").get<std::string>();
-        }
-        else{
-            // If Name is not a string, return an empty TagSet because that is a breaking error
-            std::cout << "Invalid Name" << "\n";
-            return TagSet();
-        }
-
-        if (tag.get("Active").is<bool>()){ active = tag.get("Active").get<bool>(); }
-
-        // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
-        if (tag.get("Date Created").is<double>()){ date_created = int(tag.get("Date Created").get<double>()); }
-        
-        if (tag.get("Desc").is<std::string>()){ desc = tag.get("Desc").get<std::string>(); }
-        
-        // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
-        if (tag.get("Comm ID").is<double>()){ community_id = int(tag.get("Comm ID").get<double>()); }
-        
-        if (tag.get("Type").is<std::string>()){ tag.get("Type").get<std::string>(); }
-        
-        Tag tag_class = Tag{
-            tag_id,
-            tag_name,
-            active,
-            date_created,
-            desc,
-            community_id,
-            type
-        };
-        tags_vector.push_back(tag_class);
-    };
-
-    TagSet tag_set = TagSet{
-        id,
-        name,
-        tags_vector
-    };
-
-    return tag_set;
 }
