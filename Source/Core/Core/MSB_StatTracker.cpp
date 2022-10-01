@@ -1644,8 +1644,8 @@ void StatTracker::setRecordStatus(bool inBool) {
     mTrackerInfo.mRecord = inBool;
 
     std::map<int, Tag::TagSet> dummy_tag_sets = Tag::getDummyTagSets();
-    std::cout << dummy_tag_sets[0].tag_ids_string() << "\n";
-    std::cout << dummy_tag_sets[0].tag_names_string() << "\n";
+    std::cout << dummy_tag_sets.at(1).tag_ids_string() << "\n";
+    std::cout << dummy_tag_sets.at(1).tag_names_string() << "\n";
 
     std::optional<Tag::TagSet> dummy_tag_set = Tag::getDummyTagSet();
     if (dummy_tag_set) {
@@ -1653,8 +1653,12 @@ void StatTracker::setRecordStatus(bool inBool) {
     }
 
     std::map<int, Tag::TagSet> tag_sets = Tag::getAvailableTagSets(m_http, "YYoXDBoQg6rBc23T4xs_qmPWZxubBO9v9cq8UjJkmD0");
-    std::cout << tag_sets[0].tag_ids_string() << "\n";
-    std::cout << tag_sets[0].tag_names_string() << "\n";
+    for (const auto &tag_set_pair : tag_sets) {
+        std::cout << "MAP KEY: " << tag_set_pair.first << "\n";
+        std::cout << "MAP VALUE ID: " << tag_set_pair.second.id << "\n";
+    }
+    std::cout << tag_sets.at(1).tag_ids_string() << "\n";
+    std::cout << tag_sets.at(1).tag_names_string() << "\n";
 
     std::optional<Tag::TagSet> tag_set = Tag::getTagSet(m_http, 1);
     if (tag_set) {

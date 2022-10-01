@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <utility>
 
 #include "HttpRequest.h"
 
@@ -281,8 +282,8 @@ namespace Tag
             std::optional<TagSet> tag_set = convertPicoJsonTagSet(tag_set_pico_json);     
 
             // If tag_set is valid, add to tag_sets vector
-            if (tag_set) {
-                tag_sets.emplace(tag_set.value().id, tag_set);
+            if (tag_set) {                
+                tag_sets.insert(std::make_pair(tag_set.value().id, tag_set.value()));
             }
         }
         
@@ -342,8 +343,8 @@ namespace Tag
 
         std::map<int, TagSet> dummy_tag_sets;
 
-        dummy_tag_sets.emplace(tag_set_a.id, tag_set_a);
-        dummy_tag_sets.emplace(tag_set_b.id, tag_set_b);
+        dummy_tag_sets.insert(std::make_pair(tag_set_a.id, tag_set_a));
+        dummy_tag_sets.insert(std::make_pair(tag_set_b.id, tag_set_b));
 
         return dummy_tag_sets;
     }
