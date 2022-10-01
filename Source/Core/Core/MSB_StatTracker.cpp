@@ -1643,7 +1643,16 @@ void StatTracker::setRecordStatus(bool inBool) {
     std::cout << "Record Status=" << inBool << "\n";
     mTrackerInfo.mRecord = inBool;
 
-    std::vector<Tag::TagSet> tag_sets = Tag::getAvailableTagSets(m_http, "YYoXDBoQg6rBc23T4xs_qmPWZxubBO9v9cq8UjJkmD0");
+    std::map<int, Tag::TagSet> dummy_tag_sets = Tag::getDummyTagSets();
+    std::cout << dummy_tag_sets[0].tag_ids_string() << "\n";
+    std::cout << dummy_tag_sets[0].tag_names_string() << "\n";
+
+    std::optional<Tag::TagSet> dummy_tag_set = Tag::getDummyTagSet();
+    if (dummy_tag_set) {
+        std::cout << dummy_tag_set.value().id << "\n";
+    }
+
+    std::map<int, Tag::TagSet> tag_sets = Tag::getAvailableTagSets(m_http, "YYoXDBoQg6rBc23T4xs_qmPWZxubBO9v9cq8UjJkmD0");
     std::cout << tag_sets[0].tag_ids_string() << "\n";
     std::cout << tag_sets[0].tag_names_string() << "\n";
 

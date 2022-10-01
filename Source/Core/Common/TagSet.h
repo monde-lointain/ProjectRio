@@ -220,7 +220,34 @@ namespace Tag
         return tag_set;
     }
 
-    static std::vector<TagSet> getAvailableTagSets(Common::HttpRequest &http, std::string rio_key){
+    static std::optional<TagSet> getDummyTagSet() {
+        return TagSet(
+            1,
+            "Dummy Tag Set 1",
+            {
+                Tag(
+                    1,
+                    "Fake Tag 1",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition"
+                ), 
+                Tag(
+                    2,
+                    "Fake Tag 2",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition"
+                ), 
+            }
+        );
+    }
+
+    static std::map<int, TagSet> getAvailableTagSets(Common::HttpRequest &http, std::string rio_key){
         std::stringstream sstm;
         sstm << "{\"Active\":\"true\", \"Rio Key\":\"" << rio_key << "\"}";
         std::string payload = sstm.str(); 
@@ -232,19 +259,19 @@ namespace Tag
 
         if (!response){
             std::cout << "No Response" << "\n";
-            std::vector<TagSet> empty_vector;
-            return empty_vector;
+            std::map<int, TagSet> empty_map;
+            return empty_map;
         }
 
         auto json = ParseResponse(response.value());
         if (!json){
             std::cout << "No JSON" << "\n"; 
-            std::vector<TagSet> empty_vector;
-            return empty_vector;
+            std::map<int, TagSet> empty_map;
+            return empty_map;
         }
 
         // Initalize vector that will be populated with TagSets and returned at end of function
-        std::vector<TagSet> tag_sets;
+        std::map<int, TagSet> tag_sets;
 
         // Create a vector of tag_sets as picojson objects
         std::vector<picojson::value> tag_sets_pico_json = json->get("Tag Sets").get<picojson::array>();
@@ -255,10 +282,69 @@ namespace Tag
 
             // If tag_set is valid, add to tag_sets vector
             if (tag_set) {
-                tag_sets.push_back(tag_set.value());
+                tag_sets.emplace(tag_set.value().id, tag_set);
             }
         }
         
         return tag_sets;
+    }
+
+    static std::map<int, TagSet> getDummyTagSets() {
+        TagSet tag_set_a = TagSet(
+            1,
+            "Dummy Tag Set 1",
+            {
+                Tag(
+                    1,
+                    "Fake Tag 1",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition"
+                ), 
+                Tag(
+                    2,
+                    "Fake Tag 2",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition"
+                ), 
+            }
+        );
+
+        TagSet tag_set_b = TagSet(
+            2,
+            "Dummy Tag Set 2",
+            {
+                Tag(
+                    1,
+                    "Fake Tag",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition"
+                ),
+                Tag(
+                    2,
+                    "Fake Tag 2",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition"
+                ),
+            }
+        );
+
+        std::map<int, TagSet> dummy_tag_sets;
+
+        dummy_tag_sets.emplace(tag_set_a.id, tag_set_a);
+        dummy_tag_sets.emplace(tag_set_b.id, tag_set_b);
+
+        return dummy_tag_sets;
     }
 }
