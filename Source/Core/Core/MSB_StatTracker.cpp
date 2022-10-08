@@ -686,11 +686,7 @@ void StatTracker::logContact(Event& in_event){
     contact->ball_y_velo.read_value();
     contact->ball_z_velo.read_value();
     contact->ball_contact_x_pos.read_value();
-    contact->ball_contact_y_pos.read_value();
     contact->ball_contact_z_pos.read_value();
-    contact->bat_contact_x_pos.read_value();
-    contact->bat_contact_y_pos.read_value();
-    contact->bat_contact_z_pos.read_value();
     contact->contact_absolute.read_value();
     contact->contact_quality.read_value();
     contact->rng1.read_value();
@@ -724,6 +720,8 @@ void StatTracker::logPitch(Event& in_event){
     in_event.pitch->pitch_speed        = Memory::Read_U8(aAB_PitchSpeed);
 
     in_event.pitch->ball_z_strike_vs_ball = Memory::Read_U32(aAB_PitchBallPosZStrikezone);
+    in_event.pitch->bat_contact_x_pos.read_value();
+    in_event.pitch->bat_contact_z_pos.read_value();
 
     float ballposz_strikezone = floatConverter(in_event.pitch->ball_z_strike_vs_ball);
     float strikezone_left = floatConverter(Memory::Read_U32(aAB_PitchStrikezoneEdgeLeft));
@@ -1088,6 +1086,8 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
             json_stream << "        \"Pitch Speed\": "        << std::to_string(pitch->pitch_speed) << ",\n";
             json_stream << "        \"Ball Position - Strikezone\": "   << floatConverter(pitch->ball_z_strike_vs_ball) << ",\n";
             json_stream << "        \"In Strikezone\": "      << std::to_string(pitch->ball_in_strikezone) << ",\n";
+            json_stream << "        \"" << pitch->bat_contact_x_pos.name << "\": " << floatConverter(pitch->bat_contact_x_pos.get_value()) << ",\n";
+            json_stream << "        \"" << pitch->bat_contact_z_pos.name << "\": " << floatConverter(pitch->bat_contact_z_pos.get_value()) << ",\n";
             json_stream << "        \"DB\": "                 << std::to_string(pitch->db) << ",\n";
             json_stream << "        \"Type of Swing\": "      << decode("Swing", pitch->type_of_swing, inDecode);
             
@@ -1121,13 +1121,8 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
                 json_stream << "          \"" << contact->ball_z_velo.name << "\": " << floatConverter(contact->ball_z_velo.get_value()) << ",\n";
 
                 json_stream << "          \"" << contact->ball_contact_x_pos.name << "\": " << floatConverter(contact->ball_contact_x_pos.get_value()) << ",\n";
-                json_stream << "          \"" << contact->ball_contact_y_pos.name << "\": " << floatConverter(contact->ball_contact_y_pos.get_value()) << ",\n";
                 json_stream << "          \"" << contact->ball_contact_z_pos.name << "\": " << floatConverter(contact->ball_contact_z_pos.get_value()) << ",\n";
-                
-                json_stream << "          \"" << contact->bat_contact_x_pos.name << "\": " << floatConverter(contact->bat_contact_x_pos.get_value()) << ",\n";
-                json_stream << "          \"" << contact->bat_contact_y_pos.name << "\": " << floatConverter(contact->bat_contact_y_pos.get_value()) << ",\n";
-                json_stream << "          \"" << contact->bat_contact_z_pos.name << "\": " << floatConverter(contact->bat_contact_z_pos.get_value()) << ",\n";
-                
+                                
                 json_stream << "          \"" << contact->ball_x_pos.name << "\": " << floatConverter(contact->ball_x_pos.get_value()) << ",\n";
                 json_stream << "          \"" << contact->ball_y_pos.name << "\": " << floatConverter(contact->ball_y_pos.get_value()) << ",\n";
                 json_stream << "          \"" << contact->ball_z_pos.name << "\": " << floatConverter(contact->ball_z_pos.get_value()) << ",\n";
@@ -1402,6 +1397,8 @@ std::string StatTracker::getHUDJSON(std::string in_event_num, Event& in_curr_eve
         json_stream << "      \"Pitch Speed\": "        << std::to_string(pitch->pitch_speed) << ",\n";
         json_stream << "      \"Ball Position - Strikezone\": "   << floatConverter(pitch->ball_z_strike_vs_ball) << ",\n";
         json_stream << "      \"In Strikezone\": "      << std::to_string(pitch->ball_in_strikezone) << ",\n";
+        json_stream << "        \"" << pitch->bat_contact_x_pos.name << "\": " << floatConverter(pitch->bat_contact_x_pos.get_value()) << ",\n";
+        json_stream << "        \"" << pitch->bat_contact_z_pos.name << "\": " << floatConverter(pitch->bat_contact_z_pos.get_value()) << ",\n";
         json_stream << "      \"DB\": "                 << std::to_string(pitch->db) << ",\n";
         json_stream << "      \"Type of Swing\": "      << decode("Swing", pitch->type_of_swing, inDecode);
         
@@ -1430,11 +1427,7 @@ std::string StatTracker::getHUDJSON(std::string in_event_num, Event& in_curr_eve
             json_stream << "        \"" << contact->ball_y_velo.name << "\": " << floatConverter(contact->ball_y_velo.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_z_velo.name << "\": " << floatConverter(contact->ball_z_velo.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_contact_x_pos.name << "\": " << floatConverter(contact->ball_contact_x_pos.get_value()) << ",\n";
-            json_stream << "        \"" << contact->ball_contact_y_pos.name << "\": " << floatConverter(contact->ball_contact_y_pos.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_contact_z_pos.name << "\": " << floatConverter(contact->ball_contact_z_pos.get_value()) << ",\n";
-            json_stream << "        \"" << contact->bat_contact_x_pos.name << "\": " << floatConverter(contact->bat_contact_x_pos.get_value()) << ",\n";
-            json_stream << "        \"" << contact->bat_contact_y_pos.name << "\": " << floatConverter(contact->bat_contact_y_pos.get_value()) << ",\n";
-            json_stream << "        \"" << contact->bat_contact_z_pos.name << "\": " << floatConverter(contact->bat_contact_z_pos.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_x_pos.name << "\": " << floatConverter(contact->ball_x_pos.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_y_pos.name << "\": " << floatConverter(contact->ball_y_pos.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_z_pos.name << "\": " << floatConverter(contact->ball_z_pos.get_value()) << ",\n";

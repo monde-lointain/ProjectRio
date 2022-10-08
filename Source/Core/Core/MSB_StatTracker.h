@@ -595,12 +595,7 @@ public:
         TrackerAdr<u32> ball_z_velo = TrackerAdr<u32>("Ball Velocity - Z", aAB_BallVel_Z, 0xFFFFFFFF);
 
         TrackerAdr<u32> ball_contact_x_pos = TrackerAdr<u32>("Ball Contact Pos - X", aAB_BallContactPos_X, 0xFFFFFFFF);
-        TrackerAdr<u32> ball_contact_y_pos = TrackerAdr<u32>("Ball Contact Pos - Y", aAB_BallContactPos_Y, 0xFFFFFFFF);
         TrackerAdr<u32> ball_contact_z_pos = TrackerAdr<u32>("Ball Contact Pos - Z", aAB_BallContactPos_Z, 0xFFFFFFFF);
-
-        TrackerAdr<u32> bat_contact_x_pos = TrackerAdr<u32>("Bat Contact Pos - X", aAB_BatContactPos_X, 0xFFFFFFFF);
-        TrackerAdr<u32> bat_contact_y_pos = TrackerAdr<u32>("Bat Contact Pos - Y", aAB_BatContactPos_Y, 0xFFFFFFFF);
-        TrackerAdr<u32> bat_contact_z_pos = TrackerAdr<u32>("Bat Contact Pos - Z", aAB_BatContactPos_Z, 0xFFFFFFFF);
 
         TrackerAdr<u32> contact_absolute = TrackerAdr<u32>("Contact Absolute", aAB_ContactAbsolute, 0xFFFFFFFF);
         TrackerAdr<u32> contact_quality = TrackerAdr<u32>("Contact Quality", aAB_ContactQuality, 0xFFFFFFFF);
@@ -668,6 +663,9 @@ public:
         //Ball pos for pitch visualization
         u32 ball_z_strike_vs_ball;
         u8 ball_in_strikezone;
+        
+        TrackerAdr<u32> bat_contact_x_pos = TrackerAdr<u32>("Bat Contact Pos - X", aAB_BatContactPos_X, 0xFFFFFFFF);
+        TrackerAdr<u32> bat_contact_z_pos = TrackerAdr<u32>("Bat Contact Pos - Z", aAB_BatContactPos_Z, 0xFFFFFFFF);
 
         //For integrosity - TODO
         u8 db = 0;
