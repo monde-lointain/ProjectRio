@@ -180,6 +180,7 @@ void StatTracker::lookForTriggerEvents(){
                     m_game_info.getCurrentEvent().runner_3 = logRunnerInfo(3);
 
                     if (!m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].initialized){
+                        std::cout << " Initializing fielders for team: " << std::to_string(!m_game_info.getCurrentEvent().half_inning) << "\n";
                         m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].initTracker(!m_game_info.getCurrentEvent().half_inning);
                     }
 
@@ -242,6 +243,7 @@ void StatTracker::lookForTriggerEvents(){
                         std::cout << "Pitch detected!\n";
 
                         //Check for fielder swaps
+                        std::cout << " Evaluating fielders for team: " << std::to_string(!m_game_info.getCurrentEvent().half_inning) << "\n";
                         m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].evaluateFielders();
 
                         m_game_info.getCurrentEvent().pitch = std::make_optional(Pitch());
@@ -946,11 +948,11 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
             json_stream << "        \"Outs Pitched\": "        << std::to_string(def_stat.outs_pitched) << ",\n";
             json_stream << "        \"Batters Per Position\": [\n";
 
-            if (m_fielder_tracker[team].batterOutsAtAnyPosition(roster, 0)){
+            if (m_fielder_tracker[team].battersAtAnyPosition(roster, 0)){
                 json_stream << "          {\n";
                 for (int pos = 0; pos < cNumOfPositions; ++pos) {
                     if (m_fielder_tracker[team].fielder_map[roster].batter_count_by_position[pos] > 0){
-                        std::string comma = (m_fielder_tracker[team].batterOutsAtAnyPosition(roster, pos+1)) ? "," : "";
+                        std::string comma = (m_fielder_tracker[team].battersAtAnyPosition(roster, pos+1)) ? "," : "";
                         json_stream << "            \"" << cPosition.at(pos) << "\": " << std::to_string(m_fielder_tracker[team].fielder_map[roster].batter_count_by_position[pos]) << comma << "\n";
                     }
                 }
@@ -1280,11 +1282,11 @@ std::string StatTracker::getHUDJSON(std::string in_event_num, Event& in_curr_eve
             json_stream << "      \"Outs Pitched\": "        << std::to_string(def_stat.outs_pitched) << ",\n";
             json_stream << "      \"Batters Per Position\": [\n";
 
-            if (m_fielder_tracker[team].batterOutsAtAnyPosition(roster, 0)){
+            if (m_fielder_tracker[team].battersAtAnyPosition(roster, 0)){
                 json_stream << "        {\n";
                 for (int pos = 0; pos < cNumOfPositions; ++pos) {
                     if (m_fielder_tracker[team].fielder_map[roster].batter_count_by_position[pos] > 0){
-                        std::string comma = (m_fielder_tracker[team].batterOutsAtAnyPosition(roster, pos+1)) ? "," : "";
+                        std::string comma = (m_fielder_tracker[team].battersAtAnyPosition(roster, pos+1)) ? "," : "";
                         json_stream << "            \"" << cPosition.at(pos) << "\": " << std::to_string(m_fielder_tracker[team].fielder_map[roster].batter_count_by_position[pos]) << comma << "\n";
                     }
                 }
@@ -1645,18 +1647,18 @@ void StatTracker::setRecordStatus(bool inBool) {
         std::cout << dummy_tag_set.value().id << "\n";
     }
 
-    std::map<int, Tag::TagSet> tag_sets = Tag::getAvailableTagSets(m_http, "YYoXDBoQg6rBc23T4xs_qmPWZxubBO9v9cq8UjJkmD0");
-    for (const auto &tag_set_pair : tag_sets) {
-        std::cout << "MAP KEY: " << tag_set_pair.first << "\n";
-        std::cout << "MAP VALUE ID: " << tag_set_pair.second.id << "\n";
-    }
-    std::cout << tag_sets.at(1).tag_ids_string() << "\n";
-    std::cout << tag_sets.at(1).tag_names_string() << "\n";
+    // std::map<int, Tag::TagSet> tag_sets = Tag::getAvailableTagSets(m_http, "YYoXDBoQg6rBc23T4xs_qmPWZxubBO9v9cq8UjJkmD0");
+    // for (const auto &tag_set_pair : tag_sets) {
+    //     std::cout << "MAP KEY: " << tag_set_pair.first << "\n";
+    //     std::cout << "MAP VALUE ID: " << tag_set_pair.second.id << "\n";
+    // }
+    // std::cout << tag_sets.at(1).tag_ids_string() << "\n";
+    // std::cout << tag_sets.at(1).tag_names_string() << "\n";
 
-    std::optional<Tag::TagSet> tag_set = Tag::getTagSet(m_http, 1);
-    if (tag_set) {
-        std::cout << tag_set.value().id << "\n";
-    }
+    // std::optional<Tag::TagSet> tag_set = Tag::getTagSet(m_http, 1);
+    // if (tag_set) {
+    //     std::cout << tag_set.value().id << "\n";
+    // }
 }
 
 void StatTracker::setTagSetId(Tag::TagSet tag_set) {
@@ -1710,8 +1712,6 @@ void StatTracker::initPlayerInfo(){
     if (m_game_info.team0_port == 0xFF && m_game_info.team1_port == 0xFF){
         //From Roeming
         std::array<u8, 2> ports = {Memory::Read_U8(0x800e874c), Memory::Read_U8(0x800e874d)};
-        m_game_info.home_port = ports[1];
-        m_game_info.away_port = ports[0];
 
         //u32 TeamBatting = Memory::Read_U32(0x80892990);
         //u32 TeamPitching = Memory::Read_U32(0x80892994);
@@ -1729,6 +1729,9 @@ void StatTracker::initPlayerInfo(){
             m_game_info.team1_port = BattingPort;
         }
 
+        m_game_info.home_port = FieldingPort;
+        m_game_info.away_port = BattingPort;
+
         readPlayerNames(!m_game_info.netplay);
 
         std::string away_player_name;
@@ -1741,6 +1744,8 @@ void StatTracker::initPlayerInfo(){
             away_player_name = m_game_info.team1_player.GetUsername();
             home_player_name = m_game_info.team0_player.GetUsername();
         }
+        std::cout << "ports[0]" << std::to_string(Memory::Read_U8(0x800e874c)) << " ports[1]" << std::to_string(Memory::Read_U8(0x800e874d)) << "\n";
+        std::cout << "BattingPort" << std::to_string(Memory::Read_U32(0x80892990)) << " FieldingPort" << std::to_string(Memory::Read_U32(0x80892994)) << "\n";
 
         std::cout << "Info:  Fielder Port=" << std::to_string(FieldingPort) << ", Batter Port=" << std::to_string(BattingPort) << "\n";
         std::cout << "Info:  Team0 Port=" << std::to_string(m_game_info.team0_port) << ", Team1 Port=" << std::to_string(m_game_info.team1_port) << "\n";

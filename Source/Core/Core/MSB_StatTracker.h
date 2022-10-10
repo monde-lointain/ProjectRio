@@ -663,7 +663,7 @@ public:
         //Ball pos for pitch visualization
         u32 ball_z_strike_vs_ball;
         u8 ball_in_strikezone;
-        
+
         TrackerAdr<u32> bat_contact_x_pos = TrackerAdr<u32>("Bat Contact Pos - X", aAB_BatContactPos_X, 0xFFFFFFFF);
         TrackerAdr<u32> bat_contact_z_pos = TrackerAdr<u32>("Bat Contact Pos - Z", aAB_BatContactPos_Z, 0xFFFFFFFF);
 
@@ -877,9 +877,9 @@ public:
                 //If new position, mark changed (unless this is the first pitch of the AB (pos==0xFF))
                 //Then set new position
                 if (fielder_map[roster_loc].current_pos != pos){
-                    //std::cout << " Team=" << std::to_string(team_id) << " RosterLoc:" << std::to_string(roster_loc) 
-                    //            << " swapped from " << cPosition.at(fielder_map[roster_loc].current_pos)
-                    //            << " to " << cPosition.at(pos) << std::endl; 
+                    std::cout << " Team=" << std::to_string(team_id) << " RosterLoc:" << std::to_string(roster_loc) 
+                                << " swapped from " << cPosition.at(fielder_map[roster_loc].current_pos)
+                                << " to " << cPosition.at(pos) << std::endl; 
                     fielder_map[roster_loc].current_pos = pos; 
                 }
 
