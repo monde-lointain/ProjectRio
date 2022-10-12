@@ -1605,12 +1605,12 @@ void SetDisplayStats()
 {
   if (s_stat_tracker)
   {
-      s_stat_tracker->setDisplayStats(g_ActiveConfig.bShowStats);
+      s_stat_tracker->setDisplayStats(Config::Get(Config::MAIN_ENABLE_DEBUGGING));
   }
   else {
     s_stat_tracker = std::make_unique<StatTracker>();
     s_stat_tracker->init();
-    s_stat_tracker->setDisplayStats(g_ActiveConfig.bShowStats);
+    s_stat_tracker->setDisplayStats(Config::Get(Config::MAIN_ENABLE_DEBUGGING));
   }
 }
 

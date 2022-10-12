@@ -64,7 +64,6 @@ void VideoConfig::Refresh()
   bShowFPS = Config::Get(Config::GFX_SHOW_FPS);
   bShowBatterFielder = Config::Get(Config::GFX_SHOW_BATTER_FIELDER);
   bTrainingModeOverlay = Config::Get(Config::GFX_TRAINING_MODE);
-  bShowStats = Config::Get(Config::GFX_SHOW_STATS);
   bShowNetPlayPing = Config::Get(Config::GFX_SHOW_NETPLAY_PING);
   bShowNetPlayMessages = Config::Get(Config::GFX_SHOW_NETPLAY_MESSAGES);
   bLogRenderTimeToFile = Config::Get(Config::GFX_LOG_RENDER_TIME_TO_FILE);
