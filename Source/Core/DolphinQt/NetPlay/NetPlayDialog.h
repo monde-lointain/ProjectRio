@@ -150,6 +150,7 @@ private:
   QMenu* m_network_menu;
   QMenu* m_md5_menu;
   QMenu* m_other_menu;
+  QMenu* m_gecko_menu;
   QPushButton* m_game_button;
   QPushButton* m_start_button;
   QLabel* m_buffer_label;
@@ -165,6 +166,9 @@ private:
   QAction* m_golf_mode_overlay_action;
   QAction* m_fixed_delay_action;
   QAction* m_hide_remote_gbas_action;
+  QAction* m_night_stadium_action;
+  QAction* m_disable_music_action;
+  QAction* m_never_cull_action;
   QPushButton* m_quit_button;
   QSplitter* m_splitter;
   // QCheckBox* m_ranked_box;

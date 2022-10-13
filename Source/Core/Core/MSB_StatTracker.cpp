@@ -1702,6 +1702,11 @@ void StatTracker::setNetplayerUserInfo(std::map<int, LocalPlayers::LocalPlayers:
     m_game_info.NetplayerUserInfo[player.first] = player.second;
 }
 
+void StatTracker::setGameID(u32 gameID)
+{
+  m_game_info.game_id = gameID;
+}
+
 void StatTracker::initPlayerInfo(){
     //Read start time
     std::time_t unix_time = std::time(nullptr);

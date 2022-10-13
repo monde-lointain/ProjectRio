@@ -162,8 +162,13 @@ double GetActualEmulationSpeed()
 void FrameUpdateOnCPUThread()
 {
   if (NetPlay::IsNetPlayRunning()) {
-    NetPlay::NetPlayClient::SendTimeBase();
-
+    //NetPlay::NetPlayClient::SendTimeBase();
+    u64 frame = Movie::GetCurrentFrame();
+    if (frame % 60)
+    {
+      u8 checksumId = (frame / 60) & 0xF;
+      NetPlay::NetPlayClient::SendChecksum(checksumId, frame);
+    }
     if (s_stat_tracker){
       //Figure out if client is hosting via netplay settings. Could use local player as well
       bool is_hosting = NetPlay::GetNetSettings().m_IsHosting;
@@ -183,6 +188,22 @@ void FrameUpdateOnCPUThread()
       s_stat_tracker->setNetplaySession(false);
     }
   }
+
+  if (s_stat_tracker)
+  {
+    s_stat_tracker->Run();
+  }
+
+  SetNetplayerUserInfo();
+  SetDisplayStats();
+
+  CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(), isNight());
+
+  AutoGolfMode();
+  TrainingMode();
+  DisplayBatterFielder();
+  SetAvgPing();
+  SendGameID();
 }
 
 void OnFrameEnd()
@@ -191,28 +212,6 @@ void OnFrameEnd()
   if (s_memory_watcher)
     s_memory_watcher->Step();
 #endif
-
-  // prevent cpu thread racing
-  RunAsCPUThread(
-      [&] {
-        SetNetplayerUserInfo();
-        SetDisplayStats();
-
-        if (s_stat_tracker)
-        {
-          s_stat_tracker->Run();
-        }
-
-        // always enable netplay event code for ranked games
-        // if not ranked, check if code is checked off
-        CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(),
-                                 isNight());
-
-        AutoGolfMode();
-        TrainingMode();
-        DisplayBatterFielder();
-        SetAvgPing();
-      });
 }
 
 void AutoGolfMode()
@@ -223,7 +222,7 @@ void AutoGolfMode()
     u8 FielderPort = Memory::Read_U8(aFielderPort);
     bool isField = Memory::Read_U8(aIsField) == 1;
 
-    if (BatterPort == 0)
+    if (Memory::Read_U8(aMatchStarted) == 0)
       return;  // means game hasn't started yet
 
     // makes the player who paused the golfer
@@ -473,6 +472,20 @@ void DisplayBatterFielder()
                              OSD::Duration::SHORT, portColor[FielderPort]);
       }
     }
+  }
+}
+
+void SendGameID()
+{
+  bool matchStarted = Memory::Read_U32(aMatchStarted) == 1 ? true : false;
+
+  if (!matchStarted)
+    hasSentGameID = false;
+
+  if (!hasSentGameID && matchStarted)
+  {
+    NetPlay::NetPlayClient::SendGameID(Memory::Read_U32(aGameId));
+    hasSentGameID = true;
   }
 }
 
@@ -1607,14 +1620,27 @@ void SetDisplayStats()
 {
   if (s_stat_tracker)
   {
-      s_stat_tracker->setDisplayStats(g_ActiveConfig.bShowStats);
+      s_stat_tracker->setDisplayStats(Config::Get(Config::MAIN_ENABLE_DEBUGGING));
   }
   else {
     s_stat_tracker = std::make_unique<StatTracker>();
     s_stat_tracker->init();
-    s_stat_tracker->setDisplayStats(g_ActiveConfig.bShowStats);
+    s_stat_tracker->setDisplayStats(Config::Get(Config::MAIN_ENABLE_DEBUGGING));
   }
 }
 
+void SetGameID(u32 gameID)
+{
+  if (s_stat_tracker)
+  {
+    s_stat_tracker->setGameID(gameID);
+  }
+  else
+  {
+    s_stat_tracker = std::make_unique<StatTracker>();
+    s_stat_tracker->init();
+    s_stat_tracker->setGameID(gameID);
+  }
+}
 
 }  // namespace Core

@@ -145,6 +145,7 @@ public:
   void RequestGolfControl();
   std::string GetCurrentGolfer();
   std::vector<std::string> v_ActiveGeckoCodes;
+  std::map<u8, u32> ourChecksum;
 
   // Send and receive pads values
   bool WiimoteUpdate(int _number, u8* data, std::size_t size, u8 reporting_mode);
@@ -168,6 +169,7 @@ public:
   bool PortHasPlayerAssigned(int port);
 
   static void SendTimeBase();
+  static void SendChecksum(u8 checksumId, u64 frame);
   bool DoAllPlayersHaveGame();
 
   static void AutoGolfMode(bool isField, int BatPort, int FieldPort);
@@ -177,6 +179,7 @@ public:
   static u32 sGetPlayersMaxPing();
   static std::string sGetPortPlayer(int PortInt);
   static std::map<int, LocalPlayers::LocalPlayers::Player> getNetplayerUserInfo();
+  static void SendGameID(u32 gameId);
   bool m_ranked_client = false;
   bool m_night_stadium = false;
   
@@ -335,10 +338,10 @@ private:
   void OnSendCodesMsg(sf::Packet& packet);
   void OnCoinFlipMsg(sf::Packet& packet);
   void OnNightMsg(sf::Packet& packet);
+  void OnChecksumMsg(sf::Packet& packet);
+  void OnGameIDMsg(sf::Packet& packet);
 
   int framesAsGolfer = 0;
-  int framesShouldBeGolfer = 0; // how many frames nextGolferPort has been the same port
-  int nextGolferPort = 0; // the port that should become the golfer
 
   bool m_is_connected = false;
   ConnectionState m_connection_state = ConnectionState::Failure;
