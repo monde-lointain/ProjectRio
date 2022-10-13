@@ -179,6 +179,7 @@ public:
   static u32 sGetPlayersMaxPing();
   static std::string sGetPortPlayer(int PortInt);
   static std::map<int, LocalPlayers::LocalPlayers::Player> getNetplayerUserInfo();
+  static void SendGameID(u32 gameId);
   bool m_ranked_client = false;
   bool m_night_stadium = false;
   
@@ -338,6 +339,7 @@ private:
   void OnCoinFlipMsg(sf::Packet& packet);
   void OnNightMsg(sf::Packet& packet);
   void OnChecksumMsg(sf::Packet& packet);
+  void OnGameIDMsg(sf::Packet& packet);
 
   int framesAsGolfer = 0;
 

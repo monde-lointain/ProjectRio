@@ -203,6 +203,7 @@ void FrameUpdateOnCPUThread()
   TrainingMode();
   DisplayBatterFielder();
   SetAvgPing();
+  SendGameID();
 }
 
 void OnFrameEnd()
@@ -471,6 +472,20 @@ void DisplayBatterFielder()
                              OSD::Duration::SHORT, portColor[FielderPort]);
       }
     }
+  }
+}
+
+void SendGameID()
+{
+  bool matchStarted = Memory::Read_U32(aMatchStarted) == 1 ? true : false;
+
+  if (!matchStarted)
+    hasSentGameID = false;
+
+  if (!hasSentGameID && matchStarted)
+  {
+    NetPlay::NetPlayClient::SendGameID(Memory::Read_U32(aGameId));
+    hasSentGameID = true;
   }
 }
 
@@ -1614,5 +1629,18 @@ void SetDisplayStats()
   }
 }
 
+void SetGameID(u32 gameID)
+{
+  if (s_stat_tracker)
+  {
+    s_stat_tracker->setGameID(gameID);
+  }
+  else
+  {
+    s_stat_tracker = std::make_unique<StatTracker>();
+    s_stat_tracker->init();
+    s_stat_tracker->setGameID(gameID);
+  }
+}
 
 }  // namespace Core

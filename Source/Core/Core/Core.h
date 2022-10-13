@@ -186,7 +186,9 @@ void TrainingMode();
 void DisplayBatterFielder();
 void SetAvgPing();
 void SetNetplayerUserInfo();
+void SendGameID();
 
+bool hasSentGameID = false;
 static int avgPing = 0;
 static int nPing = 0;
 static int nLagSpikes = 0;
@@ -197,6 +199,7 @@ void setRecordStatus(bool inNewStatus);
 void setSubmitStatus(bool inNewStatus);
 void setRankedStatus(bool inNewStatus);
 void SetDisplayStats();
+void SetGameID(u32 gameID);
 
 union{
   u32 num;

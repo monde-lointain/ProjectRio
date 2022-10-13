@@ -78,6 +78,7 @@
 #include <Core/GeckoCodeConfig.h>
 #include "Core/HotkeyManager.h"
 #include "Core/LocalPlayersConfig.h"
+#include "Core/Core.h"
 
 namespace NetPlay
 {
@@ -494,6 +495,10 @@ void NetPlayClient::OnData(sf::Packet& packet)
 
   case MessageID::Checksum:
     OnChecksumMsg(packet);
+    break;
+
+  case MessageID::GameID:
+    OnGameIDMsg(packet);
     break;
 
   default:
@@ -1576,6 +1581,14 @@ void NetPlayClient::OnChecksumMsg(sf::Packet& packet)
   }
 }
 
+void NetPlayClient::OnGameIDMsg(sf::Packet& packet)
+{
+  u32 gameID;
+  packet >> gameID;
+
+  Core::SetGameID(gameID);
+}
+
 void NetPlayClient::Send(const sf::Packet& packet, const u8 channel_id)
 {
   ENetPacket* epac =
@@ -2569,13 +2582,23 @@ void NetPlayClient::RequestGolfControl()
   RequestGolfControl(m_local_player->pid);
 }
 
+void NetPlayClient::SendGameID(u32 gameId)
+{
+  // only golfer sends
+  if (netplay_client->m_local_player->pid != netplay_client->m_current_golfer)
+    return;
+
+  sf::Packet packet;
+  packet << MessageID::GameID;
+  packet << gameId;
+  netplay_client->SendAsync(std::move(packet));
+}
 
 // Auto Golf Mode functions
 void NetPlayClient::AutoGolfMode(bool isField, int BatPort, int FieldPort)
 {
   netplay_client->AutoGolfModeLogic(isField, BatPort, FieldPort);
 }
-
 
 void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
 {

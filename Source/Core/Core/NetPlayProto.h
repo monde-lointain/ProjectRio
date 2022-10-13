@@ -197,6 +197,7 @@ enum class MessageID : u8
   SendCodes = 0xF3,
   CoinFlip = 0xF4,
   NightStadium = 0xF5,
+  GameID = 0xF6,
 };
 
 enum class ConnectionError : u8

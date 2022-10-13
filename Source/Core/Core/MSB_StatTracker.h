@@ -990,6 +990,7 @@ public:
     void setLagSpikes(int nLagSpikes);
     void setNetplayerUserInfo(std::map<int, LocalPlayers::LocalPlayers::Player> userInfo);
     void setDisplayStats(bool bDisplay);
+    void setGameID(u32 gameID);
     // void setTags(std::vector tags);
     // void setTagSet(int tagset);
 
