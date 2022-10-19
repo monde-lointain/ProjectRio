@@ -336,9 +336,9 @@ void NetPlaySetupDialog::CreateMainLayout()
   m_main_layout->addWidget(m_button_box, 3, 0, 1, -1);
 
   // Tabs
-  m_tab_widget->addTab(connection_widget, tr("Connect"));
-  m_tab_widget->addTab(host_widget, tr("Host"));
-  m_tab_widget->addTab(browser_widget, tr("Browser"));
+  m_tab_widget->addTab(connection_widget, tr("Join Private Lobby"));
+  m_tab_widget->addTab(host_widget, tr("Host Lobby"));
+  m_tab_widget->addTab(browser_widget, tr("Lobby Browser"));
 
 
   setLayout(m_main_layout);
