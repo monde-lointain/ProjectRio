@@ -588,7 +588,9 @@ void GameList::OpenWiki()
 
   QString game_id = QString::fromStdString(game->GetGameID());
   QString url =
-      QStringLiteral("https://wiki.dolphin-emu.org/dolphin-redirect.php?gameid=").append(game_id);
+      game_id.toStdString() == "GYQE01" ?
+          QStringLiteral("https://mario-superstar-baseball.fandom.com/wiki/Mario_Superstar_Baseball_Wiki")
+      : QStringLiteral("https://wiki.dolphin-emu.org/dolphin-redirect.php?gameid=").append(game_id);
   QDesktopServices::openUrl(QUrl(url));
 }
 
