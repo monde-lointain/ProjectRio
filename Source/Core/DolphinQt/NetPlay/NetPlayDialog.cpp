@@ -518,6 +518,7 @@ void NetPlayDialog::OnActiveGeckoCodes(std::string codeStr)
 void NetPlayDialog::OnGameMode(std::string mode)
 {
   DisplayMessage(tr("Game Mode: %1").arg(QString::fromStdString(mode)), "goldenrod");
+  Core::SetGameMode(mode);
 }
 
 void NetPlayDialog::OnRankedEnabled(bool is_ranked)

@@ -194,12 +194,23 @@ static int nPing = 0;
 static int nLagSpikes = 0;
 static int previousPing = 0;
 
+//enum class GameMode
+//{
+//  StarsOff,
+//  StarsOn,
+//  Custom,
+//};
+
+// auto GameMode = GameMode::Custom;
+u32 GameMode = 0;
+
 //void setRankedStatus(bool inNewStatus);
 void setRecordStatus(bool inNewStatus);
 void setSubmitStatus(bool inNewStatus);
 void setRankedStatus(bool inNewStatus);
 void SetDisplayStats();
 void SetGameID(u32 gameID);
+void SetGameMode(std::string mode);
 
 union{
   u32 num;

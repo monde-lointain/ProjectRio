@@ -10,9 +10,14 @@
 
 class DefaultGeckoCodes {
   public:
-    void RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bIsNight);
+    void RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bIsNight, u32 uGameMode);
 
   private:
+    bool NetplayEventCode;
+    bool IsRanked;
+    bool IsNight;
+    u32 GameMode;
+
 
     // Default Rumble On [LittleCoaks]
     static const u32 aControllerRumble = 0x80366177;

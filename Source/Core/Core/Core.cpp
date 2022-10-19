@@ -197,7 +197,7 @@ void FrameUpdateOnCPUThread()
   SetNetplayerUserInfo();
   SetDisplayStats();
 
-  CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(), isNight());
+  CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(), isNight(), GameMode);
 
   AutoGolfMode();
   TrainingMode();
@@ -1640,6 +1640,25 @@ void SetGameID(u32 gameID)
     s_stat_tracker = std::make_unique<StatTracker>();
     s_stat_tracker->init();
     s_stat_tracker->setGameID(gameID);
+  }
+}
+
+void SetGameMode(std::string mode)
+{
+  if (mode == "Superstars OFF")
+  {
+    GameMode = 1;
+    //GameMode = GameMode::StarsOff;
+  }
+  else if (mode == "Superstars ON")
+  {
+    GameMode = 2;
+    //GameMode = GameMode::StarsOn;
+  }
+  else
+  {
+    GameMode = 0;
+    //GameMode = GameMode::Custom;
   }
 }
 
