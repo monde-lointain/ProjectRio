@@ -187,6 +187,7 @@ void DisplayBatterFielder();
 void SetAvgPing();
 void SetNetplayerUserInfo();
 void SendGameID();
+void RunDraftTimer();
 
 bool hasSentGameID = false;
 static int avgPing = 0;
@@ -219,6 +220,8 @@ union{
 
 bool previousContactMade = false;
 
+int draftTimer = 0;
+
 static const u32 aOpponentPort = 0x802EBF92;
 static const u32 aFielderPort = 0x802EBF94;
 static const u32 aBatterPort = 0x802EBF95;
@@ -244,6 +247,7 @@ static const u32 aWallBallPort = 0x80890AD9; // port of character pitching in wa
 static const u32 aMinigameID = 0x808980DE;  // 3 == Barrel Batter; 2 == Wall Ball; 1 == Bom-omb Derby; 4 == Chain Chomp Sprint; 5 == Piranha Panic; 6 == Star Dash; 7 == Grand Prix
 static const u32 aNetplayEventCode = 0x802EBF96;
 static const u32 aWhoPaused = 0x8039D7D3; // 2 == fielder, 1 == batter
-static const u32 aMatchStarted = 0x8036F3A8; // bool for if a game is in session
+static const u32 aMatchStarted = 0x80317376;  // bool for if a game is in session
+static const u32 aSceneId = 0x800E877F;
 
 }  // namespace Core

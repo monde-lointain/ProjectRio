@@ -204,6 +204,7 @@ void FrameUpdateOnCPUThread()
   DisplayBatterFielder();
   SetAvgPing();
   SendGameID();
+  RunDraftTimer();
 }
 
 void OnFrameEnd()
@@ -477,15 +478,50 @@ void DisplayBatterFielder()
 
 void SendGameID()
 {
-  bool matchStarted = Memory::Read_U32(aMatchStarted) == 1 ? true : false;
-
-  if (!matchStarted)
-    hasSentGameID = false;
-
-  if (!hasSentGameID && matchStarted)
+  if (NetPlay::IsNetPlayRunning())
   {
-    NetPlay::NetPlayClient::SendGameID(Memory::Read_U32(aGameId));
-    hasSentGameID = true;
+    bool matchStarted = Memory::Read_U32(aMatchStarted) == 1 ? true : false;
+
+    if (!matchStarted)
+      hasSentGameID = false;
+
+    if (!hasSentGameID && matchStarted)
+    {
+      NetPlay::NetPlayClient::SendGameID(Memory::Read_U32(aGameId));
+      hasSentGameID = true;
+    }
+  }
+}
+
+void RunDraftTimer()
+{
+  // if they have the config off or if it's not 1st frame of second
+  if (Movie::GetCurrentFrame() % 60 != 0)
+    return;
+
+  u8 scene = Memory::Read_U8(aSceneId);
+
+  if (scene < 0x9)
+    draftTimer = 0;
+
+  else if (scene < 0xC) // pause clock after draft
+  {
+    draftTimer++;
+    u32 draftMinutes = draftTimer / 60;
+    u32 draftSeconds = draftTimer % 60;
+    if (g_ActiveConfig.bDraftTimer)
+    {
+      if (draftSeconds >= 10)
+      {
+        OSD::AddTypedMessage(OSD::MessageType::DraftTimer,
+                             fmt::format("Draft:  {}:{}", draftMinutes, draftSeconds), 2000);
+      }
+      else
+      {
+        OSD::AddTypedMessage(OSD::MessageType::DraftTimer,
+                             fmt::format("Draft:  {}:0{}", draftMinutes, draftSeconds), 2000);
+      }
+    }
   }
 }
 
