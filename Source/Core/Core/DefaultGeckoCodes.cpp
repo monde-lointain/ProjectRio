@@ -8,7 +8,7 @@ void DefaultGeckoCodes::RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bo
   NetplayEventCode = bNetplayEventCode;
   IsRanked = bIsRanked;
   IsNight = bIsNight;
-  GameMode = uGameMode;
+  GameMode = uGameMode; //1 == stars off, 2 == stars on, 0 == anything else
 
   aWriteAddr = 0x802ED200;  // starting asm write addr
 
@@ -71,12 +71,6 @@ void DefaultGeckoCodes::InjectNetplayEventCode()
 
   Memory::Write_U8(0x1, aUnlockEverything_5);
 
-  if (!(IsRanked && GameMode == 1))  // if stars off ranked, don't unlock superstars
-  {
-    for (int i = 0; i <= 0x35; i++)
-      Memory::Write_U8(0x1, aUnlockEverything_6 + i);
-  }
-
   for (int i = 0; i <= 0x3; i++)
     Memory::Write_U8(0x1, aUnlockEverything_7 + i);
 
@@ -99,6 +93,17 @@ void DefaultGeckoCodes::AddRankedCodes()
   WriteAsm(sPitchClock);
  
   Memory::Write_U32(0x386001bb, aBatSound);
+
+  if (GameMode != 1)  // if stars off ranked, don't unlock superstars
+  {
+    for (int i = 0; i <= 0x35; i++)
+      Memory::Write_U8(0x1, aUnlockEverything_6 + i);
+  }
+
+  if (Memory::Read_U32(aBanBatterPausing) == 0xA0040006)
+    Memory::Write_U32(0x38000000, aBanBatterPausing);
+
+  WriteAsm(sHazardless);
 }
 
 
