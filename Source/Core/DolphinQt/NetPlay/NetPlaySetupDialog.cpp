@@ -35,6 +35,7 @@
 #include "UICommon/NetPlayIndex.h"
 #include "DolphinQt/NetPlay/NetPlayBrowser.h"
 #include "Common/Version.h"
+#include <qdesktopservices.h>
 //#include "Core/NetPlayServer.h"
 
 
@@ -134,6 +135,7 @@ void NetPlaySetupDialog::CreateMainLayout()
   m_connection_type = new QComboBox;
   m_connection_type->setCurrentIndex(1); // default to traversal server
   m_reset_traversal_button = new NonDefaultQPushButton(tr("Reset Traversal Settings"));
+  m_latency_test = new QPushButton(tr("Internet Test"));
   m_tab_widget = new QTabWidget;
 
   m_nickname_edit->setValidator(
@@ -332,6 +334,7 @@ void NetPlaySetupDialog::CreateMainLayout()
   m_main_layout->addWidget(m_reset_traversal_button, 0, 2);
   m_main_layout->addWidget(new QLabel(tr("Nickname:")), 1, 0);
   m_main_layout->addWidget(m_nickname_edit, 1, 1);
+  m_main_layout->addWidget(m_latency_test, 1, 2);
   m_main_layout->addWidget(m_tab_widget, 2, 0, 1, -1);
   m_main_layout->addWidget(m_button_box, 3, 0, 1, -1);
 
@@ -402,6 +405,7 @@ void NetPlaySetupDialog::ConnectWidgets()
   connect(m_button_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
   connect(m_reset_traversal_button, &QPushButton::clicked, this,
           &NetPlaySetupDialog::ResetTraversalHost);
+  connect(m_latency_test, &QPushButton::clicked, this, &NetPlaySetupDialog::OpenInternetTest);
   connect(m_host_server_browser, &QCheckBox::toggled, this, [this](bool value) {
     m_host_server_region->setEnabled(value);
     m_host_server_name->setEnabled(value);
@@ -608,6 +612,12 @@ void NetPlaySetupDialog::ResetTraversalHost()
       tr("Reset Traversal Server to %1:%2")
           .arg(QString::fromStdString(Config::NETPLAY_TRAVERSAL_SERVER.GetDefaultValue()),
                QString::number(Config::NETPLAY_TRAVERSAL_PORT.GetDefaultValue())));
+}
+
+void NetPlaySetupDialog::OpenInternetTest()
+{
+  QString url = QStringLiteral("https://testmy.net/latency?testALL=1");
+  QDesktopServices::openUrl(QUrl(url));
 }
 
 
