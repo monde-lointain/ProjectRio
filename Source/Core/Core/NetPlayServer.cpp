@@ -888,6 +888,20 @@ unsigned int NetPlayServer::OnData(sf::Packet& packet, Client& player)
   }
   break;
 
+  case MessageID::Stadium:
+  {
+    int stadium;
+    packet >> stadium;
+
+    // send codes to other clients
+    sf::Packet spac;
+    spac << MessageID::Stadium;
+    spac << stadium;
+
+    SendToClients(spac);
+  }
+  break;
+
   case MessageID::PlayerData:
   {
     u8 port;

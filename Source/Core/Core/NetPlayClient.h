@@ -73,6 +73,7 @@ public:
   virtual void OnCoinFlipResult(int coinFlip) = 0;
   virtual void OnNightResult(bool is_night) = 0;
   virtual void OnActiveGeckoCodes(std::string codeStr) = 0;
+  virtual void OnRandomStadiumResult(int stadium) = 0;
   virtual bool IsSpectating() = 0;
   virtual void SetSpectating(bool spectating) = 0;
 
@@ -139,6 +140,7 @@ public:
   void GetActiveGeckoCodes();
   void SendCoinFlip(int randNum);
   void SendNightStadium(bool is_night);
+  void SendStadium(int stadium);
   void RequestStopGame();
   void SendPowerButtonEvent();
   void RequestGolfControl(PlayerId pid);
@@ -340,6 +342,7 @@ private:
   void OnNightMsg(sf::Packet& packet);
   void OnChecksumMsg(sf::Packet& packet);
   void OnGameIDMsg(sf::Packet& packet);
+  void OnStadiumMsg(sf::Packet& packet);
 
   int framesAsGolfer = 0;
 

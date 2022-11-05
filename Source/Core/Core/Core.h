@@ -190,6 +190,7 @@ void SendGameID();
 void RunDraftTimer();
 
 bool hasSentGameID = false;
+bool bHasWrittenStadium = false;
 static int avgPing = 0;
 static int nPing = 0;
 static int nLagSpikes = 0;
@@ -212,6 +213,7 @@ void setRankedStatus(bool inNewStatus);
 void SetDisplayStats();
 void SetGameID(u32 gameID);
 void SetGameMode(std::string mode);
+void DefaultStadiumGecko(u8 stadium = 0xff, u8 stadium_id = 0xff);
 
 union{
   u32 num;
@@ -221,6 +223,8 @@ union{
 bool previousContactMade = false;
 
 int draftTimer = 0;
+u8 m_stadium = 0;
+u8 m_stadium_id = 0;
 
 static const u32 aOpponentPort = 0x802EBF92;
 static const u32 aFielderPort = 0x802EBF94;

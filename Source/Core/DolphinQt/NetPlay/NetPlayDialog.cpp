@@ -267,6 +267,9 @@ void NetPlayDialog::CreateChatLayout()
   m_chat_send_button = new QPushButton(tr("Send"));
   m_coin_flipper = new QPushButton(tr("Coin Flip"));
   m_coin_flipper->setAutoDefault(false); // prevents accidental coin flips when trying to send a chat msg
+  m_random_stadium = new QPushButton(tr("Stadium"));
+  m_random_stadium->setAutoDefault(false);
+  m_random_stadium->setToolTip(tr("Generates a random stadium and posts in the netplay chat."));
 
   // This button will get re-enabled when something gets entered into the chat box
   m_chat_send_button->setEnabled(false);
@@ -281,6 +284,7 @@ void NetPlayDialog::CreateChatLayout()
   layout->addWidget(m_chat_type_edit, 1, 0);
   layout->addWidget(m_chat_send_button, 1, 1);
   layout->addWidget(m_coin_flipper, 1, 2);
+  layout->addWidget(m_random_stadium, 1, 3);
 
   m_chat_box->setLayout(layout);
 }
@@ -382,6 +386,7 @@ void NetPlayDialog::ConnectWidgets()
   connect(m_spectator_toggle, &QCheckBox::stateChanged, this, &NetPlayDialog::OnSpectatorToggle);
 
   connect(m_coin_flipper, &QPushButton::clicked, this, &NetPlayDialog::OnCoinFlip);
+  connect(m_random_stadium, &QPushButton::clicked, this, &NetPlayDialog::OnRandomStadium);
   
   const auto hia_function = [this](bool enable) {
     if (m_host_input_authority != enable)
@@ -493,6 +498,53 @@ void NetPlayDialog::OnCoinFlipResult(int coinNum)
     DisplayMessage(tr("Heads"), "lightslategray");
   else
     DisplayMessage(tr("Tails"), "lightslategray");
+}
+
+void NetPlayDialog::OnRandomStadium()
+{
+  u8 randNum;
+  randNum = rand() % 6;
+  Settings::Instance().GetNetPlayClient()->SendStadium(randNum);
+}
+
+void NetPlayDialog::OnRandomStadiumResult(int stadium)
+{
+  bool error = false;
+  u8 stadium_id = 0;
+
+  switch (stadium) {
+  case 0:
+    DisplayMessage(tr("Mario Stadium!"), "DodgerBlue");
+    break;
+  case 1:
+    DisplayMessage(tr("Peach's Garden!"), "DodgerBlue");
+    stadium_id = 4;
+    break;
+  case 2:
+    DisplayMessage(tr("Wario's Palace!"), "DodgerBlue");
+    stadium_id = 2;
+    break;
+  case 3:
+    DisplayMessage(tr("Yoshi's Park!"), "DodgerBlue");
+    stadium_id = 3;
+    break;
+  case 4:
+    DisplayMessage(tr("DK's Jungle!"), "DodgerBlue");
+    stadium_id = 5;
+    break;
+  case 5:
+    DisplayMessage(tr("Bowser's Castle!"), "DodgerBlue");
+    stadium_id = 1;
+    break;
+  default:
+    DisplayMessage(tr("There was an error. Please try again"), "red");
+    error = true;
+  }
+
+  if (error)
+    return;
+
+  Core::DefaultStadiumGecko(stadium, stadium_id);
 }
 
 void NetPlayDialog::OnNightResult(bool is_night)

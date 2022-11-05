@@ -209,6 +209,12 @@ void FrameUpdateOnCPUThread()
   SetAvgPing();
   SendGameID();
   RunDraftTimer();
+
+  if (!bHasWrittenStadium && Movie::GetCurrentFrame() == 240 && NetPlay::IsNetPlayRunning()) // wait 4 seconds
+  {
+    DefaultStadiumGecko();
+    bHasWrittenStadium = true;
+  }
 }
 
 void OnFrameEnd()
@@ -712,6 +718,10 @@ bool Init(std::unique_ptr<BootParameters> boot, const WindowSystemInfo& wsi)
   // Start the emu thread
   s_is_booting.Set();
   s_emu_thread = std::thread(EmuThread, std::move(boot), prepared_wsi);
+
+  // do this too lol ~LittleCoaks
+  bHasWrittenStadium = false;
+
   return true;
 }
 
@@ -1699,6 +1709,25 @@ void SetGameMode(std::string mode)
   {
     GameMode = 0;
     //GameMode = GameMode::Custom;
+  }
+}
+
+void DefaultStadiumGecko(u8 stadium, u8 stadium_id)
+{
+  if (IsRunning())
+  {
+    if (stadium == 0xff)
+      stadium = m_stadium;
+    if (stadium_id == 0xff)
+      stadium_id = m_stadium_id;
+    
+    Memory::Write_U32(0x38000000 + stadium, 0x80650934);
+    Memory::Write_U8(stadium_id, 0x80E016A7);
+  }
+  else
+  {
+    m_stadium = stadium;
+    m_stadium_id = stadium_id;
   }
 }
 

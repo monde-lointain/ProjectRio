@@ -77,6 +77,7 @@ public:
   void OnGameMode(std::string mode) override;
   void OnRankedEnabled(bool is_ranked) override;
   void OnCoinFlipResult(int coinNum);
+  void OnRandomStadiumResult(int stadium);
   void OnNightResult(bool is_night);
   void OnActiveGeckoCodes(std::string codeStr);
   bool IsSpectating() override;
@@ -118,6 +119,7 @@ private:
   void OnChat();
   void OnSpectatorToggle();
   void OnCoinFlip();
+  void OnRandomStadium();
   void OnStart();
   void DisplayMessage(const QString& msg, const std::string& color,
                       int duration = OSD::Duration::NORMAL);
@@ -174,6 +176,7 @@ private:
   // QCheckBox* m_ranked_box;
   QActionGroup* m_network_mode_group;
   QPushButton* m_coin_flipper;
+  QPushButton* m_random_stadium;
   QCheckBox* m_night_stadium;
   QCheckBox* m_spectator_toggle;
 

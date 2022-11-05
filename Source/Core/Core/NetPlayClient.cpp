@@ -501,6 +501,10 @@ void NetPlayClient::OnData(sf::Packet& packet)
     OnGameIDMsg(packet);
     break;
 
+  case MessageID::Stadium:
+    OnStadiumMsg(packet);
+    break;
+
   default:
     PanicAlertFmtT("Unknown message received with id : {0}", static_cast<u8>(mid));
     break;
@@ -1589,6 +1593,13 @@ void NetPlayClient::OnGameIDMsg(sf::Packet& packet)
   Core::SetGameID(gameID);
 }
 
+void NetPlayClient::OnStadiumMsg(sf::Packet& packet)
+{
+  int stadium;
+  packet >> stadium;
+  m_dialog->OnRandomStadiumResult(stadium);
+}
+
 void NetPlayClient::Send(const sf::Packet& packet, const u8 channel_id)
 {
   ENetPacket* epac =
@@ -1869,6 +1880,15 @@ void NetPlayClient::SendCoinFlip(int randNum)
   sf::Packet packet;
   packet << MessageID::CoinFlip;
   packet << randNum;
+
+  SendAsync(std::move(packet));
+}
+
+void NetPlayClient::SendStadium(int stadium)
+{
+  sf::Packet packet;
+  packet << MessageID::Stadium;
+  packet << stadium;
 
   SendAsync(std::move(packet));
 }
