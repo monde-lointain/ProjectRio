@@ -199,6 +199,7 @@ enum class MessageID : u8
   NightStadium = 0xF5,
   GameID = 0xF6,
   Stadium = 0xF7,
+  DisableReplays = 0xF8,
 };
 
 enum class ConnectionError : u8

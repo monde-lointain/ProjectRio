@@ -79,6 +79,7 @@ public:
   void OnCoinFlipResult(int coinNum);
   void OnRandomStadiumResult(int stadium);
   void OnNightResult(bool is_night);
+  void OnDisableReplaysResult(bool disable);
   void OnActiveGeckoCodes(std::string codeStr);
   bool IsSpectating() override;
   void SetSpectating(bool spectating) override;
@@ -178,6 +179,7 @@ private:
   QPushButton* m_coin_flipper;
   QPushButton* m_random_stadium;
   QCheckBox* m_night_stadium;
+  QCheckBox* m_disable_replays;
   QCheckBox* m_spectator_toggle;
 
   QGridLayout* m_main_layout;

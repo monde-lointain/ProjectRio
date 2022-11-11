@@ -10,13 +10,14 @@
 
 class DefaultGeckoCodes {
   public:
-    void RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bIsNight, u32 uGameMode);
+    void RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bIsNight, u32 uGameMode, bool bDisableReplays);
 
   private:
     bool NetplayEventCode;
     bool IsRanked;
     bool IsNight;
     u32 GameMode;
+    bool DisableReplays;
 
 
     // Default Rumble On [LittleCoaks]
@@ -61,6 +62,9 @@ class DefaultGeckoCodes {
 
     // Ban Batter Pausing [LittleCoaks]
     static const u32 aBanBatterPausing = 0x806eed5c; // write to 0x38000000 if equal to 0xA0040006
+
+    // Disable Replays [LittleCoaks]
+    static const u32 aDisableReplays = 0x806bb214; // write  to 0x38000000 if equal to 0x38000001
 
     void InjectNetplayEventCode();
     void AddRankedCodes();

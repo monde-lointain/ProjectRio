@@ -3,12 +3,13 @@
 #include "Config/NetplaySettings.h"
 #include <VideoCommon/VideoConfig.h>
 
-void DefaultGeckoCodes::RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bIsNight, u32 uGameMode)
+void DefaultGeckoCodes::RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bIsNight, u32 uGameMode, bool bDisableReplays)
 {
   NetplayEventCode = bNetplayEventCode;
   IsRanked = bIsRanked;
   IsNight = bIsNight;
   GameMode = uGameMode; //1 == stars off, 2 == stars on, 0 == anything else
+  DisableReplays = bDisableReplays;
 
   aWriteAddr = 0x802ED200;  // starting asm write addr
 
@@ -32,6 +33,12 @@ void DefaultGeckoCodes::RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bo
   {
     if (IsNight)
       WriteAsm(sNightStadium);
+
+    if (DisableReplays)
+    {
+      if (Memory::Read_U32(aDisableReplays) == 0x38000001)
+        Memory::Write_U32(0x38000000, aDisableReplays);
+    }
 
     if (Config::Get(Config::NETPLAY_DISABLE_MUSIC))
     {

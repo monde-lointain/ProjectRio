@@ -148,6 +148,7 @@ void NetPlayDialog::CreateMainLayout()
   //    " always record stats, ignoring user configurations."));
   //m_coin_flipper = new QPushButton(tr("Coin Flip"));
   m_night_stadium = new QCheckBox(tr("Night Mario Stadium"));
+  m_disable_replays = new QCheckBox(tr("Disable Replays"));
   m_spectator_toggle = new QCheckBox(tr("Spectator"));
 
   m_data_menu = m_menu_bar->addMenu(tr("Data"));
@@ -251,6 +252,7 @@ void NetPlayDialog::CreateMainLayout()
   //options_widget->addWidget(m_ranked_box, 0, 3, Qt::AlignVCenter);
   //options_widget->addWidget(m_coin_flipper, 0, 3, Qt::AlignVCenter);
   options_widget->addWidget(m_night_stadium, 0, 3, Qt::AlignVCenter);
+  options_widget->addWidget(m_disable_replays, 0, 4, Qt::AlignVCenter);
   options_widget->addWidget(m_spectator_toggle, 0, 5, Qt::AlignVCenter | Qt::AlignRight);
 
   m_main_layout->addLayout(options_widget, 2, 0, 1, -1, Qt::AlignRight);
@@ -380,6 +382,15 @@ void NetPlayDialog::ConnectWidgets()
       server->AdjustNightStadium(is_night);
     else
       client->SendNightStadium(is_night);
+  });
+
+  connect(m_disable_replays, &QCheckBox::stateChanged, [this](bool disable) {
+    auto client = Settings::Instance().GetNetPlayClient();
+    auto server = Settings::Instance().GetNetPlayServer();
+    if (server)
+      server->AdjustReplays(disable);
+    else
+      client->SendNightStadium(disable);
   });
 
 
@@ -550,9 +561,21 @@ void NetPlayDialog::OnRandomStadiumResult(int stadium)
 void NetPlayDialog::OnNightResult(bool is_night)
 {
   if (is_night)
+  {
     DisplayMessage(tr("Night Stadium Enabled"), "steelblue");
+  }
   else
+  {
     DisplayMessage(tr("Night Stadium Disabled"), "coral");
+  }
+}
+
+void NetPlayDialog::OnDisableReplaysResult(bool disable)
+{
+  if (disable)
+    DisplayMessage(tr("Replays Disabled"), "coral");
+  else
+    DisplayMessage(tr("Replays Enabled"), "steelblue");
 }
 
 void NetPlayDialog::DisplayActiveGeckoCodes()
@@ -686,6 +709,8 @@ void NetPlayDialog::show(std::string nickname, bool use_traversal)
   m_kick_button->setEnabled(false);
   m_night_stadium->setHidden(!is_hosting);
   m_night_stadium->setEnabled(is_hosting);
+  m_disable_replays->setHidden(!is_hosting);
+  m_disable_replays->setEnabled(is_hosting);
   //m_ranked_box->setHidden(!is_hosting);
   //m_ranked_box->setEnabled(is_hosting);
 
@@ -1004,6 +1029,7 @@ void NetPlayDialog::SetOptionsEnabled(bool enabled)
     m_fixed_delay_action->setEnabled(enabled);
     // m_ranked_box->setCheckable(enabled);
     m_night_stadium->setCheckable(enabled);
+    m_disable_replays->setCheckable(enabled);
     //m_night_stadium_action->setEnabled(enabled);
     m_disable_music_action->setEnabled(enabled);
     m_never_cull_action->setEnabled(enabled);
@@ -1049,6 +1075,7 @@ void NetPlayDialog::OnMsgStartGame()
         client->StartGame(game->GetFilePath());
         // m_ranked_box->setEnabled(false);
         m_night_stadium->setEnabled(false);
+        m_disable_replays->setEnabled(false);
       }
       else
         PanicAlertFmtT("Selected game doesn't exist in game list!");
@@ -1068,6 +1095,7 @@ void NetPlayDialog::OnMsgStopGame()
 
   const bool is_hosting = IsHosting();
   m_night_stadium->setEnabled(is_hosting);
+  m_disable_replays->setEnabled(is_hosting);
   // m_ranked_box->setEnabled(is_hosting);
   //m_ranked_box->setChecked(client->m_ranked_client);
   m_spectator_toggle->setEnabled(true);

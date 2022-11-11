@@ -72,6 +72,7 @@ public:
   virtual void RankedStartingMsg(bool is_ranked) = 0;
   virtual void OnCoinFlipResult(int coinFlip) = 0;
   virtual void OnNightResult(bool is_night) = 0;
+  virtual void OnDisableReplaysResult(bool disable) = 0;
   virtual void OnActiveGeckoCodes(std::string codeStr) = 0;
   virtual void OnRandomStadiumResult(int stadium) = 0;
   virtual bool IsSpectating() = 0;
@@ -141,6 +142,7 @@ public:
   void SendCoinFlip(int randNum);
   void SendNightStadium(bool is_night);
   void SendStadium(int stadium);
+  void SendDisableReplays(bool disable);
   void RequestStopGame();
   void SendPowerButtonEvent();
   void RequestGolfControl(PlayerId pid);
@@ -178,12 +180,14 @@ public:
   static void DisplayBatterFielder(u8 BatterPortInt, u8 FielderPortInt);
   static bool isRanked();
   static bool isNight();
+  static bool isDisableReplays();
   static u32 sGetPlayersMaxPing();
   static std::string sGetPortPlayer(int PortInt);
   static std::map<int, LocalPlayers::LocalPlayers::Player> getNetplayerUserInfo();
   static void SendGameID(u32 gameId);
   bool m_ranked_client = false;
   bool m_night_stadium = false;
+  bool m_disable_replays = false;
   
   const PadMappingArray& GetPadMapping() const;
   const GBAConfigArray& GetGBAConfig() const;
@@ -343,6 +347,7 @@ private:
   void OnChecksumMsg(sf::Packet& packet);
   void OnGameIDMsg(sf::Packet& packet);
   void OnStadiumMsg(sf::Packet& packet);
+  void OnDisableReplaysMsg(sf::Packet& packet);
 
   int framesAsGolfer = 0;
 

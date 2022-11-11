@@ -201,7 +201,7 @@ void FrameUpdateOnCPUThread()
   SetNetplayerUserInfo();
   SetDisplayStats();
 
-  CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(), isNight(), GameMode);
+  CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(), isNight(), GameMode, isDisableReplays());
 
   AutoGolfMode();
   TrainingMode();
@@ -572,6 +572,13 @@ bool isNight()
   if (!NetPlay::IsNetPlayRunning())
     return false;
   return NetPlay::NetPlayClient::isNight();
+}
+
+bool isDisableReplays()
+{
+  if (!NetPlay::IsNetPlayRunning())
+    return false;
+  return NetPlay::NetPlayClient::isDisableReplays();
 }
 
 void SetAvgPing()

@@ -505,6 +505,10 @@ void NetPlayClient::OnData(sf::Packet& packet)
     OnStadiumMsg(packet);
     break;
 
+  case MessageID::DisableReplays:
+    OnDisableReplaysMsg(packet);
+    break;
+
   default:
     PanicAlertFmtT("Unknown message received with id : {0}", static_cast<u8>(mid));
     break;
@@ -1572,6 +1576,14 @@ void NetPlayClient::OnNightMsg(sf::Packet& packet)
   m_night_stadium = is_night;
 }
 
+void NetPlayClient::OnDisableReplaysMsg(sf::Packet& packet)
+{
+  bool disable;
+  packet >> disable;
+  m_dialog->OnDisableReplaysResult(disable);
+  m_disable_replays = disable;
+}
+
 void NetPlayClient::OnChecksumMsg(sf::Packet& packet)
 {
   u32 inChecksum;
@@ -1624,6 +1636,11 @@ bool NetPlayClient::isRanked()
 bool NetPlayClient::isNight()
 {
   return netplay_client->m_night_stadium;
+}
+
+bool NetPlayClient::isDisableReplays()
+{
+  return netplay_client->m_disable_replays;
 }
 
 void NetPlayClient::DisplayBatterFielder(u8 BatterPortInt, u8 FielderPortInt)
@@ -1843,6 +1860,15 @@ void NetPlayClient::SendNightStadium(bool is_night)
   sf::Packet packet;
   packet << MessageID::NightStadium;
   packet << is_night;
+
+  SendAsync(std::move(packet));
+}
+
+void NetPlayClient::SendDisableReplays(bool disable)
+{
+  sf::Packet packet;
+  packet << MessageID::DisableReplays;
+  packet << disable;
 
   SendAsync(std::move(packet));
 }
