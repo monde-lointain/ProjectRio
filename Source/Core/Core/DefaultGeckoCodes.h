@@ -146,8 +146,9 @@ class DefaultGeckoCodes {
     // Anti Quick Pitch [PeacockSlayer, LittleCoaks]
     const DefaultGeckoCode sAntiQuickPitch = {
         0x806B406C, 0xa01e0006,
-        {0x3DC08089, 0x61CE80DE, 0x89CE0000, 0x2C0E0000, 0x4082001C, 0x38000000,
-        0x3DC08089, 0x61CE0AE0, 0xA1CE0000, 0x2C0E0060, 0x40810008, 0xA01E0006}
+        {0x3DC08089, 0x61CE80DE, 0x89CE0000, 0x2C0E0000, 0x40820030, 0x38000000, 0x3DC08089,
+         0x61CE0AE0, 0xA1CE0000, 0x2C0E0030, 0x4081001C, 0x3DC08089, 0x61CE099D, 0x89CE0000,
+         0x2C0E0001, 0x41820008, 0xA01E0006}
     };
 
     // Default Competitive Rules [LittleCoaks]
