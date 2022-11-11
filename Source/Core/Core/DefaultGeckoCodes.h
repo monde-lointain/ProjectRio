@@ -111,15 +111,16 @@ class DefaultGeckoCodes {
     };
 
     // Store Port Info->0x802EBF94 (fielding port) and 0x802EBF95 (batting port) [LittleCoaks]
-    const DefaultGeckoCode sClearPortInfo_1 = {
-        0x80042CD0, 0,
-        {0x3CA0802E, 0x60A5BF91, 0x3C608089, 0x60632ACA, 0x88630000, 0x2C030001, 0x4182000C,
-        0x38600001, 0x48000008, 0x38600005, 0x98650000, 0x3C60800E, 0x6063874D, 0x88630000,
-        0x38630001, 0x98650001, 0x386001B8}
+    const DefaultGeckoCode sStorePortInfo_1 = {
+        0x80042CD8, 0,
+        {0x9421FFB0, 0xBDC10008, 0x3DE0802E, 0x61EFBF91, 0x3E008089, 0x62102ACA,
+        0x8A100000, 0x2C100001, 0x4182000C, 0x3A000001, 0x48000008, 0x3A000005,
+        0x9A0F0000, 0x3E00800E, 0x6210874D, 0x8A100000, 0x3A100001, 0x9A0F0001,
+        0xB9C10008, 0x38210050, 0x38A0007F}
     };
 
     // Store Port Info [LittleCoaks]
-    const DefaultGeckoCode sClearPortInfo_2 = {
+    const DefaultGeckoCode sStorePortInfo_2 = {
         0x806706B8, 0x3c608089,
         {0x3FE08089, 0x63FF3928, 0x7C04F800, 0x3FE0802E, 0x63FFBF91, 0x41820018, 0x887F0000,
         0x987F0004, 0x887F0001, 0x987F0003, 0x48000014, 0x887F0001, 0x987F0004, 0x887F0000,
@@ -263,7 +264,7 @@ class DefaultGeckoCodes {
 
     std::vector<DefaultGeckoCode> sRequiredCodes =
     {sGenerateGameID, sClearGameID_1, sClearGameID_2, sClearGameID_3,
-    sClearPortInfo, sClearHitResult, sClearPortInfo_1, sClearPortInfo_2,
+    sClearPortInfo, sClearHitResult, sStorePortInfo_1, sStorePortInfo_2,
         sRememberWhoQuit_1, sRememberWhoQuit_2, sStoreRandBattingInts, sChecksum};
 
     std::vector<DefaultGeckoCode> sNetplayCodes =
