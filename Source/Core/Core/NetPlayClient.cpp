@@ -2618,6 +2618,7 @@ void NetPlayClient::SendGameID(u32 gameId)
 void NetPlayClient::AutoGolfMode(bool isField, int BatPort, int FieldPort)
 {
   netplay_client->AutoGolfModeLogic(isField, BatPort, FieldPort);
+  INFO_LOG_FMT(NETPLAY, "Auto Golf run"); // this needs to be here for debugger i guess
 }
 
 void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
