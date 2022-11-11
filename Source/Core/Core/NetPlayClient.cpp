@@ -2640,12 +2640,12 @@ void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
   }
 
   // this little block makes it so that the auto golf logic will only complete if the client's been
-  // the golfer for more than 240 frames. this is to ensure that under laggier conditions, a golfer
+  // the golfer for more than 60 frames. this is to ensure that under laggier conditions, a golfer
   // who's game is too far behind doesn't swap the golfer status back and forth for a short while,
   // which can be extra jarring to players
   if (framesAsGolfer < 255) // don't want a memory overflow here
     framesAsGolfer += 1;
-  if (framesAsGolfer <= 240) // delay this so that swapping bugs are way less likely; 4 second lockout window (240 frames)
+  if (framesAsGolfer <= 60) // delay this so that swapping bugs are way less likely; 1 second lockout window (60 frames)
     return;
 
   // if the current golfer is also the one who should be the golfer, return
