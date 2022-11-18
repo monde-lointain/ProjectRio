@@ -180,6 +180,7 @@ float vectorMagnitude(float x, float y, float z);
 float RoundZ(float num);
 bool isRankedMode();
 bool isNight();
+bool isDisableReplays();
 
 void AutoGolfMode();
 void TrainingMode();
@@ -187,12 +188,24 @@ void DisplayBatterFielder();
 void SetAvgPing();
 void SetNetplayerUserInfo();
 void SendGameID();
+void RunDraftTimer();
 
 bool hasSentGameID = false;
+bool bHasWrittenStadium = false;
 static int avgPing = 0;
 static int nPing = 0;
 static int nLagSpikes = 0;
 static int previousPing = 0;
+
+//enum class GameMode
+//{
+//  StarsOff,
+//  StarsOn,
+//  Custom,
+//};
+
+// auto GameMode = GameMode::Custom;
+u32 GameMode = 0;
 
 //void setRankedStatus(bool inNewStatus);
 void setRecordStatus(bool inNewStatus);
@@ -200,6 +213,8 @@ void setSubmitStatus(bool inNewStatus);
 void setRankedStatus(bool inNewStatus);
 void SetDisplayStats();
 void SetGameID(u32 gameID);
+void SetGameMode(std::string mode);
+void DefaultStadiumGecko(u8 stadium = 0xff, u8 stadium_id = 0xff);
 
 union{
   u32 num;
@@ -207,6 +222,10 @@ union{
 } float_converter;
 
 bool previousContactMade = false;
+
+int draftTimer = 0;
+u8 m_stadium = 0;
+u8 m_stadium_id = 0;
 
 static const u32 aOpponentPort = 0x802EBF92;
 static const u32 aFielderPort = 0x802EBF94;
@@ -233,6 +252,7 @@ static const u32 aWallBallPort = 0x80890AD9; // port of character pitching in wa
 static const u32 aMinigameID = 0x808980DE;  // 3 == Barrel Batter; 2 == Wall Ball; 1 == Bom-omb Derby; 4 == Chain Chomp Sprint; 5 == Piranha Panic; 6 == Star Dash; 7 == Grand Prix
 static const u32 aNetplayEventCode = 0x802EBF96;
 static const u32 aWhoPaused = 0x8039D7D3; // 2 == fielder, 1 == batter
-static const u32 aMatchStarted = 0x8036F3A8; // bool for if a game is in session
+static const u32 aMatchStarted = 0x80317376;  // bool for if a game is in session
+static const u32 aSceneId = 0x800E877F;
 
 }  // namespace Core

@@ -501,6 +501,14 @@ void NetPlayClient::OnData(sf::Packet& packet)
     OnGameIDMsg(packet);
     break;
 
+  case MessageID::Stadium:
+    OnStadiumMsg(packet);
+    break;
+
+  case MessageID::DisableReplays:
+    OnDisableReplaysMsg(packet);
+    break;
+
   default:
     PanicAlertFmtT("Unknown message received with id : {0}", static_cast<u8>(mid));
     break;
@@ -1568,6 +1576,14 @@ void NetPlayClient::OnNightMsg(sf::Packet& packet)
   m_night_stadium = is_night;
 }
 
+void NetPlayClient::OnDisableReplaysMsg(sf::Packet& packet)
+{
+  bool disable;
+  packet >> disable;
+  m_dialog->OnDisableReplaysResult(disable);
+  m_disable_replays = disable;
+}
+
 void NetPlayClient::OnChecksumMsg(sf::Packet& packet)
 {
   u32 inChecksum;
@@ -1587,6 +1603,13 @@ void NetPlayClient::OnGameIDMsg(sf::Packet& packet)
   packet >> gameID;
 
   Core::SetGameID(gameID);
+}
+
+void NetPlayClient::OnStadiumMsg(sf::Packet& packet)
+{
+  int stadium;
+  packet >> stadium;
+  m_dialog->OnRandomStadiumResult(stadium);
 }
 
 void NetPlayClient::Send(const sf::Packet& packet, const u8 channel_id)
@@ -1613,6 +1636,11 @@ bool NetPlayClient::isRanked()
 bool NetPlayClient::isNight()
 {
   return netplay_client->m_night_stadium;
+}
+
+bool NetPlayClient::isDisableReplays()
+{
+  return netplay_client->m_disable_replays;
 }
 
 void NetPlayClient::DisplayBatterFielder(u8 BatterPortInt, u8 FielderPortInt)
@@ -1836,6 +1864,15 @@ void NetPlayClient::SendNightStadium(bool is_night)
   SendAsync(std::move(packet));
 }
 
+void NetPlayClient::SendDisableReplays(bool disable)
+{
+  sf::Packet packet;
+  packet << MessageID::DisableReplays;
+  packet << disable;
+
+  SendAsync(std::move(packet));
+}
+
 void NetPlayClient::GetActiveGeckoCodes()
 {
   // don't use any gecko codes if playing ranked
@@ -1869,6 +1906,15 @@ void NetPlayClient::SendCoinFlip(int randNum)
   sf::Packet packet;
   packet << MessageID::CoinFlip;
   packet << randNum;
+
+  SendAsync(std::move(packet));
+}
+
+void NetPlayClient::SendStadium(int stadium)
+{
+  sf::Packet packet;
+  packet << MessageID::Stadium;
+  packet << stadium;
 
   SendAsync(std::move(packet));
 }
@@ -2598,6 +2644,7 @@ void NetPlayClient::SendGameID(u32 gameId)
 void NetPlayClient::AutoGolfMode(bool isField, int BatPort, int FieldPort)
 {
   netplay_client->AutoGolfModeLogic(isField, BatPort, FieldPort);
+  INFO_LOG_FMT(NETPLAY, "Auto Golf run"); // this needs to be here for debugger i guess
 }
 
 void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
@@ -2620,12 +2667,12 @@ void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
   }
 
   // this little block makes it so that the auto golf logic will only complete if the client's been
-  // the golfer for more than 240 frames. this is to ensure that under laggier conditions, a golfer
+  // the golfer for more than 60 frames. this is to ensure that under laggier conditions, a golfer
   // who's game is too far behind doesn't swap the golfer status back and forth for a short while,
   // which can be extra jarring to players
   if (framesAsGolfer < 255) // don't want a memory overflow here
     framesAsGolfer += 1;
-  if (framesAsGolfer <= 240) // delay this so that swapping bugs are way less likely; 4 second lockout window (240 frames)
+  if (framesAsGolfer <= 60) // delay this so that swapping bugs are way less likely; 1 second lockout window (60 frames)
     return;
 
   // if the current golfer is also the one who should be the golfer, return

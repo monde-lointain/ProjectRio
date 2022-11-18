@@ -3,30 +3,47 @@
 #include "Config/NetplaySettings.h"
 #include <VideoCommon/VideoConfig.h>
 
-void DefaultGeckoCodes::RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bIsNight)
+void DefaultGeckoCodes::RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bIsNight, u32 uGameMode, bool bDisableReplays)
 {
+  NetplayEventCode = bNetplayEventCode;
+  IsRanked = bIsRanked;
+  IsNight = bIsNight;
+  GameMode = uGameMode; //1 == stars off, 2 == stars on, 0 == anything else
+  DisableReplays = bDisableReplays;
+
   aWriteAddr = 0x802ED200;  // starting asm write addr
 
   Memory::Write_U8(0x1, aControllerRumble);  // enable rumble
+
+  // this is a very bad and last-minute "fix" to the pitcher stamina bug. i can't find the true source of the bug so i'm
+  // manually fixing it with this line here. will remove soon once bug is truly squashed
+  if (Memory::Read_U8(0x8069BBDD) == 0xC5)
+    Memory::Write_U8(05, 0x8069BBDD);
 
   // handle asm writes for required code
   for (DefaultGeckoCode geckocode : sRequiredCodes)
     WriteAsm(geckocode);
 
-  if (bNetplayEventCode || bIsRanked)
+  if (NetplayEventCode || IsRanked)
     InjectNetplayEventCode();
 
-  if (bIsRanked)
+  if (IsRanked)
     AddRankedCodes();
 
-  if (g_ActiveConfig.bTrainingModeOverlay && !bIsRanked)
+  if (g_ActiveConfig.bTrainingModeOverlay && !IsRanked)
     WriteAsm(sEasyBattingZ);
 
   // Netplay Config Codes
   if (NetPlay::IsNetPlayRunning())
   {
-    if (bIsNight)
+    if (IsNight)
       WriteAsm(sNightStadium);
+
+    if (DisableReplays)
+    {
+      if (Memory::Read_U32(aDisableReplays) == 0x38000001)
+        Memory::Write_U32(0x38000000, aDisableReplays);
+    }
 
     if (Config::Get(Config::NETPLAY_DISABLE_MUSIC))
     {
@@ -54,19 +71,29 @@ void DefaultGeckoCodes::InjectNetplayEventCode()
 
   // Unlock Everything
   Memory::Write_U8(0x2, aUnlockEverything_1);
+
   for (int i = 0; i <= 0x5; i++)
     Memory::Write_U8(0x3, aUnlockEverything_2 + i);
+
   for (int i = 0; i <= 0x5; i++)
     Memory::Write_U8(0x1, aUnlockEverything_3 + i);
+
   for (int i = 0; i <= 0x29; i++)
     Memory::Write_U8(0x1, aUnlockEverything_4 + i);
+
   Memory::Write_U8(0x1, aUnlockEverything_5);
-  for (int i = 0; i <= 0x35; i++)
-    Memory::Write_U8(0x1, aUnlockEverything_6 + i);
+
+  if (!(GameMode == 1 && IsRanked))  // if stars off ranked, don't unlock superstars
+  {
+    for (int i = 0; i <= 0x35; i++)
+      Memory::Write_U8(0x1, aUnlockEverything_6 + i);
+  }
+
   for (int i = 0; i <= 0x3; i++)
     Memory::Write_U8(0x1, aUnlockEverything_7 + i);
-  Memory::Write_U8(0x1, aUnlockEverything_8);
-  Memory::Write_U8(0x1, aUnlockEverything_8 + 1);
+
+  Memory::Write_U16(0x0101, aUnlockEverything_8);
+  //Memory::Write_U8(0x1, aUnlockEverything_8 + 1);
 
   // handle asm writes for netplay codes
   for (DefaultGeckoCode geckocode : sNetplayCodes)
@@ -84,6 +111,11 @@ void DefaultGeckoCodes::AddRankedCodes()
   WriteAsm(sPitchClock);
  
   Memory::Write_U32(0x386001bb, aBatSound);
+
+  if (Memory::Read_U32(aBanBatterPausing) == 0xA0040006)
+    Memory::Write_U32(0x38000000, aBanBatterPausing);
+
+  WriteAsm(sHazardless);
 }
 
 

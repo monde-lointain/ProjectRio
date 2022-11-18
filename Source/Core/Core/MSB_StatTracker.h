@@ -1071,7 +1071,10 @@ public:
 
             //Remove current event, wasn't finished
             auto it = m_game_info.events.find(m_game_info.event_num);
-            m_game_info.events.erase(it);
+            if (&it != NULL)
+            {
+              m_game_info.events.erase(it);
+            }
 
             //Game has ended. Write file but do not submit
             std::string jsonPath = getStatJsonPath("crash.decode.");
