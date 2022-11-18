@@ -15,6 +15,11 @@ void DefaultGeckoCodes::RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bo
 
   Memory::Write_U8(0x1, aControllerRumble);  // enable rumble
 
+  // this is a very bad and last-minute "fix" to the pitcher stamina bug. i can't find the true source of the bug so i'm
+  // manually fixing it with this line here. will remove soon once bug is truly squashed
+  if (Memory::Read_U8(0x8069BBDD) == 0xC5)
+    Memory::Write_U8(05, 0x8069BBDD);
+
   // handle asm writes for required code
   for (DefaultGeckoCode geckocode : sRequiredCodes)
     WriteAsm(geckocode);
