@@ -22,6 +22,7 @@
 #include <QRadioButton>
 #include <QHeaderView>
 #include <QInputDialog>
+#include <QUrl>
 
 #include "Core/Config/NetplaySettings.h"
 #include "Core/NetPlayProto.h"
