@@ -49,6 +49,7 @@ private:
   void ConnectWidgets();
   void PopulateGameList();
   void ResetTraversalHost();
+  void OpenInternetTest();
   std::string LobbyNameString();
 
   // Browser Stuff
@@ -72,6 +73,7 @@ private:
   QGridLayout* m_main_layout;
   QTabWidget* m_tab_widget;
   QPushButton* m_reset_traversal_button;
+  QPushButton* m_latency_test;
 
   // Connection Widget
   QLabel* m_ip_label;

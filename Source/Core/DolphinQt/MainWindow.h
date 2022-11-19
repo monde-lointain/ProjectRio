@@ -11,6 +11,8 @@
 #include <optional>
 #include <string>
 
+#include <Common/HttpRequest.h>
+
 class QStackedWidget;
 class QString;
 
@@ -246,4 +248,6 @@ private:
   WatchWidget* m_watch_widget;
   CheatsManager* m_cheats_manager;
   QByteArray m_render_widget_geometry;
+
+  Common::HttpRequest m_http{std::chrono::minutes{3}};
 };

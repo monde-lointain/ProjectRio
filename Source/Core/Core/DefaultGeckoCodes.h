@@ -10,9 +10,15 @@
 
 class DefaultGeckoCodes {
   public:
-    void RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bIsNight);
+    void RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bIsNight, u32 uGameMode, bool bDisableReplays);
 
   private:
+    bool NetplayEventCode;
+    bool IsRanked;
+    bool IsNight;
+    u32 GameMode;
+    bool DisableReplays;
+
 
     // Default Rumble On [LittleCoaks]
     static const u32 aControllerRumble = 0x80366177;
@@ -54,6 +60,11 @@ class DefaultGeckoCodes {
     static const u32 aNeverCull_3 = 0x806ab8b4;  // write to 0x38000001
     static const u32 aNeverCull_4 = 0x806f7b7c;  // write to 0x38000003 if equal to 0x881a0093
 
+    // Ban Batter Pausing [LittleCoaks]
+    static const u32 aBanBatterPausing = 0x806eed5c; // write to 0x38000000 if equal to 0xA0040006
+
+    // Disable Replays [LittleCoaks]
+    static const u32 aDisableReplays = 0x806bb214; // write  to 0x38000000 if equal to 0x38000001
 
     void InjectNetplayEventCode();
     void AddRankedCodes();
@@ -104,15 +115,16 @@ class DefaultGeckoCodes {
     };
 
     // Store Port Info->0x802EBF94 (fielding port) and 0x802EBF95 (batting port) [LittleCoaks]
-    const DefaultGeckoCode sClearPortInfo_1 = {
-        0x80042CD0, 0,
-        {0x3CA0802E, 0x60A5BF91, 0x3C608089, 0x60632ACA, 0x88630000, 0x2C030001, 0x4182000C,
-        0x38600001, 0x48000008, 0x38600005, 0x98650000, 0x3C60800E, 0x6063874D, 0x88630000,
-        0x38630001, 0x98650001, 0x386001B8}
+    const DefaultGeckoCode sStorePortInfo_1 = {
+        0x80042CD8, 0,
+        {0x9421FFB0, 0xBDC10008, 0x3DE0802E, 0x61EFBF91, 0x3E008089, 0x62102ACA,
+        0x8A100000, 0x2C100001, 0x4182000C, 0x3A000001, 0x48000008, 0x3A000005,
+        0x9A0F0000, 0x3E00800E, 0x6210874D, 0x8A100000, 0x3A100001, 0x9A0F0001,
+        0xB9C10008, 0x38210050, 0x38A0007F}
     };
 
     // Store Port Info [LittleCoaks]
-    const DefaultGeckoCode sClearPortInfo_2 = {
+    const DefaultGeckoCode sStorePortInfo_2 = {
         0x806706B8, 0x3c608089,
         {0x3FE08089, 0x63FF3928, 0x7C04F800, 0x3FE0802E, 0x63FFBF91, 0x41820018, 0x887F0000,
         0x987F0004, 0x887F0001, 0x987F0003, 0x48000014, 0x887F0001, 0x987F0004, 0x887F0000,
@@ -134,8 +146,9 @@ class DefaultGeckoCodes {
     // Anti Quick Pitch [PeacockSlayer, LittleCoaks]
     const DefaultGeckoCode sAntiQuickPitch = {
         0x806B406C, 0xa01e0006,
-        {0x3DC08089, 0x61CE80DE, 0x89CE0000, 0x2C0E0000, 0x4082001C, 0x38000000,
-        0x3DC08089, 0x61CE099D, 0x89CE0000, 0x2C0E0001, 0x41820008, 0xA01E0006}
+        {0x3DC08089, 0x61CE80DE, 0x89CE0000, 0x2C0E0000, 0x40820030, 0x38000000, 0x3DC08089,
+         0x61CE0AE0, 0xA1CE0000, 0x2C0E0030, 0x4081001C, 0x3DC08089, 0x61CE099D, 0x89CE0000,
+         0x2C0E0001, 0x41820008, 0xA01E0006}
     };
 
     // Default Competitive Rules [LittleCoaks]
@@ -227,10 +240,28 @@ class DefaultGeckoCodes {
          0x60A5BFB8, 0x90850000, 0xB8610008, 0x80010104, 0x38210100, 0x7C0803A6,
          0x3C80800F}};  // 0x802EBFB8 == checksum addr
 
+
+    // Hold Z for Easy Batting [Roeming]
     const DefaultGeckoCode sEasyBattingZ = {
         0x806A82B0, 0x28000000,
         {0x3CA08089, 0x38852990, 0x80040000, 0x1C000004, 0x38852A78, 0x7C840214,
         0x80040000, 0x1C000010,0x3885392C, 0x7C840214, 0xA0040000, 0x70000010, 0x28000000}
+    };
+
+
+    // Hazardless Stadiums [LittleCoaks, PeacockSlayer]
+    const DefaultGeckoCode sHazardless = {
+        0x80699508, 0x88a40009,
+        {0x88A40009, 0x9421FFB0, 0xBDC10008, 0x3E608035, 0x6273323B, 0x3AA00000, 0x7E93A8AE,
+         0x2C140001, 0x418200D8, 0x3AB50001, 0x2C150012, 0x4082FFEC, 0x2C050000, 0x418200C4,
+         0x2C050006, 0x408000BC, 0x2C050001, 0x41820028, 0x2C050002, 0x4182003C, 0x2C050003,
+         0x41820050, 0x2C050004, 0x4182005C, 0x2C050005, 0x4182007C, 0x48000090, 0x3E608070,
+         0x627356C8, 0x3E803860, 0x92930000, 0x3E803800, 0x92931638, 0x48000074, 0x3E608070,
+         0x6273FC30, 0x3E806000, 0x92930000, 0x3E803800, 0x9293376C, 0x48000058, 0x3E608069,
+         0x62739E54, 0x3E803800, 0x92930000, 0x48000044, 0x3E60807C, 0x6273D098, 0x3A800000,
+         0x3AA00000, 0x9A930011, 0x3AB50001, 0x3A730014, 0x2C150010, 0x4180FFF0, 0x4800001C,
+         0x3E608072, 0x6273F950, 0x3E806000, 0x92930000, 0x92934A54, 0x92934A60, 0xB9C10008,
+         0x38210050}
     };
 
     void WriteAsm(DefaultGeckoCode CodeBlock);
@@ -238,9 +269,9 @@ class DefaultGeckoCodes {
 
     std::vector<DefaultGeckoCode> sRequiredCodes =
     {sGenerateGameID, sClearGameID_1, sClearGameID_2, sClearGameID_3,
-    sClearPortInfo, sClearHitResult, sClearPortInfo_1, sClearPortInfo_2,
+    sClearPortInfo, sClearHitResult, sStorePortInfo_1, sStorePortInfo_2,
         sRememberWhoQuit_1, sRememberWhoQuit_2, sStoreRandBattingInts, sChecksum};
 
     std::vector<DefaultGeckoCode> sNetplayCodes =
-    {sAntiQuickPitch, sDefaultCompetitiveRules, sManualSelect,sRemoveDingus};
+    {sAntiQuickPitch, sDefaultCompetitiveRules, sManualSelect, sRemoveDingus};
 };

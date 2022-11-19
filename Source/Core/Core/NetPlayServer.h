@@ -69,6 +69,7 @@ public:
 
   void AdjustRankedBox(bool is_ranked);
   void AdjustNightStadium(bool is_night);
+  void AdjustReplays(bool disable);
 
   void KickPlayer(PlayerId player);
 
@@ -173,6 +174,7 @@ private:
 
   bool m_current_ranked_value = false;
   bool m_current_night_value = false;
+  bool m_current_disable_replays_value = false;
 
   std::map<PlayerId, Client> m_players;
 

@@ -11,10 +11,12 @@
 #include <QLineEdit>
 #include <QStringList>
 #include <QTextEdit>
+#include <QPushButton>
 
 //#include "Core/LocalPlayersConfig.h"
 
 #include "DolphinQt/QtUtils/ModalMessageBox.h"
+#include <qdesktopservices.h>
 
 AddLocalPlayersEditor::AddLocalPlayersEditor(QWidget* parent) : QDialog(parent)
 {
@@ -42,9 +44,13 @@ void AddLocalPlayersEditor::CreateWidgets()
         "NOTE: the player at port 1 will\nbe used over NetPlay."));
 
   m_description = new QLabel(
-      tr("\nEnter the Username and User ID EXACTLY\nas they appear on projectrio.online and/or from your email.\n"
-         "This is necessary to send stat files to\nour database properly. If you enter an\n"
-         "invalid Username and/or User ID, your\nstats will not be saved to the database."));
+      tr("\nEnter the Username and User ID EXACTLY as they appear on projectrio.online\n"
+         "and/or from your email. This is necessary to send stat files to our database\n"
+         "properly. If you enter an invalid Username and/or User ID, your stats will\n"
+         "not be saved to the database.\n\n"
+         "If you do not have an account, you can create one below."));
+
+  m_create_account = new QPushButton(tr("Create Account"));
 
   m_button_box = new QDialogButtonBox(QDialogButtonBox::Cancel | QDialogButtonBox::Save);
 
@@ -55,8 +61,9 @@ void AddLocalPlayersEditor::CreateWidgets()
   grid_layout->addWidget(m_username_edit, 0, 1);
   grid_layout->addWidget(new QLabel(tr("User ID:")), 1, 0);
   grid_layout->addWidget(m_userid_edit, 1, 1);
-  grid_layout->addWidget(m_description, 3, 1);
-  grid_layout->addWidget(m_button_box, 4, 1);
+  grid_layout->addWidget(m_description, 2, 0, 1, -1);
+  grid_layout->addWidget(m_create_account, 3, 0);
+  grid_layout->addWidget(m_button_box, 3, 1);
 
   QFont monospace(QFontDatabase::systemFont(QFontDatabase::FixedFont).family());
 
@@ -69,8 +76,14 @@ void AddLocalPlayersEditor::ConnectWidgets()
 {
   connect(m_button_box, &QDialogButtonBox::accepted, this, &AddLocalPlayersEditor::accept);
   connect(m_button_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  connect(m_create_account, &QPushButton::clicked, this, &AddLocalPlayersEditor::CreateAccount);
 }
 
+void AddLocalPlayersEditor::CreateAccount()
+{
+  QString url = QStringLiteral("https://projectrio-api-1.api.projectrio.app/signup/");
+  QDesktopServices::openUrl(QUrl(url));
+}
 
 bool AddLocalPlayersEditor::AcceptPlayer()
 {
