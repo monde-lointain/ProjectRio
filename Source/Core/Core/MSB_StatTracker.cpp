@@ -705,11 +705,6 @@ void StatTracker::logContact(Event& in_event){
     contact->ball_max_height.read_value();
     contact->ball_hang_time.read_value();
 
-
-    std::cout << "\n";
-    std::cout << "ports[0]=" << std::to_string(Memory::Read_U8(0x800e874c)) << " ports[1]=" << std::to_string(Memory::Read_U8(0x800e874d)) << "\n";
-    std::cout << "BattingPort=" << std::to_string(Memory::Read_U32(0x80892990)) << " FieldingPort=" << std::to_string(Memory::Read_U32(0x80892994)) << "\n";
-
     u32 aStickInput = aAB_ControlStickInput + (getBatterFielderPorts().first * cControl_Offset);
     std::cout << "Batter Port=" << std::to_string(getBatterFielderPorts().first) << " Stick Addr=" << std::hex << aStickInput << " Stick Value=" << (Memory::Read_U16(aStickInput) & 0xF) << "\n";
     contact->input_direction_stick.set_value(Memory::Read_U16(aStickInput) & 0xF); //Mask off the lower 4 bits which are the control stick directions

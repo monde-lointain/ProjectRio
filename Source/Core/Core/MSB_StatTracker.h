@@ -440,7 +440,7 @@ static const u32 aAB_FramesUnitlBallArrivesBatter  = 0x80890AF2;
 static const u32 aAB_TotalFramesOfPitch            = 0x80890AF4;
 static const u32 aAB_MissedBall                    = 0x80890b18;
 
-static const u32 aAB_ControlStickInput = 0x80893928; //P1
+static const u32 aAB_ControlStickInput = 0x8089392C; //P1
 static const u8 cControl_Offset = 0x10;
 
 //static const u32 aBattingRandInt1 = 0x802ec010; // short
@@ -612,7 +612,7 @@ public:
         TrackerAdr<u32> charge_power_up = TrackerAdr<u32>("Charge Power Up", aAB_ChargeUp, 0xFFFFFFFF);
         TrackerAdr<u32> charge_power_down = TrackerAdr<u32>("Charge Power Down", aAB_ChargeDown, 0xFFFFFFFF);
         
-        TrackerValue<u8> input_direction_stick = TrackerValue<u8>("Input Direction - Stick", 0xFF);
+        TrackerValue<u8> input_direction_stick = TrackerValue<u8>("Input Direction - Stick", 0);
         TrackerAdr<u8> input_direction_push_pull = TrackerAdr<u8>("Input Direction - Push/Pull", aAB_InputDirection, 0xFF);
 
         TrackerAdr<u16> frame_of_swing = TrackerAdr<u16>("Frame of Swing Upon Contact", aAB_FrameOfSwing, 0xFFFF);
@@ -1054,21 +1054,33 @@ public:
     std::string getStatJsonPath(std::string prefix);
 
     std::pair<u8,u8> getBatterFielderPorts(){
+        // These values are the actual port numbers
+        // and are indexed into using the below u8s
         std::array<u8, 2> ports = {Memory::Read_U8(0x800e874c), Memory::Read_U8(0x800e874d)};
 
-        u8 BattingPort = ports[Memory::Read_U32(0x80892990)];
-        u8 FieldingPort = ports[Memory::Read_U32(0x80892994)];
+        // These registers will always be 0 or 1
+        // and swap values each half inning
+        u32 BattingTeam = Memory::Read_U32(0x80892990);
+        u32 PitchingTeam = Memory::Read_U32(0x80892994);
+        
+        u8 BattingPort = ports[BattingTeam];
+        u8 FieldingPort = ports[PitchingTeam];
 
         return std::make_pair(BattingPort, FieldingPort);
     }
 
+    /*
     std::pair<u8,u8> getHomeAwayPort(){
+        // These values are the actual port numbers
+        // and are indexed into using the below u8s
         std::array<u8, 2> ports = {Memory::Read_U8(0x800e874c), Memory::Read_U8(0x800e874d)};
+        
         m_game_info.home_port = ports[0];
         m_game_info.away_port = ports[1];
 
         return std::make_pair(m_game_info.home_port, m_game_info.away_port);
     }
+    */
 
     void initPlayerInfo();
 
