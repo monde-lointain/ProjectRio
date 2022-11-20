@@ -1719,23 +1719,14 @@ void StatTracker::initPlayerInfo(){
     if (m_game_info.team0_port == 0xFF && m_game_info.team1_port == 0xFF){
         //From Roeming
         std::array<u8, 2> ports = {Memory::Read_U8(0x800e874c), Memory::Read_U8(0x800e874d)};
-
-        //u32 TeamBatting = Memory::Read_U32(0x80892990);
-        //u32 TeamPitching = Memory::Read_U32(0x80892994);
+        
         u8 BattingPort = ports[Memory::Read_U32(0x80892990)];
         u8 FieldingPort = ports[Memory::Read_U32(0x80892994)];
-        //
         
-        //The lower value will always be team0. If CPU vs CPU is on Team0 == 5 and Team1 == 6
-        if (BattingPort < FieldingPort) {
-            m_game_info.team0_port = BattingPort;
-            m_game_info.team1_port = FieldingPort;
-        }
-        else {
-            m_game_info.team0_port = FieldingPort;
-            m_game_info.team1_port = BattingPort;
-        }
+        m_game_info.team0_port = ports[0];
+        m_game_info.team1_port = ports[1];
 
+        //This will be true for event 0 (when this function is executed)
         m_game_info.home_port = FieldingPort;
         m_game_info.away_port = BattingPort;
 
