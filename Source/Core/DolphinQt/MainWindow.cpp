@@ -1315,7 +1315,7 @@ void MainWindow::ShowNetPlaySetupDialog()
 
   // Validate Rio User
   std::string url =
-      "https://projectrio-api-1.api.projectrio.app/validate_user_from_client/?username=" +
+      "https://api.projectrio.app/validate_user_from_client/?username=" +
       LocalPlayers::m_local_player_1.GetUsername() +
       "&rio_key=" + LocalPlayers::m_local_player_1.GetUserID();
   const Common::HttpRequest::Response response = m_http.Get(url);
