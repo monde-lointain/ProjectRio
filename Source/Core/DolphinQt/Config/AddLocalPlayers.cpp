@@ -81,7 +81,7 @@ void AddLocalPlayersEditor::ConnectWidgets()
 
 void AddLocalPlayersEditor::CreateAccount()
 {
-  QString url = QStringLiteral("https://projectrio-api-1.api.projectrio.app/signup/");
+  QString url = QStringLiteral("https://api.projectrio.app/signup/");
   QDesktopServices::openUrl(QUrl(url));
 }
 
@@ -128,7 +128,7 @@ bool AddLocalPlayersEditor::AcceptPlayer()
   }
   
   
-  std::string url = "https://projectrio-api-1.api.projectrio.app/validate_user_from_client/?username=" 
+  std::string url = "https://api.projectrio.app/validate_user_from_client/?username=" 
                   + m_local_player->username
                   + "&rio_key=" + m_local_player->userid;
   const Common::HttpRequest::Response response = m_http.Get(url);

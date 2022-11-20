@@ -502,12 +502,12 @@ void StatTracker::lookForTriggerEvents(){
                 File::WriteStringToFile(jsonPath, json);
 
                 //File::WriteStringToFile(jsonPath, json);
-                //https://projectrio-api-1.api.projectrio.app/populate_db
+                //https://api.projectrio.app/populate_db
                 
                 json = getStatJSON(false, false);
                 if (shouldSubmitGame()) {
                     const Common::HttpRequest::Response response =
-                    m_http.Post("https://projectrio-api-1.api.projectrio.app/populate_db/", json,
+                    m_http.Post("https://api.projectrio.app/populate_db/", json,
                         {
                             {"Content-Type", "application/json"},
                         }
@@ -1780,7 +1780,7 @@ void StatTracker::onGameQuit(){
     json = getStatJSON(false, false);
     if (shouldSubmitGame()) {
         const Common::HttpRequest::Response response =
-        m_http.Post("https://projectrio-api-1.api.projectrio.app/populate_db/", json,
+        m_http.Post("https://api.projectrio.app/populate_db/", json,
             {
                 {"Content-Type", "application/json"},
             }
