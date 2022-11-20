@@ -148,6 +148,7 @@ void NetPlayDialog::CreateMainLayout()
   //    " always record stats, ignoring user configurations."));
   //m_coin_flipper = new QPushButton(tr("Coin Flip"));
   m_night_stadium = new QCheckBox(tr("Night Mario Stadium"));
+  m_disable_replays = new QCheckBox(tr("Disable Replays"));
   m_spectator_toggle = new QCheckBox(tr("Spectator"));
 
   m_data_menu = m_menu_bar->addMenu(tr("Data"));
@@ -212,6 +213,22 @@ void NetPlayDialog::CreateMainLayout()
   m_hide_remote_gbas_action = m_other_menu->addAction(tr("Hide Remote GBAs"));
   m_hide_remote_gbas_action->setCheckable(true);
 
+  // TODO gecko options: batter hold Z for easy batting?, custom music
+  m_gecko_menu = m_menu_bar->addMenu(tr("Gecko Code Options"));
+  m_gecko_menu->setToolTipsVisible(true);
+  //m_night_stadium_action = m_gecko_menu->addAction(tr("Night Time Mario Stadium"));
+  //m_night_stadium_action->setToolTip(
+  //    tr("Changes Mario Stadium to under the lights, as in Bom-omb Derby."));
+  //m_night_stadium_action->setCheckable(true);
+  m_disable_music_action = m_gecko_menu->addAction(tr("Disable Music"));
+  m_disable_music_action->setToolTip(tr("Turns off music."));
+  m_disable_music_action->setCheckable(true);
+  m_never_cull_action = m_gecko_menu->addAction(tr("Never Cull"));
+  m_never_cull_action->setToolTip(
+      tr("Characters and stadium hazards never disappear when\noffscreen. Useful for content creators/widescreen "
+         "users.\nWARNING: can cause lag on weaker systems."));
+  m_never_cull_action->setCheckable(true);
+
   m_game_button->setDefault(false);
   m_game_button->setAutoDefault(false);
 
@@ -235,6 +252,7 @@ void NetPlayDialog::CreateMainLayout()
   //options_widget->addWidget(m_ranked_box, 0, 3, Qt::AlignVCenter);
   //options_widget->addWidget(m_coin_flipper, 0, 3, Qt::AlignVCenter);
   options_widget->addWidget(m_night_stadium, 0, 3, Qt::AlignVCenter);
+  options_widget->addWidget(m_disable_replays, 0, 4, Qt::AlignVCenter);
   options_widget->addWidget(m_spectator_toggle, 0, 5, Qt::AlignVCenter | Qt::AlignRight);
 
   m_main_layout->addLayout(options_widget, 2, 0, 1, -1, Qt::AlignRight);
@@ -251,6 +269,9 @@ void NetPlayDialog::CreateChatLayout()
   m_chat_send_button = new QPushButton(tr("Send"));
   m_coin_flipper = new QPushButton(tr("Coin Flip"));
   m_coin_flipper->setAutoDefault(false); // prevents accidental coin flips when trying to send a chat msg
+  m_random_stadium = new QPushButton(tr("Stadium"));
+  m_random_stadium->setAutoDefault(false);
+  m_random_stadium->setToolTip(tr("Generates a random stadium and posts in the netplay chat."));
 
   // This button will get re-enabled when something gets entered into the chat box
   m_chat_send_button->setEnabled(false);
@@ -265,6 +286,7 @@ void NetPlayDialog::CreateChatLayout()
   layout->addWidget(m_chat_type_edit, 1, 0);
   layout->addWidget(m_chat_send_button, 1, 1);
   layout->addWidget(m_coin_flipper, 1, 2);
+  layout->addWidget(m_random_stadium, 1, 3);
 
   m_chat_box->setLayout(layout);
 }
@@ -362,10 +384,20 @@ void NetPlayDialog::ConnectWidgets()
       client->SendNightStadium(is_night);
   });
 
+  connect(m_disable_replays, &QCheckBox::stateChanged, [this](bool disable) {
+    auto client = Settings::Instance().GetNetPlayClient();
+    auto server = Settings::Instance().GetNetPlayServer();
+    if (server)
+      server->AdjustReplays(disable);
+    else
+      client->SendNightStadium(disable);
+  });
+
 
   connect(m_spectator_toggle, &QCheckBox::stateChanged, this, &NetPlayDialog::OnSpectatorToggle);
 
   connect(m_coin_flipper, &QPushButton::clicked, this, &NetPlayDialog::OnCoinFlip);
+  connect(m_random_stadium, &QPushButton::clicked, this, &NetPlayDialog::OnRandomStadium);
   
   const auto hia_function = [this](bool enable) {
     if (m_host_input_authority != enable)
@@ -429,6 +461,9 @@ void NetPlayDialog::ConnectWidgets()
   connect(m_golf_mode_overlay_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
   connect(m_fixed_delay_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
   connect(m_hide_remote_gbas_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
+  //connect(m_night_stadium_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
+  connect(m_disable_music_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
+  connect(m_never_cull_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
 }
 
 void NetPlayDialog::SendMessage(const std::string& msg)
@@ -476,12 +511,71 @@ void NetPlayDialog::OnCoinFlipResult(int coinNum)
     DisplayMessage(tr("Tails"), "lightslategray");
 }
 
+void NetPlayDialog::OnRandomStadium()
+{
+  u8 randNum;
+  randNum = rand() % 6;
+  Settings::Instance().GetNetPlayClient()->SendStadium(randNum);
+}
+
+void NetPlayDialog::OnRandomStadiumResult(int stadium)
+{
+  bool error = false;
+  u8 stadium_id = 0;
+
+  switch (stadium) {
+  case 0:
+    DisplayMessage(tr("Mario Stadium!"), "DodgerBlue");
+    break;
+  case 1:
+    DisplayMessage(tr("Peach's Garden!"), "DodgerBlue");
+    stadium_id = 4;
+    break;
+  case 2:
+    DisplayMessage(tr("Wario's Palace!"), "DodgerBlue");
+    stadium_id = 2;
+    break;
+  case 3:
+    DisplayMessage(tr("Yoshi's Park!"), "DodgerBlue");
+    stadium_id = 3;
+    break;
+  case 4:
+    DisplayMessage(tr("DK's Jungle!"), "DodgerBlue");
+    stadium_id = 5;
+    break;
+  case 5:
+    DisplayMessage(tr("Bowser's Castle!"), "DodgerBlue");
+    stadium_id = 1;
+    break;
+  default:
+    DisplayMessage(tr("There was an error. Please try again"), "red");
+    error = true;
+  }
+
+  if (error)
+    return;
+
+  Core::DefaultStadiumGecko(stadium, stadium_id);
+}
+
 void NetPlayDialog::OnNightResult(bool is_night)
 {
   if (is_night)
+  {
     DisplayMessage(tr("Night Stadium Enabled"), "steelblue");
+  }
   else
+  {
     DisplayMessage(tr("Night Stadium Disabled"), "coral");
+  }
+}
+
+void NetPlayDialog::OnDisableReplaysResult(bool disable)
+{
+  if (disable)
+    DisplayMessage(tr("Replays Disabled"), "coral");
+  else
+    DisplayMessage(tr("Replays Enabled"), "steelblue");
 }
 
 void NetPlayDialog::DisplayActiveGeckoCodes()
@@ -499,6 +593,7 @@ void NetPlayDialog::OnActiveGeckoCodes(std::string codeStr)
 void NetPlayDialog::OnGameMode(std::string mode)
 {
   DisplayMessage(tr("Game Mode: %1").arg(QString::fromStdString(mode)), "goldenrod");
+  Core::SetGameMode(mode);
 }
 
 void NetPlayDialog::OnRankedEnabled(bool is_ranked)
@@ -612,13 +707,12 @@ void NetPlayDialog::show(std::string nickname, bool use_traversal)
   m_hostcode_action_button->setHidden(!is_hosting);
   m_game_button->setEnabled(is_hosting);
   m_kick_button->setEnabled(false);
-  //m_ranked_box->setHidden(!is_hosting);
-  //m_ranked_box->setEnabled(is_hosting);
   m_night_stadium->setHidden(!is_hosting);
   m_night_stadium->setEnabled(is_hosting);
-  //m_coin_flipper->setHidden(!is_hosting);
-  //m_coin_flipper->setEnabled(is_hosting);
-  //m_coin_flipper->setEnabled(true);
+  m_disable_replays->setHidden(!is_hosting);
+  m_disable_replays->setEnabled(is_hosting);
+  //m_ranked_box->setHidden(!is_hosting);
+  //m_ranked_box->setEnabled(is_hosting);
 
   SetOptionsEnabled(true);
 
@@ -935,6 +1029,10 @@ void NetPlayDialog::SetOptionsEnabled(bool enabled)
     m_fixed_delay_action->setEnabled(enabled);
     // m_ranked_box->setCheckable(enabled);
     m_night_stadium->setCheckable(enabled);
+    m_disable_replays->setCheckable(enabled);
+    //m_night_stadium_action->setEnabled(enabled);
+    m_disable_music_action->setEnabled(enabled);
+    m_never_cull_action->setEnabled(enabled);
   }
 
   m_record_input_action->setEnabled(enabled);
@@ -977,6 +1075,7 @@ void NetPlayDialog::OnMsgStartGame()
         client->StartGame(game->GetFilePath());
         // m_ranked_box->setEnabled(false);
         m_night_stadium->setEnabled(false);
+        m_disable_replays->setEnabled(false);
       }
       else
         PanicAlertFmtT("Selected game doesn't exist in game list!");
@@ -995,10 +1094,10 @@ void NetPlayDialog::OnMsgStopGame()
   auto client = Settings::Instance().GetNetPlayClient();
 
   const bool is_hosting = IsHosting();
-  // m_ranked_box->setEnabled(is_hosting);
   m_night_stadium->setEnabled(is_hosting);
+  m_disable_replays->setEnabled(is_hosting);
+  // m_ranked_box->setEnabled(is_hosting);
   //m_ranked_box->setChecked(client->m_ranked_client);
-  //m_night_stadium->setChecked(client->m_night_stadium);
   m_spectator_toggle->setEnabled(true);
 }
 
@@ -1074,9 +1173,9 @@ void NetPlayDialog::OnHostInputAuthorityChanged(bool enabled)
 
 void NetPlayDialog::OnDesync(u32 frame, const std::string& player)
 {
-  DisplayMessage(tr("Possible desync detected: %1 might have desynced at frame %2")
+ /* DisplayMessage(tr("Possible desync detected: %1 might have desynced at frame %2")
                      .arg(QString::fromStdString(player), QString::number(frame)),
-                 "red", OSD::Duration::VERY_LONG);
+                 "red", OSD::Duration::VERY_LONG);*/
   OSD::AddTypedMessage(OSD::MessageType::NetPlayDesync,
                        "Possible desync detected. Game restart advised.",
                        OSD::Duration::VERY_LONG, OSD::Color::RED);
@@ -1244,6 +1343,9 @@ void NetPlayDialog::LoadSettings()
   const bool golf_mode_overlay = Config::Get(Config::NETPLAY_GOLF_MODE_OVERLAY);
   const bool hide_remote_gbas = Config::Get(Config::NETPLAY_HIDE_REMOTE_GBAS);
   //const bool ranked_mode = Config::Get(Config::NETPLAY_RANKED);
+  //const bool night_stadium = Config::Get(Config::NETPLAY_NIGHT_STADIUM);
+  const bool disable_music = Config::Get(Config::NETPLAY_DISABLE_MUSIC);
+  const bool never_cull = Config::Get(Config::NETPLAY_NEVER_CULL);
 
   //m_ranked_box->setChecked(ranked_mode);
   m_buffer_size_box->setValue(buffer_size);
@@ -1255,6 +1357,9 @@ void NetPlayDialog::LoadSettings()
   m_sync_all_wii_saves_action->setChecked(sync_all_wii_saves);
   m_golf_mode_overlay_action->setChecked(golf_mode_overlay);
   m_hide_remote_gbas_action->setChecked(hide_remote_gbas);
+  //m_night_stadium_action->setChecked(night_stadium);
+  m_disable_music_action->setChecked(disable_music);
+  m_never_cull_action->setChecked(never_cull);
 
   const std::string network_mode = Config::Get(Config::NETPLAY_NETWORK_MODE);
 
@@ -1291,6 +1396,9 @@ void NetPlayDialog::SaveSettings()
   Config::SetBase(Config::NETPLAY_GOLF_MODE_OVERLAY, m_golf_mode_overlay_action->isChecked());
   Config::SetBase(Config::NETPLAY_HIDE_REMOTE_GBAS, m_hide_remote_gbas_action->isChecked());
   //Config::SetBase(Config::NETPLAY_RANKED, m_ranked_box->isChecked());
+  //Config::SetBase(Config::NETPLAY_NIGHT_STADIUM, m_night_stadium_action->isChecked());
+  Config::SetBase(Config::NETPLAY_DISABLE_MUSIC, m_disable_music_action->isChecked());
+  Config::SetBase(Config::NETPLAY_NEVER_CULL, m_never_cull_action->isChecked());
 
   std::string network_mode;
   if (m_fixed_delay_action->isChecked())

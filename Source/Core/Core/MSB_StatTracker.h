@@ -8,6 +8,7 @@
 #include <tuple>
 #include <iostream>
 #include "Core/HW/Memmap.h"
+#include <picojson.h>
 
 #include "Common/HttpRequest.h"
 
@@ -19,6 +20,8 @@
 #include "Core/Logger.h"
 
 #include "Core/TrackerAdr.h"
+
+#include "Common/TagSet.h"
 
 enum class GAME_STATE
 {
@@ -437,7 +440,7 @@ static const u32 aAB_FramesUnitlBallArrivesBatter  = 0x80890AF2;
 static const u32 aAB_TotalFramesOfPitch            = 0x80890AF4;
 static const u32 aAB_MissedBall                    = 0x80890b18;
 
-static const u32 aAB_ControlStickInput = 0x80893928; //P1
+static const u32 aAB_ControlStickInput = 0x8089392C; //P1
 static const u8 cControl_Offset = 0x10;
 
 //static const u32 aBattingRandInt1 = 0x802ec010; // short
@@ -592,12 +595,7 @@ public:
         TrackerAdr<u32> ball_z_velo = TrackerAdr<u32>("Ball Velocity - Z", aAB_BallVel_Z, 0xFFFFFFFF);
 
         TrackerAdr<u32> ball_contact_x_pos = TrackerAdr<u32>("Ball Contact Pos - X", aAB_BallContactPos_X, 0xFFFFFFFF);
-        TrackerAdr<u32> ball_contact_y_pos = TrackerAdr<u32>("Ball Contact Pos - Y", aAB_BallContactPos_Y, 0xFFFFFFFF);
         TrackerAdr<u32> ball_contact_z_pos = TrackerAdr<u32>("Ball Contact Pos - Z", aAB_BallContactPos_Z, 0xFFFFFFFF);
-
-        TrackerAdr<u32> bat_contact_x_pos = TrackerAdr<u32>("Bat Contact Pos - X", aAB_BatContactPos_X, 0xFFFFFFFF);
-        TrackerAdr<u32> bat_contact_y_pos = TrackerAdr<u32>("Bat Contact Pos - Y", aAB_BatContactPos_Y, 0xFFFFFFFF);
-        TrackerAdr<u32> bat_contact_z_pos = TrackerAdr<u32>("Bat Contact Pos - Z", aAB_BatContactPos_Z, 0xFFFFFFFF);
 
         TrackerAdr<u32> contact_absolute = TrackerAdr<u32>("Contact Absolute", aAB_ContactAbsolute, 0xFFFFFFFF);
         TrackerAdr<u32> contact_quality = TrackerAdr<u32>("Contact Quality", aAB_ContactQuality, 0xFFFFFFFF);
@@ -614,7 +612,7 @@ public:
         TrackerAdr<u32> charge_power_up = TrackerAdr<u32>("Charge Power Up", aAB_ChargeUp, 0xFFFFFFFF);
         TrackerAdr<u32> charge_power_down = TrackerAdr<u32>("Charge Power Down", aAB_ChargeDown, 0xFFFFFFFF);
         
-        TrackerValue<u8> input_direction_stick = TrackerValue<u8>("Input Direction - Stick", 0xFF);
+        TrackerValue<u8> input_direction_stick = TrackerValue<u8>("Input Direction - Stick", 0);
         TrackerAdr<u8> input_direction_push_pull = TrackerAdr<u8>("Input Direction - Push/Pull", aAB_InputDirection, 0xFF);
 
         TrackerAdr<u16> frame_of_swing = TrackerAdr<u16>("Frame of Swing Upon Contact", aAB_FrameOfSwing, 0xFFFF);
@@ -665,6 +663,9 @@ public:
         //Ball pos for pitch visualization
         u32 ball_z_strike_vs_ball;
         u8 ball_in_strikezone;
+
+        TrackerAdr<u32> bat_contact_x_pos = TrackerAdr<u32>("Bat Contact Pos - X", aAB_BatContactPos_X, 0xFFFFFFFF);
+        TrackerAdr<u32> bat_contact_z_pos = TrackerAdr<u32>("Bat Contact Pos - Z", aAB_BatContactPos_Z, 0xFFFFFFFF);
 
         //For integrosity - TODO
         u8 db = 0;
@@ -876,9 +877,9 @@ public:
                 //If new position, mark changed (unless this is the first pitch of the AB (pos==0xFF))
                 //Then set new position
                 if (fielder_map[roster_loc].current_pos != pos){
-                    //std::cout << " Team=" << std::to_string(team_id) << " RosterLoc:" << std::to_string(roster_loc) 
-                    //            << " swapped from " << cPosition.at(fielder_map[roster_loc].current_pos)
-                    //            << " to " << cPosition.at(pos) << std::endl; 
+                    std::cout << " Team=" << std::to_string(team_id) << " RosterLoc:" << std::to_string(roster_loc) 
+                                << " swapped from " << cPosition.at(fielder_map[roster_loc].current_pos)
+                                << " to " << cPosition.at(pos) << std::endl; 
                     fielder_map[roster_loc].current_pos = pos; 
                 }
 
@@ -981,6 +982,7 @@ public:
         bool m_is_host = false;
         std::optional<int> m_tag_set;
         std::string m_netplay_opponent_alias = "";
+        std::optional<int> tag_set_id = std::nullopt;
     } m_state;
 
     union
@@ -991,11 +993,13 @@ public:
 
     void setRankedStatus(bool inBool);
     void setRecordStatus(bool inBool);
+    void setTagSetId(Tag::TagSet tag_set);
     void setNetplaySession(bool netplay_session, bool is_host=false, std::string opponent_name = "");
     void setAvgPing(int avgPing);
     void setLagSpikes(int nLagSpikes);
     void setNetplayerUserInfo(std::map<int, LocalPlayers::LocalPlayers::Player> userInfo);
     void setDisplayStats(bool bDisplay);
+    void setGameID(u32 gameID);
     // void setTags(std::vector tags);
     // void setTagSet(int tagset);
 
@@ -1050,21 +1054,33 @@ public:
     std::string getStatJsonPath(std::string prefix);
 
     std::pair<u8,u8> getBatterFielderPorts(){
+        // These values are the actual port numbers
+        // and are indexed into using the below u8s
         std::array<u8, 2> ports = {Memory::Read_U8(0x800e874c), Memory::Read_U8(0x800e874d)};
 
-        u8 BattingPort = ports[Memory::Read_U32(0x80892990)];
-        u8 FieldingPort = ports[Memory::Read_U32(0x80892994)];
+        // These registers will always be 0 or 1
+        // and swap values each half inning
+        u32 BattingTeam = Memory::Read_U32(0x80892990);
+        u32 PitchingTeam = Memory::Read_U32(0x80892994);
+        
+        u8 BattingPort = ports[BattingTeam];
+        u8 FieldingPort = ports[PitchingTeam];
 
         return std::make_pair(BattingPort, FieldingPort);
     }
 
+    /*
     std::pair<u8,u8> getHomeAwayPort(){
+        // These values are the actual port numbers
+        // and are indexed into using the below u8s
         std::array<u8, 2> ports = {Memory::Read_U8(0x800e874c), Memory::Read_U8(0x800e874d)};
+        
         m_game_info.home_port = ports[0];
         m_game_info.away_port = ports[1];
 
         return std::make_pair(m_game_info.home_port, m_game_info.away_port);
     }
+    */
 
     void initPlayerInfo();
 
@@ -1076,7 +1092,10 @@ public:
 
             //Remove current event, wasn't finished
             auto it = m_game_info.events.find(m_game_info.event_num);
-            m_game_info.events.erase(it);
+            if (&it != NULL)
+            {
+              m_game_info.events.erase(it);
+            }
 
             //Game has ended. Write file but do not submit
             std::string jsonPath = getStatJsonPath("crash.decode.");

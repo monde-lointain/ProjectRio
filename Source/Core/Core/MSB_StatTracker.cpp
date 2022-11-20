@@ -180,6 +180,7 @@ void StatTracker::lookForTriggerEvents(){
                     m_game_info.getCurrentEvent().runner_3 = logRunnerInfo(3);
 
                     if (!m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].initialized){
+                        std::cout << " Initializing fielders for team: " << std::to_string(!m_game_info.getCurrentEvent().half_inning) << "\n";
                         m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].initTracker(!m_game_info.getCurrentEvent().half_inning);
                     }
 
@@ -242,6 +243,7 @@ void StatTracker::lookForTriggerEvents(){
                         std::cout << "Pitch detected!\n";
 
                         //Check for fielder swaps
+                        std::cout << " Evaluating fielders for team: " << std::to_string(!m_game_info.getCurrentEvent().half_inning) << "\n";
                         m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].evaluateFielders();
 
                         m_game_info.getCurrentEvent().pitch = std::make_optional(Pitch());
@@ -476,10 +478,7 @@ void StatTracker::lookForTriggerEvents(){
 
                 //If TagSet provided, get tags from server
                 if (m_state.m_tag_set.has_value()){
-                    const Common::HttpRequest::Response response = m_http.Get("https://projectrio-api-1.api.projectrio.app/tag_set/"+std::to_string(m_state.m_tag_set.value()));
-                    // if (response.has_value()){
-                    //     //Parse out the strings
-                    // }
+                    //Get tags from tag_set
                 }
 
                 m_game_state = GAME_STATE::INGAME;
@@ -503,12 +502,12 @@ void StatTracker::lookForTriggerEvents(){
                 File::WriteStringToFile(jsonPath, json);
 
                 //File::WriteStringToFile(jsonPath, json);
-                //https://projectrio-api-1.api.projectrio.app/populate_db
+                //https://api.projectrio.app/populate_db
                 
                 json = getStatJSON(false, false);
                 if (shouldSubmitGame()) {
                     const Common::HttpRequest::Response response =
-                    m_http.Post("https://projectrio-api-1.api.projectrio.app/populate_db/", json,
+                    m_http.Post("https://api.projectrio.app/populate_db/", json,
                         {
                             {"Content-Type", "application/json"},
                         }
@@ -689,11 +688,7 @@ void StatTracker::logContact(Event& in_event){
     contact->ball_y_velo.read_value();
     contact->ball_z_velo.read_value();
     contact->ball_contact_x_pos.read_value();
-    contact->ball_contact_y_pos.read_value();
     contact->ball_contact_z_pos.read_value();
-    contact->bat_contact_x_pos.read_value();
-    contact->bat_contact_y_pos.read_value();
-    contact->bat_contact_z_pos.read_value();
     contact->contact_absolute.read_value();
     contact->contact_quality.read_value();
     contact->rng1.read_value();
@@ -711,8 +706,10 @@ void StatTracker::logContact(Event& in_event){
     contact->ball_hang_time.read_value();
 
     u32 aStickInput = aAB_ControlStickInput + (getBatterFielderPorts().first * cControl_Offset);
-    std::cout << " Stick Addr=" << std::hex << aStickInput << " Stick Value=" << Memory::Read_U16(aStickInput) << "\n";
+    std::cout << "Batter Port=" << std::to_string(getBatterFielderPorts().first) << " Stick Addr=" << std::hex << aStickInput << " Stick Value=" << (Memory::Read_U16(aStickInput) & 0xF) << "\n";
     contact->input_direction_stick.set_value(Memory::Read_U16(aStickInput) & 0xF); //Mask off the lower 4 bits which are the control stick directions
+    std::cout << "  Stick Value Decoded=" << decode("StickVec", contact->input_direction_stick.get_value(), true) << "\n";
+    std::cout << "\n";
 }
 
 void StatTracker::logPitch(Event& in_event){
@@ -727,6 +724,8 @@ void StatTracker::logPitch(Event& in_event){
     in_event.pitch->pitch_speed        = Memory::Read_U8(aAB_PitchSpeed);
 
     in_event.pitch->ball_z_strike_vs_ball = Memory::Read_U32(aAB_PitchBallPosZStrikezone);
+    in_event.pitch->bat_contact_x_pos.read_value();
+    in_event.pitch->bat_contact_z_pos.read_value();
 
     float ballposz_strikezone = floatConverter(in_event.pitch->ball_z_strike_vs_ball);
     float strikezone_left = floatConverter(Memory::Read_U32(aAB_PitchStrikezoneEdgeLeft));
@@ -838,7 +837,7 @@ void StatTracker::logFinalResults(Event& in_event){
 
     //num_outs_during_play
     auto num_outs = in_event.num_outs_during_play.read_value();
-    std::cout << "Num outs for play=" << num_outs << "\n";
+    std::cout << "Num outs for play=" << std::to_string(num_outs) << "\n";
     m_fielder_tracker[!m_game_info.getCurrentEvent().half_inning].incrementBatterOutForPosition(num_outs);
 
     //If the runner got out at first (forced), increment outs for the fielder who first touched the ball
@@ -951,11 +950,11 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
             json_stream << "        \"Outs Pitched\": "        << std::to_string(def_stat.outs_pitched) << ",\n";
             json_stream << "        \"Batters Per Position\": [\n";
 
-            if (m_fielder_tracker[team].batterOutsAtAnyPosition(roster, 0)){
+            if (m_fielder_tracker[team].battersAtAnyPosition(roster, 0)){
                 json_stream << "          {\n";
                 for (int pos = 0; pos < cNumOfPositions; ++pos) {
                     if (m_fielder_tracker[team].fielder_map[roster].batter_count_by_position[pos] > 0){
-                        std::string comma = (m_fielder_tracker[team].batterOutsAtAnyPosition(roster, pos+1)) ? "," : "";
+                        std::string comma = (m_fielder_tracker[team].battersAtAnyPosition(roster, pos+1)) ? "," : "";
                         json_stream << "            \"" << cPosition.at(pos) << "\": " << std::to_string(m_fielder_tracker[team].fielder_map[roster].batter_count_by_position[pos]) << comma << "\n";
                     }
                 }
@@ -1091,6 +1090,8 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
             json_stream << "        \"Pitch Speed\": "        << std::to_string(pitch->pitch_speed) << ",\n";
             json_stream << "        \"Ball Position - Strikezone\": "   << floatConverter(pitch->ball_z_strike_vs_ball) << ",\n";
             json_stream << "        \"In Strikezone\": "      << std::to_string(pitch->ball_in_strikezone) << ",\n";
+            json_stream << "        \"" << pitch->bat_contact_x_pos.name << "\": " << floatConverter(pitch->bat_contact_x_pos.get_value()) << ",\n";
+            json_stream << "        \"" << pitch->bat_contact_z_pos.name << "\": " << floatConverter(pitch->bat_contact_z_pos.get_value()) << ",\n";
             json_stream << "        \"DB\": "                 << std::to_string(pitch->db) << ",\n";
             json_stream << "        \"Type of Swing\": "      << decode("Swing", pitch->type_of_swing, inDecode);
             
@@ -1124,13 +1125,8 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
                 json_stream << "          \"" << contact->ball_z_velo.name << "\": " << floatConverter(contact->ball_z_velo.get_value()) << ",\n";
 
                 json_stream << "          \"" << contact->ball_contact_x_pos.name << "\": " << floatConverter(contact->ball_contact_x_pos.get_value()) << ",\n";
-                json_stream << "          \"" << contact->ball_contact_y_pos.name << "\": " << floatConverter(contact->ball_contact_y_pos.get_value()) << ",\n";
                 json_stream << "          \"" << contact->ball_contact_z_pos.name << "\": " << floatConverter(contact->ball_contact_z_pos.get_value()) << ",\n";
-                
-                json_stream << "          \"" << contact->bat_contact_x_pos.name << "\": " << floatConverter(contact->bat_contact_x_pos.get_value()) << ",\n";
-                json_stream << "          \"" << contact->bat_contact_y_pos.name << "\": " << floatConverter(contact->bat_contact_y_pos.get_value()) << ",\n";
-                json_stream << "          \"" << contact->bat_contact_z_pos.name << "\": " << floatConverter(contact->bat_contact_z_pos.get_value()) << ",\n";
-                
+                                
                 json_stream << "          \"" << contact->ball_x_pos.name << "\": " << floatConverter(contact->ball_x_pos.get_value()) << ",\n";
                 json_stream << "          \"" << contact->ball_y_pos.name << "\": " << floatConverter(contact->ball_y_pos.get_value()) << ",\n";
                 json_stream << "          \"" << contact->ball_z_pos.name << "\": " << floatConverter(contact->ball_z_pos.get_value()) << ",\n";
@@ -1288,11 +1284,11 @@ std::string StatTracker::getHUDJSON(std::string in_event_num, Event& in_curr_eve
             json_stream << "      \"Outs Pitched\": "        << std::to_string(def_stat.outs_pitched) << ",\n";
             json_stream << "      \"Batters Per Position\": [\n";
 
-            if (m_fielder_tracker[team].batterOutsAtAnyPosition(roster, 0)){
+            if (m_fielder_tracker[team].battersAtAnyPosition(roster, 0)){
                 json_stream << "        {\n";
                 for (int pos = 0; pos < cNumOfPositions; ++pos) {
                     if (m_fielder_tracker[team].fielder_map[roster].batter_count_by_position[pos] > 0){
-                        std::string comma = (m_fielder_tracker[team].batterOutsAtAnyPosition(roster, pos+1)) ? "," : "";
+                        std::string comma = (m_fielder_tracker[team].battersAtAnyPosition(roster, pos+1)) ? "," : "";
                         json_stream << "            \"" << cPosition.at(pos) << "\": " << std::to_string(m_fielder_tracker[team].fielder_map[roster].batter_count_by_position[pos]) << comma << "\n";
                     }
                 }
@@ -1405,6 +1401,8 @@ std::string StatTracker::getHUDJSON(std::string in_event_num, Event& in_curr_eve
         json_stream << "      \"Pitch Speed\": "        << std::to_string(pitch->pitch_speed) << ",\n";
         json_stream << "      \"Ball Position - Strikezone\": "   << floatConverter(pitch->ball_z_strike_vs_ball) << ",\n";
         json_stream << "      \"In Strikezone\": "      << std::to_string(pitch->ball_in_strikezone) << ",\n";
+        json_stream << "        \"" << pitch->bat_contact_x_pos.name << "\": " << floatConverter(pitch->bat_contact_x_pos.get_value()) << ",\n";
+        json_stream << "        \"" << pitch->bat_contact_z_pos.name << "\": " << floatConverter(pitch->bat_contact_z_pos.get_value()) << ",\n";
         json_stream << "      \"DB\": "                 << std::to_string(pitch->db) << ",\n";
         json_stream << "      \"Type of Swing\": "      << decode("Swing", pitch->type_of_swing, inDecode);
         
@@ -1433,11 +1431,7 @@ std::string StatTracker::getHUDJSON(std::string in_event_num, Event& in_curr_eve
             json_stream << "        \"" << contact->ball_y_velo.name << "\": " << floatConverter(contact->ball_y_velo.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_z_velo.name << "\": " << floatConverter(contact->ball_z_velo.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_contact_x_pos.name << "\": " << floatConverter(contact->ball_contact_x_pos.get_value()) << ",\n";
-            json_stream << "        \"" << contact->ball_contact_y_pos.name << "\": " << floatConverter(contact->ball_contact_y_pos.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_contact_z_pos.name << "\": " << floatConverter(contact->ball_contact_z_pos.get_value()) << ",\n";
-            json_stream << "        \"" << contact->bat_contact_x_pos.name << "\": " << floatConverter(contact->bat_contact_x_pos.get_value()) << ",\n";
-            json_stream << "        \"" << contact->bat_contact_y_pos.name << "\": " << floatConverter(contact->bat_contact_y_pos.get_value()) << ",\n";
-            json_stream << "        \"" << contact->bat_contact_z_pos.name << "\": " << floatConverter(contact->bat_contact_z_pos.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_x_pos.name << "\": " << floatConverter(contact->ball_x_pos.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_y_pos.name << "\": " << floatConverter(contact->ball_y_pos.get_value()) << ",\n";
             json_stream << "        \"" << contact->ball_z_pos.name << "\": " << floatConverter(contact->ball_z_pos.get_value()) << ",\n";
@@ -1645,7 +1639,35 @@ void StatTracker::setRankedStatus(bool inBool) {
 void StatTracker::setRecordStatus(bool inBool) {
     std::cout << "Record Status=" << inBool << "\n";
     mTrackerInfo.mRecord = inBool;
+
+    //std::map<int, Tag::TagSet> dummy_tag_sets = Tag::getDummyTagSets();
+    //std::cout << dummy_tag_sets.at(1).tag_ids_string() << "\n";
+    //std::cout << dummy_tag_sets.at(1).tag_names_string() << "\n";
+
+    //std::optional<Tag::TagSet> dummy_tag_set = Tag::getDummyTagSet();
+    //if (dummy_tag_set) {
+    //    std::cout << dummy_tag_set.value().id << "\n";
+    //}
+
+    // std::map<int, Tag::TagSet> tag_sets = Tag::getAvailableTagSets(m_http, "YYoXDBoQg6rBc23T4xs_qmPWZxubBO9v9cq8UjJkmD0");
+    // for (const auto &tag_set_pair : tag_sets) {
+    //     std::cout << "MAP KEY: " << tag_set_pair.first << "\n";
+    //     std::cout << "MAP VALUE ID: " << tag_set_pair.second.id << "\n";
+    // }
+    // std::cout << tag_sets.at(1).tag_ids_string() << "\n";
+    // std::cout << tag_sets.at(1).tag_names_string() << "\n";
+
+    // std::optional<Tag::TagSet> tag_set = Tag::getTagSet(m_http, 1);
+    // if (tag_set) {
+    //     std::cout << tag_set.value().id << "\n";
+    // }
 }
+
+void StatTracker::setTagSetId(Tag::TagSet tag_set) {
+    std::cout << "TagSet Id=" << tag_set.id << "," << "TagSet Name=" << tag_set.name << "\n";
+    m_state.tag_set_id = tag_set.id;
+}
+
 
 bool StatTracker::shouldSubmitGame() {
     bool cpuInGame = (m_game_info.getAwayTeamPlayer().GetUserID() == "CPU") || (m_game_info.getHomeTeamPlayer().GetUserID() == "CPU");
@@ -1682,6 +1704,11 @@ void StatTracker::setNetplayerUserInfo(std::map<int, LocalPlayers::LocalPlayers:
     m_game_info.NetplayerUserInfo[player.first] = player.second;
 }
 
+void StatTracker::setGameID(u32 gameID)
+{
+  m_game_info.game_id = gameID;
+}
+
 void StatTracker::initPlayerInfo(){
     //Read start time
     std::time_t unix_time = std::time(nullptr);
@@ -1692,24 +1719,16 @@ void StatTracker::initPlayerInfo(){
     if (m_game_info.team0_port == 0xFF && m_game_info.team1_port == 0xFF){
         //From Roeming
         std::array<u8, 2> ports = {Memory::Read_U8(0x800e874c), Memory::Read_U8(0x800e874d)};
-        m_game_info.home_port = ports[1];
-        m_game_info.away_port = ports[0];
-
-        //u32 TeamBatting = Memory::Read_U32(0x80892990);
-        //u32 TeamPitching = Memory::Read_U32(0x80892994);
+        
         u8 BattingPort = ports[Memory::Read_U32(0x80892990)];
         u8 FieldingPort = ports[Memory::Read_U32(0x80892994)];
-        //
         
-        //The lower value will always be team0. If CPU vs CPU is on Team0 == 5 and Team1 == 6
-        if (BattingPort < FieldingPort) {
-            m_game_info.team0_port = BattingPort;
-            m_game_info.team1_port = FieldingPort;
-        }
-        else {
-            m_game_info.team0_port = FieldingPort;
-            m_game_info.team1_port = BattingPort;
-        }
+        m_game_info.team0_port = ports[0];
+        m_game_info.team1_port = ports[1];
+
+        //This will be true for event 0 (when this function is executed)
+        m_game_info.home_port = FieldingPort;
+        m_game_info.away_port = BattingPort;
 
         readPlayerNames(!m_game_info.netplay);
 
@@ -1723,6 +1742,8 @@ void StatTracker::initPlayerInfo(){
             away_player_name = m_game_info.team1_player.GetUsername();
             home_player_name = m_game_info.team0_player.GetUsername();
         }
+        std::cout << "ports[0]=" << std::to_string(Memory::Read_U8(0x800e874c)) << " ports[1]=" << std::to_string(Memory::Read_U8(0x800e874d)) << "\n";
+        std::cout << "BattingPort=" << std::to_string(Memory::Read_U32(0x80892990)) << " FieldingPort=" << std::to_string(Memory::Read_U32(0x80892994)) << "\n";
 
         std::cout << "Info:  Fielder Port=" << std::to_string(FieldingPort) << ", Batter Port=" << std::to_string(BattingPort) << "\n";
         std::cout << "Info:  Team0 Port=" << std::to_string(m_game_info.team0_port) << ", Team1 Port=" << std::to_string(m_game_info.team1_port) << "\n";
@@ -1759,7 +1780,7 @@ void StatTracker::onGameQuit(){
     json = getStatJSON(false, false);
     if (shouldSubmitGame()) {
         const Common::HttpRequest::Response response =
-        m_http.Post("https://projectrio-api-1.api.projectrio.app/populate_db/", json,
+        m_http.Post("https://api.projectrio.app/populate_db/", json,
             {
                 {"Content-Type", "application/json"},
             }

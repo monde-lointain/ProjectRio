@@ -1312,6 +1312,24 @@ void MainWindow::ShowNetPlaySetupDialog()
   m_netplay_setup_dialog->show();
   m_netplay_setup_dialog->raise();
   m_netplay_setup_dialog->activateWindow();
+
+  // Validate Rio User
+  std::string url =
+      "https://api.projectrio.app/validate_user_from_client/?username=" +
+      LocalPlayers::m_local_player_1.GetUsername() +
+      "&rio_key=" + LocalPlayers::m_local_player_1.GetUserID();
+  const Common::HttpRequest::Response response = m_http.Get(url);
+  if (!response)
+  {
+    // TODO Error if user is not validated when full beta releases
+    // ModalMessageBox::critical(this, tr("Error"), tr("Username and Rio Key could not be
+    // validated"));
+    ModalMessageBox::warning(
+        this, tr("Warning"),
+        tr("The Username and Rio Key of the account mapped to Port 1 could not be validated.\n\n"
+           "Stat files will not be properly sent to the database if your account is invalid. You can create an account "
+           "through the \"Local Players\" tab, or through the Project Rio website."));
+  }
 }
 
 void MainWindow::ShowNetPlayBrowser()

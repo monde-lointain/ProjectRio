@@ -12,6 +12,7 @@ class QDialogButtonBox;
 class QLabel;
 class QLineEdit;
 class QTextEdit;
+class QPushButton;
 
 namespace AddPlayers
 {
@@ -28,6 +29,7 @@ public:
 private:
   void CreateWidgets();
   void ConnectWidgets();
+  void CreateAccount();
 
   bool AcceptPlayer();
 
@@ -36,6 +38,7 @@ private:
   QLineEdit* m_username_edit;
   QLineEdit* m_userid_edit;
   QLabel* m_description;
+  QPushButton* m_create_account;
 
   QDialogButtonBox* m_button_box;
 

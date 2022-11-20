@@ -483,6 +483,12 @@ ConnectionError NetPlayServer::OnConnect(ENetPeer* socket, sf::Packet& rpac)
   spac << m_current_night_value;
   Send(player.socket, spac);
 
+  // send disable replays state
+  spac.clear();
+  spac << MessageID::DisableReplays;
+  spac << m_current_disable_replays_value;
+  Send(player.socket, spac);
+
   // send input authority state
   spac.clear();
   spac << MessageID::HostInputAuthority;
@@ -713,10 +719,23 @@ void NetPlayServer::AdjustNightStadium(const bool is_night)
   std::lock_guard lkg(m_crit.game);
   m_current_night_value = is_night;
 
-  // tell clients to change ranked box
+  // tell clients to change disable replays box
   sf::Packet spac;
   spac << MessageID::NightStadium;
   spac << m_current_night_value;
+
+  SendAsyncToClients(std::move(spac));
+}
+
+void NetPlayServer::AdjustReplays(const bool disable)
+{
+  std::lock_guard lkg(m_crit.game);
+  m_current_disable_replays_value = disable;
+
+  // tell clients to change ranked box
+  sf::Packet spac;
+  spac << MessageID::DisableReplays;
+  spac << m_current_disable_replays_value;
 
   SendAsyncToClients(std::move(spac));
 }
@@ -869,6 +888,48 @@ unsigned int NetPlayServer::OnData(sf::Packet& packet, Client& player)
     sf::Packet spac;
     spac << MessageID::NightStadium;
     spac << is_night;
+
+    SendToClients(spac);
+  }
+  break;
+
+    case MessageID::GameID:
+  {
+    u32 id;
+    packet >> id;
+
+    // send codes to other clients
+    sf::Packet spac;
+    spac << MessageID::GameID;
+    spac << id;
+
+    SendToClients(spac);
+  }
+  break;
+
+  case MessageID::Stadium:
+  {
+    int stadium;
+    packet >> stadium;
+
+    // send codes to other clients
+    sf::Packet spac;
+    spac << MessageID::Stadium;
+    spac << stadium;
+
+    SendToClients(spac);
+  }
+  break;
+
+  case MessageID::DisableReplays:
+  {
+    bool disable;
+    packet >> disable;
+
+    // send codes to other clients
+    sf::Packet spac;
+    spac << MessageID::DisableReplays;
+    spac << disable;
 
     SendToClients(spac);
   }
@@ -1197,6 +1258,21 @@ unsigned int NetPlayServer::OnData(sf::Packet& packet, Client& player)
       }
       m_timebase_by_frame.erase(frame);
     }
+  }
+  break;
+
+  case MessageID::Checksum:
+  {
+    u32 inChecksum;
+    u8 checksumId;
+    packet >> inChecksum;
+    packet >> checksumId;
+
+    sf::Packet spac;
+    spac << MessageID::Checksum;
+    spac << inChecksum;
+    spac << checksumId;
+    SendToClients(spac);
   }
   break;
 

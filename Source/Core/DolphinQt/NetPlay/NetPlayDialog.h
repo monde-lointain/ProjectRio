@@ -77,7 +77,9 @@ public:
   void OnGameMode(std::string mode) override;
   void OnRankedEnabled(bool is_ranked) override;
   void OnCoinFlipResult(int coinNum);
+  void OnRandomStadiumResult(int stadium);
   void OnNightResult(bool is_night);
+  void OnDisableReplaysResult(bool disable);
   void OnActiveGeckoCodes(std::string codeStr);
   bool IsSpectating() override;
   void SetSpectating(bool spectating) override;
@@ -118,6 +120,7 @@ private:
   void OnChat();
   void OnSpectatorToggle();
   void OnCoinFlip();
+  void OnRandomStadium();
   void OnStart();
   void DisplayMessage(const QString& msg, const std::string& color,
                       int duration = OSD::Duration::NORMAL);
@@ -150,6 +153,7 @@ private:
   QMenu* m_network_menu;
   QMenu* m_md5_menu;
   QMenu* m_other_menu;
+  QMenu* m_gecko_menu;
   QPushButton* m_game_button;
   QPushButton* m_start_button;
   QLabel* m_buffer_label;
@@ -165,12 +169,17 @@ private:
   QAction* m_golf_mode_overlay_action;
   QAction* m_fixed_delay_action;
   QAction* m_hide_remote_gbas_action;
+  QAction* m_night_stadium_action;
+  QAction* m_disable_music_action;
+  QAction* m_never_cull_action;
   QPushButton* m_quit_button;
   QSplitter* m_splitter;
   // QCheckBox* m_ranked_box;
   QActionGroup* m_network_mode_group;
   QPushButton* m_coin_flipper;
+  QPushButton* m_random_stadium;
   QCheckBox* m_night_stadium;
+  QCheckBox* m_disable_replays;
   QCheckBox* m_spectator_toggle;
 
   QGridLayout* m_main_layout;

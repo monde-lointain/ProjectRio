@@ -122,6 +122,14 @@ static std::atomic<double> s_last_actual_emulation_speed{1.0};
 static bool s_frame_step = false;
 static std::atomic<bool> s_stop_frame_step;
 
+static bool hasSentGameID = false;
+static bool bHasWrittenStadium = false;
+// auto GameMode = GameMode::Custom;
+static u32 GameMode = 0;
+static int draftTimer = 0;
+static u8 m_stadium = 0;
+static u8 m_stadium_id = 0;
+
 #ifdef USE_MEMORYWATCHER
 static std::unique_ptr<MemoryWatcher> s_memory_watcher;
 #endif
@@ -161,11 +169,18 @@ double GetActualEmulationSpeed()
 
 void FrameUpdateOnCPUThread()
 {
-  if (NetPlay::IsNetPlayRunning()) {
-    NetPlay::NetPlayClient::SendTimeBase();
-
-    if (s_stat_tracker){
-      //Figure out if client is hosting via netplay settings. Could use local player as well
+  if (NetPlay::IsNetPlayRunning())
+  {
+    // NetPlay::NetPlayClient::SendTimeBase();
+    u64 frame = Movie::GetCurrentFrame();
+    if (frame % 60)
+    {
+      u8 checksumId = (frame / 60) & 0xF;
+      NetPlay::NetPlayClient::SendChecksum(checksumId, frame);
+    }
+    if (s_stat_tracker)
+    {
+      // Figure out if client is hosting via netplay settings. Could use local player as well
       bool is_hosting = NetPlay::GetNetSettings().m_IsHosting;
       std::string opponent_name = "";
       /*
@@ -178,10 +193,35 @@ void FrameUpdateOnCPUThread()
       s_stat_tracker->setNetplaySession(true, is_hosting, opponent_name);
     }
   }
-  else{
-    if (s_stat_tracker){
+  else
+  {
+    if (s_stat_tracker)
+    {
       s_stat_tracker->setNetplaySession(false);
     }
+  }
+
+  if (s_stat_tracker)
+  {
+    s_stat_tracker->Run();
+  }
+
+  SetNetplayerUserInfo();
+  SetDisplayStats();
+
+  CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(), isNight(), GameMode, isDisableReplays());
+
+  AutoGolfMode();
+  TrainingMode();
+  DisplayBatterFielder();
+  SetAvgPing();
+  SendGameID();
+  RunDraftTimer();
+
+  if (!bHasWrittenStadium && Movie::GetCurrentFrame() == 240 && NetPlay::IsNetPlayRunning()) // wait 4 seconds
+  {
+    DefaultStadiumGecko();
+    bHasWrittenStadium = true;
   }
 }
 
@@ -191,28 +231,6 @@ void OnFrameEnd()
   if (s_memory_watcher)
     s_memory_watcher->Step();
 #endif
-
-  // prevent cpu thread racing
-  RunAsCPUThread(
-      [&] {
-        SetNetplayerUserInfo();
-        SetDisplayStats();
-
-        if (s_stat_tracker)
-        {
-          s_stat_tracker->Run();
-        }
-
-        // always enable netplay event code for ranked games
-        // if not ranked, check if code is checked off
-        CodeWriter.RunCodeInject(Memory::Read_U8(aNetplayEventCode) == 1, isRankedMode(),
-                                 isNight());
-
-        AutoGolfMode();
-        TrainingMode();
-        DisplayBatterFielder();
-        SetAvgPing();
-      });
 }
 
 void AutoGolfMode()
@@ -223,7 +241,7 @@ void AutoGolfMode()
     u8 FielderPort = Memory::Read_U8(aFielderPort);
     bool isField = Memory::Read_U8(aIsField) == 1;
 
-    if (BatterPort == 0)
+    if (Memory::Read_U8(aMatchStarted) == 0)
       return;  // means game hasn't started yet
 
     // makes the player who paused the golfer
@@ -476,6 +494,55 @@ void DisplayBatterFielder()
   }
 }
 
+void SendGameID()
+{
+  if (NetPlay::IsNetPlayRunning())
+  {
+    bool matchStarted = Memory::Read_U32(aMatchStarted) == 1 ? true : false;
+
+    if (!matchStarted)
+      hasSentGameID = false;
+
+    if (!hasSentGameID && matchStarted)
+    {
+      NetPlay::NetPlayClient::SendGameID(Memory::Read_U32(aGameId));
+      hasSentGameID = true;
+    }
+  }
+}
+
+void RunDraftTimer()
+{
+  // if they have the config off or if it's not 1st frame of second
+  if (Movie::GetCurrentFrame() % 60 != 0)
+    return;
+
+  u8 scene = Memory::Read_U8(aSceneId);
+
+  if (scene < 0x9)
+    draftTimer = 0;
+
+  else if (scene < 0xC) // pause clock after draft
+  {
+    draftTimer++;
+    u32 draftMinutes = draftTimer / 60;
+    u32 draftSeconds = draftTimer % 60;
+    if (g_ActiveConfig.bDraftTimer)
+    {
+      if (draftSeconds >= 10)
+      {
+        OSD::AddTypedMessage(OSD::MessageType::DraftTimer,
+                             fmt::format("Draft:  {}:{}", draftMinutes, draftSeconds), 2000);
+      }
+      else
+      {
+        OSD::AddTypedMessage(OSD::MessageType::DraftTimer,
+                             fmt::format("Draft:  {}:0{}", draftMinutes, draftSeconds), 2000);
+      }
+    }
+  }
+}
+
 // rounds to 2 decimal places
 float u32ToFloat(u32 value)
 {
@@ -513,6 +580,13 @@ bool isNight()
   if (!NetPlay::IsNetPlayRunning())
     return false;
   return NetPlay::NetPlayClient::isNight();
+}
+
+bool isDisableReplays()
+{
+  if (!NetPlay::IsNetPlayRunning())
+    return false;
+  return NetPlay::NetPlayClient::isDisableReplays();
 }
 
 void SetAvgPing()
@@ -659,6 +733,10 @@ bool Init(std::unique_ptr<BootParameters> boot, const WindowSystemInfo& wsi)
   // Start the emu thread
   s_is_booting.Set();
   s_emu_thread = std::thread(EmuThread, std::move(boot), prepared_wsi);
+
+  // do this too lol ~LittleCoaks
+  bHasWrittenStadium = false;
+
   return true;
 }
 
@@ -1607,14 +1685,65 @@ void SetDisplayStats()
 {
   if (s_stat_tracker)
   {
-      s_stat_tracker->setDisplayStats(g_ActiveConfig.bShowStats);
+      s_stat_tracker->setDisplayStats(Config::Get(Config::MAIN_ENABLE_DEBUGGING));
   }
   else {
     s_stat_tracker = std::make_unique<StatTracker>();
     s_stat_tracker->init();
-    s_stat_tracker->setDisplayStats(g_ActiveConfig.bShowStats);
+    s_stat_tracker->setDisplayStats(Config::Get(Config::MAIN_ENABLE_DEBUGGING));
   }
 }
 
+void SetGameID(u32 gameID)
+{
+  if (s_stat_tracker)
+  {
+    s_stat_tracker->setGameID(gameID);
+  }
+  else
+  {
+    s_stat_tracker = std::make_unique<StatTracker>();
+    s_stat_tracker->init();
+    s_stat_tracker->setGameID(gameID);
+  }
+}
+
+void SetGameMode(std::string mode)
+{
+  if (mode == "Superstars OFF")
+  {
+    GameMode = 1;
+    //GameMode = GameMode::StarsOff;
+  }
+  else if (mode == "Superstars ON")
+  {
+    GameMode = 2;
+    //GameMode = GameMode::StarsOn;
+  }
+  else
+  {
+    GameMode = 0;
+    //GameMode = GameMode::Custom;
+  }
+}
+
+void DefaultStadiumGecko(u8 stadium, u8 stadium_id)
+{
+  if (IsRunning())
+  {
+    if (stadium == 0xff)
+      stadium = m_stadium;
+    if (stadium_id == 0xff)
+      stadium_id = m_stadium_id;
+    
+    Memory::Write_U32(0x38000000 + stadium, 0x80650934);
+    Memory::Write_U8(stadium_id, 0x80E016A7);
+  }
+  else
+  {
+    m_stadium = stadium;
+    m_stadium_id = stadium_id;
+  }
+}
 
 }  // namespace Core

@@ -175,6 +175,7 @@ enum class MessageID : u8
 
   TimeBase = 0xB0,
   DesyncDetected = 0xB1,
+  Checksum = 0xB2,
 
   ComputeMD5 = 0xC0,
   MD5Progress = 0xC1,
@@ -196,6 +197,9 @@ enum class MessageID : u8
   SendCodes = 0xF3,
   CoinFlip = 0xF4,
   NightStadium = 0xF5,
+  GameID = 0xF6,
+  Stadium = 0xF7,
+  DisableReplays = 0xF8,
 };
 
 enum class ConnectionError : u8

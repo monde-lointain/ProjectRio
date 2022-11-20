@@ -23,6 +23,7 @@ enum class MessageType
   GameStateInfo,
   GameStatePreviousPlayInfo,
   GameStatePreviousPlayResult,
+  DraftTimer,
 
   // This entry must be kept last so that persistent typed messages are
   // displayed before other messages
