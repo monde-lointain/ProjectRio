@@ -168,7 +168,7 @@ double GetActualEmulationSpeed()
 
 void FrameUpdateOnCPUThread()
 {
-  if (NetPlay::IsNetPlayRunning())
+  if (NetPlay::IsNetPlayRunning() && Core::IsRunningAndStarted())
   {
     // NetPlay::NetPlayClient::SendTimeBase();
     u64 frame = Movie::GetCurrentFrame();
