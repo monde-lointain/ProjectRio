@@ -1034,7 +1034,7 @@ void NetPlayDialog::SetOptionsEnabled(bool enabled)
 void NetPlayDialog::RankedStartingMsg(bool is_ranked) {
   if (is_ranked)
   {
-    DisplayMessage(tr("NOTE: Ranked is Enabled. All gecko codes & Training Mode are disabled. 10 second Pitch Clock is active."), "mediumseagreen");
+    DisplayMessage(tr("NOTE: Ranked is Enabled. All gecko codes & Training Mode are disabled. 10 second Pitch Clock is active. Superstar off games are hazardless."), "mediumseagreen");
     Core::setRankedStatus(is_ranked);
   }
   else
