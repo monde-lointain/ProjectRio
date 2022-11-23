@@ -234,7 +234,7 @@ void AutoGolfMode()
     u8 FielderPort = Memory::Read_U8(aFielderPort);
     bool isField = Memory::Read_U8(aIsField) == 1;
 
-    if (Memory::Read_U8(aMatchStarted) == 0)
+    if (BatterPort == 0)
       return;  // means game hasn't started yet
 
     // makes the player who paused the golfer
@@ -491,7 +491,7 @@ void SendGameID()
 {
   if (NetPlay::IsNetPlayRunning())
   {
-    bool matchStarted = Memory::Read_U32(aMatchStarted) == 1 ? true : false;
+    bool matchStarted = Memory::Read_U8(aBatterPort) != 0 ? true : false;
 
     if (!matchStarted)
       hasSentGameID = false;
