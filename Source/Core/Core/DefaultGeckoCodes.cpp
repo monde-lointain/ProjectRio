@@ -51,14 +51,14 @@ void DefaultGeckoCodes::RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bo
       Memory::Write_U32(0x38000000, aDisableMusic_2);
     }
 
-    if (Config::Get(Config::NETPLAY_NEVER_CULL))
-    {
-      Memory::Write_U32(0x38000007, aNeverCull_1);
-      Memory::Write_U32(0x38000001, aNeverCull_2);
-      Memory::Write_U32(0x38000001, aNeverCull_3);
-      if (Memory::Read_U32(aNeverCull_4) == 0x881a0093)
-        Memory::Write_U32(0x38000003, aNeverCull_4);
-    }
+    //if (Config::Get(Config::NETPLAY_NEVER_CULL))
+    //{
+    //  Memory::Write_U32(0x38000007, aNeverCull_1);
+    //  Memory::Write_U32(0x38000001, aNeverCull_2);
+    //  Memory::Write_U32(0x38000001, aNeverCull_3);
+    //  if (Memory::Read_U32(aNeverCull_4) == 0x881a0093)
+    //    Memory::Write_U32(0x38000003, aNeverCull_4);
+    //}
   }
 }
 

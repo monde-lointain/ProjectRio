@@ -223,11 +223,11 @@ void NetPlayDialog::CreateMainLayout()
   m_disable_music_action = m_gecko_menu->addAction(tr("Disable Music"));
   m_disable_music_action->setToolTip(tr("Turns off music."));
   m_disable_music_action->setCheckable(true);
-  m_never_cull_action = m_gecko_menu->addAction(tr("Never Cull"));
-  m_never_cull_action->setToolTip(
-      tr("Characters and stadium hazards never disappear when\noffscreen. Useful for content creators/widescreen "
-         "users.\nWARNING: can cause lag on weaker systems."));
-  m_never_cull_action->setCheckable(true);
+  //m_never_cull_action = m_gecko_menu->addAction(tr("Never Cull"));
+  //m_never_cull_action->setToolTip(
+  //    tr("Characters and stadium hazards never disappear when\noffscreen. Useful for content creators/widescreen "
+  //       "users.\nWARNING: can cause lag on weaker systems."));
+  //m_never_cull_action->setCheckable(true);
 
   m_game_button->setDefault(false);
   m_game_button->setAutoDefault(false);
@@ -463,7 +463,7 @@ void NetPlayDialog::ConnectWidgets()
   connect(m_hide_remote_gbas_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
   //connect(m_night_stadium_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
   connect(m_disable_music_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
-  connect(m_never_cull_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
+  //connect(m_never_cull_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
 }
 
 void NetPlayDialog::SendMessage(const std::string& msg)
@@ -1032,7 +1032,7 @@ void NetPlayDialog::SetOptionsEnabled(bool enabled)
     m_disable_replays->setCheckable(enabled);
     //m_night_stadium_action->setEnabled(enabled);
     m_disable_music_action->setEnabled(enabled);
-    m_never_cull_action->setEnabled(enabled);
+    //m_never_cull_action->setEnabled(enabled);
   }
 
   m_record_input_action->setEnabled(enabled);
@@ -1345,7 +1345,7 @@ void NetPlayDialog::LoadSettings()
   //const bool ranked_mode = Config::Get(Config::NETPLAY_RANKED);
   //const bool night_stadium = Config::Get(Config::NETPLAY_NIGHT_STADIUM);
   const bool disable_music = Config::Get(Config::NETPLAY_DISABLE_MUSIC);
-  const bool never_cull = Config::Get(Config::NETPLAY_NEVER_CULL);
+  //const bool never_cull = Config::Get(Config::NETPLAY_NEVER_CULL);
 
   //m_ranked_box->setChecked(ranked_mode);
   m_buffer_size_box->setValue(buffer_size);
@@ -1359,7 +1359,7 @@ void NetPlayDialog::LoadSettings()
   m_hide_remote_gbas_action->setChecked(hide_remote_gbas);
   //m_night_stadium_action->setChecked(night_stadium);
   m_disable_music_action->setChecked(disable_music);
-  m_never_cull_action->setChecked(never_cull);
+  //m_never_cull_action->setChecked(never_cull);
 
   const std::string network_mode = Config::Get(Config::NETPLAY_NETWORK_MODE);
 
@@ -1398,7 +1398,7 @@ void NetPlayDialog::SaveSettings()
   //Config::SetBase(Config::NETPLAY_RANKED, m_ranked_box->isChecked());
   //Config::SetBase(Config::NETPLAY_NIGHT_STADIUM, m_night_stadium_action->isChecked());
   Config::SetBase(Config::NETPLAY_DISABLE_MUSIC, m_disable_music_action->isChecked());
-  Config::SetBase(Config::NETPLAY_NEVER_CULL, m_never_cull_action->isChecked());
+  //Config::SetBase(Config::NETPLAY_NEVER_CULL, m_never_cull_action->isChecked());
 
   std::string network_mode;
   if (m_fixed_delay_action->isChecked())
