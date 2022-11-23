@@ -116,6 +116,7 @@ void DefaultGeckoCodes::AddRankedCodes()
     Memory::Write_U32(0x38000000, aBanBatterPausing);
 
   WriteAsm(sHazardless);
+  WriteAsm(sHazardless_1);
 }
 
 

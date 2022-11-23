@@ -263,6 +263,13 @@ class DefaultGeckoCodes {
          0x38210050}
     };
 
+    const DefaultGeckoCode sHazardless_1 = {
+        0x8072FDC8, 0xC0010044,
+        {0x3E608035, 0x6273323B, 0x3AA00000, 0x7E93A8AE, 0x2C140001, 0x41820018, 0x3AB50001, 0x2C150012,
+        0x4082FFEC, 0x3E204348, 0x92210044, 0xC0010044}
+    };
+
+
     void WriteAsm(DefaultGeckoCode CodeBlock);
     u32 aWriteAddr;  // address where the first code gets written to
 
