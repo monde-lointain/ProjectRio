@@ -520,7 +520,6 @@ void NetPlayDialog::OnRandomStadium()
 
 void NetPlayDialog::OnRandomStadiumResult(int stadium)
 {
-  bool error = false;
   u8 stadium_id = 0;
 
   switch (stadium) {
@@ -549,13 +548,7 @@ void NetPlayDialog::OnRandomStadiumResult(int stadium)
     break;
   default:
     DisplayMessage(tr("There was an error. Please try again"), "red");
-    error = true;
   }
-
-  if (error)
-    return;
-
-  Core::DefaultStadiumGecko(stadium, stadium_id);
 }
 
 void NetPlayDialog::OnNightResult(bool is_night)
