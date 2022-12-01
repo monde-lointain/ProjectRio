@@ -910,18 +910,21 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
 
     //Defensive Stats
     for (int team=0; team < cNumOfTeams; ++team){
-        // std::string team_label;
-        u8 captain_roster_loc = 0;
+        u8 captain_roster_loc;
         if (team == 0){
-            captain_roster_loc = (m_game_info.home_port == m_game_info.team0_port) ? m_game_info.team0_captain_roster_loc : m_game_info.team1_captain_roster_loc;
-        }
-        else{ // team == 1
             captain_roster_loc = (m_game_info.away_port == m_game_info.team0_port) ? m_game_info.team0_captain_roster_loc : m_game_info.team1_captain_roster_loc;
         }
+        else{ // team == 1
+            captain_roster_loc = (m_game_info.home_port == m_game_info.team0_port) ? m_game_info.team0_captain_roster_loc : m_game_info.team1_captain_roster_loc;
+        }
+
+        std::string team_string = (team == 0) ? "Away" : "Home";
 
         for (int roster=0; roster < cRosterSize; ++roster){
             CharacterSummary& char_summary = m_game_info.character_summaries[team][roster];
-            std::string label = "\"Team " + std::to_string(team) + " Roster " + std::to_string(roster) + "\": ";
+            
+            // team integer home or away
+            std::string label = "\"Team " + team_string + " Roster " + std::to_string(roster) + "\": ";
             json_stream << "    " << label << "{\n";
             json_stream << "      \"Team\": \""        << std::to_string(team) << "\",\n";
             json_stream << "      \"RosterID\": "      << std::to_string(roster) << ",\n";
