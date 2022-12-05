@@ -503,6 +503,12 @@ void StatTracker::lookForTriggerEvents(){
 
                 //File::WriteStringToFile(jsonPath, json);
                 //https://api.projectrio.app/populate_db
+
+                //Print server warning message
+                OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(
+                    "Submitting game to server \n",
+                    "DO NOT LEAVE THE GAME OR CLOSE RIO"           
+                ), 500, OSD::Color::RED);
                 
                 json = getStatJSON(false, false);
                 if (shouldSubmitGame()) {
@@ -513,6 +519,12 @@ void StatTracker::lookForTriggerEvents(){
                         }
                     );
                 }
+
+                //Print server warning message
+                OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(
+                    "Done submitting game \n",
+                    'SAFE TO QUIT'           
+                ), 5000, OSD::Color::GREEN);
 
                 std::cout << "Logging to " << jsonPath << "\n";
                 std::cout << "INGAME->ENDGAME\n";
