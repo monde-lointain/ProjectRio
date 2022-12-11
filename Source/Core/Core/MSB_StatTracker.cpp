@@ -260,6 +260,7 @@ void StatTracker::lookForTriggerEvents(){
                     else if(Memory::Read_U8(aAB_PickoffAttempt)) {
                         std::cout << "Pick of attempt detected!\n";
                         m_event_state = EVENT_STATE::MONITOR_RUNNERS;
+                        m_game_info.getCurrentEvent().pick_off_attempt = true;
                     }
                 }
                 break;
@@ -397,6 +398,11 @@ void StatTracker::lookForTriggerEvents(){
                         std::cout << "Logging DB!\n";
                     }
 
+                    // Clear result of AB for pickoffs
+                    if (m_game_info.getCurrentEvent().pick_off_attempt) {
+                        m_game_info.getCurrentEvent().result_of_atbat = 0;
+                    }
+
                     m_event_state = EVENT_STATE::FINAL_RESULT;
                     std::cout << "Play over\n";
                 }
@@ -475,6 +481,7 @@ void StatTracker::lookForTriggerEvents(){
                 m_game_info.netplay = m_state.m_netplay_session;
                 m_game_info.host    = m_state.m_is_host;
                 m_game_info.netplay_opponent_alias = m_state.m_netplay_opponent_alias;
+                m_game_info.tag_set_id = m_state.tag_set_id;
 
                 //If TagSet provided, get tags from server
                 if (m_state.m_tag_set.has_value()){
@@ -900,7 +907,12 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
     json_stream << "  \"GameID\": \"" << m_game_info.game_id << "\",\n";
     json_stream << "  \"Date - Start\": \"" << start_date_time << "\",\n";
     json_stream << "  \"Date - End\": \"" << end_date_time << "\",\n";
-    json_stream << "  \"Ranked\": " << std::to_string(m_game_info.ranked) << ",\n";
+    
+    tag_set_id_str = "";
+    if (m_game_info.tag_set_id.has_value()){
+        tag_set_id_str = std::to_string(m_game_info.tag_set_id.value());
+    }
+    json_stream << "  \"Tags\": [" << tag_set_id_str << "],\n";
     json_stream << "  \"Netplay\": " << std::to_string(m_game_info.netplay) << ",\n";
     json_stream << "  \"StadiumID\": " << decode("Stadium", m_game_info.stadium, inDecode) << ",\n";
     json_stream << "  \"Away Player\": \"" << away_player_info << "\",\n"; //TODO MAKE THIS AN ID
@@ -912,7 +924,6 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
     json_stream << "  \"Innings Selected\": " << std::to_string(m_game_info.innings_selected) << ",\n";
     json_stream << "  \"Innings Played\": " << std::to_string(m_game_info.innings_played) << ",\n";
     json_stream << "  \"Quitter Team\": " << decode("QuitterTeam", m_game_info.quitter_team, inDecode) << ",\n";
-    //json_stream << "  \"Partial Game\": \"" << std::to_string(m_game_info.partial) << "\",\n";
 
     json_stream << "  \"Average Ping\": " << std::to_string(m_game_info.avg_ping) << ",\n";
     json_stream << "  \"Lag Spikes\": " << std::to_string(m_game_info.lag_spikes) << ",\n";
@@ -1681,6 +1692,11 @@ void StatTracker::setRecordStatus(bool inBool) {
 void StatTracker::setTagSetId(Tag::TagSet tag_set) {
     std::cout << "TagSet Id=" << tag_set.id << "," << "TagSet Name=" << tag_set.name << "\n";
     m_state.tag_set_id = tag_set.id;
+}
+
+void StatTracker::clearTagSetId() {
+    std::cout << "Clearing TagSet" << "\n";
+    m_state.tag_set_id = std::nullopt;
 }
 
 
