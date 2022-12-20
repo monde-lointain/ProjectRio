@@ -530,7 +530,7 @@ void StatTracker::lookForTriggerEvents(){
                 //Print server warning message
                 OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(
                     "Done submitting game \n",
-                    'SAFE TO QUIT'           
+                    "SAFE TO QUIT"
                 ), 5000, OSD::Color::GREEN);
 
                 std::cout << "Logging to " << jsonPath << "\n";
@@ -725,9 +725,10 @@ void StatTracker::logContact(Event& in_event){
     contact->ball_hang_time.read_value();
 
     u32 aStickInput = aAB_ControlStickInput + (getBatterFielderPorts().first * cControl_Offset);
-    std::cout << "Batter Port=" << std::to_string(getBatterFielderPorts().first) << " Stick Addr=" << std::hex << aStickInput << " Stick Value=" << (Memory::Read_U16(aStickInput) & 0xF) << "\n";
+    //std::cout << "Batter Port=" << std::to_string(getBatterFielderPorts().first) << " Stick Addr=" << std::hex << aStickInput << " Stick Value=" << (Memory::Read_U16(aStickInput) & 0xF) << "\n";
     contact->input_direction_stick.set_value(Memory::Read_U16(aStickInput) & 0xF); //Mask off the lower 4 bits which are the control stick directions
-    std::cout << "  Stick Value Decoded=" << decode("StickVec", contact->input_direction_stick.get_value(), true) << "\n";
+    //std::cout << "  Stick Value Decoded=" << decode("StickVec", contact->input_direction_stick.get_value(), true) << "\n";
+    std::cout << "SWING: " << contact->frame_of_swing.get_key_value_string().first << "=" << contact->frame_of_swing.get_key_value_string().second << "\n";
     std::cout << "\n";
 }
 
@@ -766,13 +767,16 @@ void StatTracker::logPitch(Event& in_event){
     }
 
     //Use adjusted swing if swing and miss, else 0 (or 4 for bunt)
-    u8 miss_type = Memory::Read_U8(aAB_Miss_SwingOrBunt); //0=No swing, 1=swing, 2=bunt
-    if (miss_type == 0) {
+    u8 any_swing = Memory::Read_U8(aAB_AnySwing); //0=No swing, 1=swing
+    if (any_swing == 0) {
         in_event.pitch->type_of_swing = 0;
     }
-    else if (miss_type >= 1){
+    else if (any_swing >= 1){
         in_event.pitch->type_of_swing = adjusted_swing;
     }
+
+    std::cout << "SWING: Swing Type=" << std::to_string(swing_type) << " Star Swing=" << std::to_string(star_swing) 
+              << " AnySwing=" << std::to_string(Memory::Read_U8(aAB_AnySwing)) << " Final=" << std::to_string(in_event.pitch->type_of_swing) << "\n";
 }
 
 void StatTracker::logContactResult(Contact* in_contact){
@@ -908,7 +912,7 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
     json_stream << "  \"Date - Start\": \"" << start_date_time << "\",\n";
     json_stream << "  \"Date - End\": \"" << end_date_time << "\",\n";
     
-    tag_set_id_str = "";
+    std::string tag_set_id_str = "";
     if (m_game_info.tag_set_id.has_value()){
         tag_set_id_str = std::to_string(m_game_info.tag_set_id.value());
     }
