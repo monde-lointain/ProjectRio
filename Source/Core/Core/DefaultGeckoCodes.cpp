@@ -51,6 +51,11 @@ void DefaultGeckoCodes::RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bo
       Memory::Write_U32(0x38000000, aDisableMusic_2);
     }
 
+    if (Config::Get(Config::NETPLAY_HIGHLIGHT_BALL_SHADOW))
+    {
+      WriteAsm(sHighlightBallShadow);
+    }
+
     //if (Config::Get(Config::NETPLAY_NEVER_CULL))
     //{
     //  Memory::Write_U32(0x38000007, aNeverCull_1);

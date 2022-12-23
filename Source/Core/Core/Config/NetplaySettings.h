@@ -55,7 +55,8 @@ extern const Info<bool> NETPLAY_RANKED;
 extern const Info<std::string> NETPLAY_GAME_MODE;
 //extern const Info<bool> NETPLAY_NIGHT_STADIUM;
 extern const Info<bool> NETPLAY_DISABLE_MUSIC;
-extern const Info<bool> NETPLAY_NEVER_CULL;
+extern const Info<bool> NETPLAY_HIGHLIGHT_BALL_SHADOW;
+//extern const Info<bool> NETPLAY_NEVER_CULL;
 
 std::vector<std::string> LobbyNameVector(const std::string& name);
 

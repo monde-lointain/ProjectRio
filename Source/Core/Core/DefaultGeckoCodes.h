@@ -269,6 +269,12 @@ class DefaultGeckoCodes {
         0x4082FFEC, 0x3E204348, 0x92210044, 0xC0010044}
     };
 
+    // Highlight Ball Shadow [LittleCoaks]
+    const DefaultGeckoCode sHighlightBallShadow = {
+        0x806A844C, 0x41820224,
+        {0x40820020, 0x3C80806A, 0x608485B8, 0x3D80C01D, 0x91840000, 0x3D80C005, 0x618C0008,
+        0x9184001C}
+    };
 
     void WriteAsm(DefaultGeckoCode CodeBlock);
     u32 aWriteAddr;  // address where the first code gets written to

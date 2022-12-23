@@ -61,6 +61,7 @@ const Info<bool> NETPLAY_RANKED{{System::Main, "NetPlay", "Ranked"}, false};
 const Info<std::string> NETPLAY_GAME_MODE{{System::Main, "NetPlay", "GameMode"}, "Superstars OFF"};
 //const Info<bool> NETPLAY_NIGHT_STADIUM{{System::Main, "NetPlay", "Night Stadium"}, false};
 const Info<bool> NETPLAY_DISABLE_MUSIC{{System::Main, "NetPlay", "Disable Music"}, false};
+const Info<bool> NETPLAY_HIGHLIGHT_BALL_SHADOW{{System::Main, "NetPlay", "Highlight Ball Shadow"}, false};
 //const Info<bool> NETPLAY_NEVER_CULL{{System::Main, "NetPlay", "Never Cull"}, false};
 
 int ONLINE_COUNT = 0;

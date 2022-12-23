@@ -171,6 +171,7 @@ private:
   QAction* m_hide_remote_gbas_action;
   QAction* m_night_stadium_action;
   QAction* m_disable_music_action;
+  QAction* m_highlight_ball_shadow_action;
   //QAction* m_never_cull_action;
   QPushButton* m_quit_button;
   QSplitter* m_splitter;
