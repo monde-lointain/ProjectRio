@@ -52,7 +52,6 @@ NetPlaySetupDialog::NetPlaySetupDialog(const GameListModel& game_list_model, QWi
   std::string index_region = Config::Get(Config::NETPLAY_INDEX_REGION);
   std::string index_name = Config::LobbyNameVector(Config::Get(Config::NETPLAY_INDEX_NAME))[0];
   std::string index_password = Config::Get(Config::NETPLAY_INDEX_PASSWORD);
-  std::string nickname = Config::Get(Config::NETPLAY_NICKNAME);
   std::string traversal_choice = Config::Get(Config::NETPLAY_TRAVERSAL_CHOICE);
   int connect_port = Config::Get(Config::NETPLAY_CONNECT_PORT);
   int host_port = Config::Get(Config::NETPLAY_HOST_PORT);
@@ -65,7 +64,6 @@ NetPlaySetupDialog::NetPlaySetupDialog(const GameListModel& game_list_model, QWi
   m_host_upnp->setChecked(use_upnp);
 #endif
 
-  m_nickname_edit->setText(QString::fromStdString(nickname));
   m_connection_type->setCurrentIndex(traversal_choice == "direct" ? 0 : 1);
   m_connect_port_box->setValue(connect_port);
   m_host_port_box->setValue(host_port);
@@ -132,15 +130,11 @@ void NetPlaySetupDialog::CreateMainLayout()
 {
   m_main_layout = new QGridLayout;
   m_button_box = new QDialogButtonBox(QDialogButtonBox::Cancel);
-  m_nickname_edit = new QLineEdit;
   m_connection_type = new QComboBox;
   m_connection_type->setCurrentIndex(1); // default to traversal server
   m_reset_traversal_button = new NonDefaultQPushButton(tr("Reset Traversal Settings"));
   m_latency_test = new QPushButton(tr("Internet Test"));
   m_tab_widget = new QTabWidget;
-
-  m_nickname_edit->setValidator(
-      new UTF8CodePointCountValidator(NetPlay::MAX_NAME_LENGTH, m_nickname_edit));
 
   // Connection widget
   auto* connection_widget = new QWidget;
@@ -330,14 +324,12 @@ void NetPlaySetupDialog::CreateMainLayout()
   m_connection_type->addItem(tr("Direct Connection"));
   m_connection_type->addItem(tr("Traversal Server"));
 
-  m_main_layout->addWidget(new QLabel(tr("Connection Type:")), 0, 0);
-  m_main_layout->addWidget(m_connection_type, 0, 1);
-  m_main_layout->addWidget(m_reset_traversal_button, 0, 2);
-  m_main_layout->addWidget(new QLabel(tr("Nickname:")), 1, 0);
-  m_main_layout->addWidget(m_nickname_edit, 1, 1);
-  m_main_layout->addWidget(m_latency_test, 1, 2);
-  m_main_layout->addWidget(m_tab_widget, 2, 0, 1, -1);
-  m_main_layout->addWidget(m_button_box, 3, 0, 1, -1);
+  m_main_layout->addWidget(m_tab_widget, 0, 0, 1, -1);
+  m_main_layout->addWidget(new QLabel(tr("Connection Type:")), 1, 0);
+  m_main_layout->addWidget(m_connection_type, 1, 1);
+  m_main_layout->addWidget(m_reset_traversal_button, 1, 2);
+  m_main_layout->addWidget(m_latency_test, 1, 3);
+  m_main_layout->addWidget(m_button_box, 1, 4, 1, -1);
 
   // Tabs
   m_tab_widget->addTab(connection_widget, tr("Join Private Lobby"));
@@ -362,7 +354,6 @@ void NetPlaySetupDialog::ConnectWidgets()
 {
   connect(m_connection_type, qOverload<int>(&QComboBox::currentIndexChanged), this,
           &NetPlaySetupDialog::OnConnectionTypeChanged);
-  connect(m_nickname_edit, &QLineEdit::textChanged, this, &NetPlaySetupDialog::SaveSettings);
 
   // Connect widget
   connect(m_ip_edit, &QLineEdit::textChanged, this, &NetPlaySetupDialog::SaveSettings);
@@ -452,7 +443,6 @@ void NetPlaySetupDialog::SaveSettings()
 {
   Config::ConfigChangeCallbackGuard config_guard;
 
-  Config::SetBaseOrCurrent(Config::NETPLAY_NICKNAME, m_nickname_edit->text().toStdString());
   Config::SetBaseOrCurrent(m_connection_type->currentIndex() == 0 ? Config::NETPLAY_ADDRESS :
                                                                     Config::NETPLAY_HOST_CODE,
                            m_ip_edit->text().toStdString());
@@ -528,7 +518,7 @@ void NetPlaySetupDialog::show()
   // NetPlay sessions start more easily for first time players
   if (m_host_server_name->text().isEmpty())
   {
-    std::string nickname = Config::Get(Config::NETPLAY_NICKNAME);
+    std::string nickname = "New Lobby";
     m_host_server_name->setText(QString::fromStdString(nickname));
   }
   m_host_server_browser->setChecked(true);

@@ -23,6 +23,7 @@
 #include "Core/SyncIdentifier.h"
 #include "InputCommon/GCPadStatus.h"
 #include "Core/LocalPlayers.h"
+#include <Common/HttpRequest.h>
 
 class BootSessionData;
 
@@ -119,7 +120,7 @@ public:
   void SendAsync(sf::Packet&& packet, u8 channel_id = DEFAULT_CHANNEL);
 
   NetPlayClient(const std::string& address, const u16 port, NetPlayUI* dialog,
-                const std::string& name, const NetTraversalConfig& traversal_config);
+                const NetTraversalConfig& traversal_config);
   ~NetPlayClient();
 
   std::vector<const Player*> GetPlayers();
@@ -383,6 +384,7 @@ private:
   std::unique_ptr<IOS::HLE::FS::FileSystem> m_wii_sync_fs;
   std::vector<u64> m_wii_sync_titles;
   std::string m_wii_sync_redirect_folder;
+  Common::HttpRequest m_http{std::chrono::minutes{3}};
 };
 
 void NetPlay_Enable(NetPlayClient* const np);

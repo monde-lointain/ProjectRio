@@ -25,7 +25,7 @@ extern const Info<std::string> NETPLAY_ADDRESS;
 extern const Info<u16> NETPLAY_CONNECT_PORT;
 extern const Info<u16> NETPLAY_LISTEN_PORT;
 
-extern const Info<std::string> NETPLAY_NICKNAME;
+//extern const Info<std::string> NETPLAY_NICKNAME;
 extern const Info<bool> NETPLAY_USE_UPNP;
 
 extern const Info<bool> NETPLAY_ENABLE_QOS;

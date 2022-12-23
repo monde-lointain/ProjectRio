@@ -26,7 +26,9 @@ public:
     void SetUserInfo(LocalPlayers::Player player);
   };
 
-  std::vector<LocalPlayers::Player> GetPlayers(const IniFile& localIni);
+  std::vector<LocalPlayers::Player> GetPlayers();
+  std::map<std::string, std::string> GetPlayerMap();
+  std::map<std::string, int> GetPlayerIndexMap();
   std::map<int, LocalPlayers::Player> GetPortPlayers(); // port num to the full local player string <name>[<uid>]
   LocalPlayers::Player toLocalPlayer(std::string playerStr);
 };

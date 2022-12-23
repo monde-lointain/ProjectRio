@@ -60,6 +60,7 @@
 #include "Core/NetPlayClient.h"  //for NetPlayUI
 #include "Core/NetPlayCommon.h"
 #include "Core/SyncIdentifier.h"
+#include "Core/LocalPlayersConfig.h"
 
 #include "DiscIO/Enums.h"
 #include "DiscIO/RiivolutionPatcher.h"
@@ -413,7 +414,7 @@ ConnectionError NetPlayServer::OnConnect(ENetPeer* socket, sf::Packet& rpac)
   rpac >> player.revision;
   rpac >> player.name;
 
-  if (StringUTF8CodePointCount(player.name) > MAX_NAME_LENGTH)
+  if (StringUTF8CodePointCount(LocalPlayers::m_online_player.username) > MAX_NAME_LENGTH)
     return ConnectionError::NameTooLong;
 
   // Extend reliable traffic timeout

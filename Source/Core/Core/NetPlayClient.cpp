@@ -130,11 +130,28 @@ NetPlayClient::~NetPlayClient()
 }
 
 // called from ---GUI--- thread
-NetPlayClient::NetPlayClient(const std::string& address, const u16 port, NetPlayUI* dialog,
-                             const std::string& name, const NetTraversalConfig& traversal_config)
-    : m_dialog(dialog), m_player_name(name)
+NetPlayClient::NetPlayClient(const std::string& address, const u16 port, NetPlayUI* dialog, const NetTraversalConfig& traversal_config)
+    : m_dialog(dialog)
 {
   ClearBuffers();
+
+    // Validate Rio User
+  std::string url = "https://api.projectrio.app/validate_user_from_client/?username=" +
+                    LocalPlayers::m_online_player.GetUsername() +
+                    "&rio_key=" + LocalPlayers::m_online_player.GetUserID();
+  const Common::HttpRequest::Response response = m_http.Get(url);
+  if (!response)
+  {
+    m_dialog->OnConnectionError(_trans("The Username and Rio Key of the Online Player could not be validated. You must make a Rio account to access online play.\n\n"
+           "To access online play, please follow these steps:\n"
+           "- open the \"Rio Config\" tab and click the \"Add Player\" button.\n"
+           "- click \"Create Account\" and create a Rio account through the Project Rio website.\n"
+           "- make sure to verify your email and receive your Rio Key.\n"
+           "- enter your username and Rio Key into the appropriate text boxes, then click \"Save\".\n"
+        "- set the \"Online Player\" combo box to your newly added account."));
+    return;  // no netplay for invalid account
+  }
+  m_player_name = LocalPlayers::m_online_player.GetUsername();
 
   if (!traversal_config.use_traversal)
   {
@@ -3111,17 +3128,16 @@ void NetPlayClient::SendLocalPlayerNetplay(LocalPlayers::LocalPlayers::Player us
 
 LocalPlayers::LocalPlayers::Player NetPlayClient::GetLocalPlayerNetplay()
 {
-  // Eventually replace this with the account information in future official release
-  // for now, we just reference the player mapped to port 1, which is the intended player 99% of the time anyway
+  // get online player in rio config
   // if no one is set, use netplay nickname
   LocalPlayers::LocalPlayers::Player netplay_player;
-  if (LocalPlayers::m_local_player_1.GetUsername() == "" || LocalPlayers::m_local_player_1.GetUsername() == "No Player Selected")
+  if (LocalPlayers::m_online_player.GetUsername() == "" || LocalPlayers::m_online_player.GetUsername() == "No Player Selected")
   {
     netplay_player.username = m_players[m_local_player->pid].name;
     netplay_player.userid = "0";
   }
   else
-    netplay_player = LocalPlayers::m_local_player_1;
+    netplay_player = LocalPlayers::m_online_player;
   return netplay_player;
 }
 

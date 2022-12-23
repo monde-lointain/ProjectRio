@@ -64,6 +64,7 @@
 #include "VideoCommon/NetPlayGolfUI.h"
 #include "VideoCommon/RenderBase.h"
 #include "VideoCommon/VideoConfig.h"
+#include <Core/LocalPlayersConfig.h>
 
 namespace
 {
@@ -658,9 +659,9 @@ void NetPlayDialog::reject()
   }
 }
 
-void NetPlayDialog::show(std::string nickname, bool use_traversal)
+void NetPlayDialog::show(bool use_traversal)
 {
-  m_nickname = nickname;
+  m_nickname = LocalPlayers::m_online_player.username;
   m_use_traversal = use_traversal;
   m_buffer_size = 0;
   m_old_player_count = 0;

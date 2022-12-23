@@ -31,12 +31,8 @@ private:
   void OnRemovePlayers();
   void SavePlayers();
   void UpdatePlayers();
-  void AddPlayerToList();
 
-  void SetPlayerOne(const LocalPlayers::LocalPlayers::Player& local_player_1);
-  void SetPlayerTwo(const LocalPlayers::LocalPlayers::Player& local_player_2);
-  void SetPlayerThree(const LocalPlayers::LocalPlayers::Player& local_player_3);
-  void SetPlayerFour(const LocalPlayers::LocalPlayers::Player& local_player_4);
+  void SetPortInfo();
 
   void ConnectWidgets();
 
@@ -44,13 +40,18 @@ private:
   QGridLayout* m_player_layout;
   QListWidget* m_player_list;
 
+  QComboBox* m_player_list_0;
   QComboBox* m_player_list_1;
   QComboBox* m_player_list_2;
   QComboBox* m_player_list_3;
   QComboBox* m_player_list_4;
+  std::array<QComboBox*, 5> m_port_array;
 
   QPushButton* m_add_button;
   QPushButton* m_remove_button;
   std::array<QHBoxLayout*, 4> m_player_groups;
-  std::vector<LocalPlayers::LocalPlayers::Player> m_local_players;
+
+  std::vector<LocalPlayers::LocalPlayers::Player> m_local_players; // vector of player objects
+  std::map<std::string, std::string> m_player_map; // maps player key to username
+  std::map<std::string, int> m_player_index_map; // maps player key to vector index
 };
