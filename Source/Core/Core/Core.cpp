@@ -123,8 +123,10 @@ static bool s_frame_step = false;
 static std::atomic<bool> s_stop_frame_step;
 
 static bool hasSentGameID = false;
-// auto GameMode = GameMode::Custom;
+static bool bHasWrittenStadium = false;
 static u32 GameMode = 0;
+static bool previousContactMade = false;
+
 static int draftTimer = 0;
 static u8 m_stadium = 0;
 static u8 m_stadium_id = 0;

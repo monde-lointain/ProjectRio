@@ -202,6 +202,8 @@ static int previousPing = 0;
 //  Custom,
 //};
 
+// auto GameMode = GameMode::Custom;
+
 //void setRankedStatus(bool inNewStatus);
 void setRecordStatus(bool inNewStatus);
 void setSubmitStatus(bool inNewStatus);
@@ -214,8 +216,6 @@ union{
   u32 num;
   float fnum;
 } float_converter;
-
-static bool previousContactMade = false;
 
 static const u32 aOpponentPort = 0x802EBF92;
 static const u32 aFielderPort = 0x802EBF94;
