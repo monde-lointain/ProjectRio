@@ -260,6 +260,7 @@ void StatTracker::lookForTriggerEvents(){
                     else if(Memory::Read_U8(aAB_PickoffAttempt)) {
                         std::cout << "Pick of attempt detected!\n";
                         m_event_state = EVENT_STATE::MONITOR_RUNNERS;
+                        m_game_info.getCurrentEvent().pick_off_attempt = true;
                     }
                 }
                 break;
@@ -397,6 +398,11 @@ void StatTracker::lookForTriggerEvents(){
                         std::cout << "Logging DB!\n";
                     }
 
+                    // Clear result of AB for pickoffs
+                    if (m_game_info.getCurrentEvent().pick_off_attempt) {
+                        m_game_info.getCurrentEvent().result_of_atbat = 0;
+                    }
+
                     m_event_state = EVENT_STATE::FINAL_RESULT;
                     std::cout << "Play over\n";
                 }
@@ -475,6 +481,7 @@ void StatTracker::lookForTriggerEvents(){
                 m_game_info.netplay = m_state.m_netplay_session;
                 m_game_info.host    = m_state.m_is_host;
                 m_game_info.netplay_opponent_alias = m_state.m_netplay_opponent_alias;
+                m_game_info.tag_set_id = m_state.tag_set_id;
 
                 //If TagSet provided, get tags from server
                 if (m_state.m_tag_set.has_value()){
@@ -503,6 +510,12 @@ void StatTracker::lookForTriggerEvents(){
 
                 //File::WriteStringToFile(jsonPath, json);
                 //https://api.projectrio.app/populate_db
+
+                //Print server warning message
+                OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(
+                    "Submitting game to server \n",
+                    "DO NOT LEAVE THE GAME OR CLOSE RIO"           
+                ), 500, OSD::Color::RED);
                 
                 json = getStatJSON(false, false);
                 if (shouldSubmitGame()) {
@@ -513,6 +526,12 @@ void StatTracker::lookForTriggerEvents(){
                         }
                     );
                 }
+
+                //Print server warning message
+                OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(
+                    "Done submitting game \n",
+                    "SAFE TO QUIT"
+                ), 5000, OSD::Color::GREEN);
 
                 std::cout << "Logging to " << jsonPath << "\n";
                 std::cout << "INGAME->ENDGAME\n";
@@ -706,9 +725,10 @@ void StatTracker::logContact(Event& in_event){
     contact->ball_hang_time.read_value();
 
     u32 aStickInput = aAB_ControlStickInput + (getBatterFielderPorts().first * cControl_Offset);
-    std::cout << "Batter Port=" << std::to_string(getBatterFielderPorts().first) << " Stick Addr=" << std::hex << aStickInput << " Stick Value=" << (Memory::Read_U16(aStickInput) & 0xF) << "\n";
+    //std::cout << "Batter Port=" << std::to_string(getBatterFielderPorts().first) << " Stick Addr=" << std::hex << aStickInput << " Stick Value=" << (Memory::Read_U16(aStickInput) & 0xF) << "\n";
     contact->input_direction_stick.set_value(Memory::Read_U16(aStickInput) & 0xF); //Mask off the lower 4 bits which are the control stick directions
-    std::cout << "  Stick Value Decoded=" << decode("StickVec", contact->input_direction_stick.get_value(), true) << "\n";
+    //std::cout << "  Stick Value Decoded=" << decode("StickVec", contact->input_direction_stick.get_value(), true) << "\n";
+    std::cout << "SWING: " << contact->frame_of_swing.get_key_value_string().first << "=" << contact->frame_of_swing.get_key_value_string().second << "\n";
     std::cout << "\n";
 }
 
@@ -747,13 +767,16 @@ void StatTracker::logPitch(Event& in_event){
     }
 
     //Use adjusted swing if swing and miss, else 0 (or 4 for bunt)
-    u8 miss_type = Memory::Read_U8(aAB_Miss_SwingOrBunt); //0=No swing, 1=swing, 2=bunt
-    if (miss_type == 0) {
+    u8 any_swing = Memory::Read_U8(aAB_AnySwing); //0=No swing, 1=swing
+    if (any_swing == 0) {
         in_event.pitch->type_of_swing = 0;
     }
-    else if (miss_type >= 1){
+    else if (any_swing >= 1){
         in_event.pitch->type_of_swing = adjusted_swing;
     }
+
+    std::cout << "SWING: Swing Type=" << std::to_string(swing_type) << " Star Swing=" << std::to_string(star_swing) 
+              << " AnySwing=" << std::to_string(Memory::Read_U8(aAB_AnySwing)) << " Final=" << std::to_string(in_event.pitch->type_of_swing) << "\n";
 }
 
 void StatTracker::logContactResult(Contact* in_contact){
@@ -888,7 +911,12 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
     json_stream << "  \"GameID\": \"" << m_game_info.game_id << "\",\n";
     json_stream << "  \"Date - Start\": \"" << start_date_time << "\",\n";
     json_stream << "  \"Date - End\": \"" << end_date_time << "\",\n";
-    json_stream << "  \"Ranked\": " << std::to_string(m_game_info.ranked) << ",\n";
+    
+    std::string tag_set_id_str = "";
+    if (m_game_info.tag_set_id.has_value()){
+        tag_set_id_str = std::to_string(m_game_info.tag_set_id.value());
+    }
+    json_stream << "  \"Tags\": [" << tag_set_id_str << "],\n";
     json_stream << "  \"Netplay\": " << std::to_string(m_game_info.netplay) << ",\n";
     json_stream << "  \"StadiumID\": " << decode("Stadium", m_game_info.stadium, inDecode) << ",\n";
     json_stream << "  \"Away Player\": \"" << away_player_info << "\",\n"; //TODO MAKE THIS AN ID
@@ -900,7 +928,6 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
     json_stream << "  \"Innings Selected\": " << std::to_string(m_game_info.innings_selected) << ",\n";
     json_stream << "  \"Innings Played\": " << std::to_string(m_game_info.innings_played) << ",\n";
     json_stream << "  \"Quitter Team\": " << decode("QuitterTeam", m_game_info.quitter_team, inDecode) << ",\n";
-    //json_stream << "  \"Partial Game\": \"" << std::to_string(m_game_info.partial) << "\",\n";
 
     json_stream << "  \"Average Ping\": " << std::to_string(m_game_info.avg_ping) << ",\n";
     json_stream << "  \"Lag Spikes\": " << std::to_string(m_game_info.lag_spikes) << ",\n";
@@ -910,18 +937,21 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
 
     //Defensive Stats
     for (int team=0; team < cNumOfTeams; ++team){
-        // std::string team_label;
-        u8 captain_roster_loc = 0;
+        u8 captain_roster_loc;
         if (team == 0){
-            captain_roster_loc = (m_game_info.home_port == m_game_info.team0_port) ? m_game_info.team0_captain_roster_loc : m_game_info.team1_captain_roster_loc;
-        }
-        else{ // team == 1
             captain_roster_loc = (m_game_info.away_port == m_game_info.team0_port) ? m_game_info.team0_captain_roster_loc : m_game_info.team1_captain_roster_loc;
         }
+        else{ // team == 1
+            captain_roster_loc = (m_game_info.home_port == m_game_info.team0_port) ? m_game_info.team0_captain_roster_loc : m_game_info.team1_captain_roster_loc;
+        }
+
+        std::string team_string = (team == 0) ? "Away" : "Home";
 
         for (int roster=0; roster < cRosterSize; ++roster){
             CharacterSummary& char_summary = m_game_info.character_summaries[team][roster];
-            std::string label = "\"Team " + std::to_string(team) + " Roster " + std::to_string(roster) + "\": ";
+            
+            // team integer home or away
+            std::string label = "\"Team " + team_string + " Roster " + std::to_string(roster) + "\": ";
             json_stream << "    " << label << "{\n";
             json_stream << "      \"Team\": \""        << std::to_string(team) << "\",\n";
             json_stream << "      \"RosterID\": "      << std::to_string(roster) << ",\n";
@@ -1666,6 +1696,11 @@ void StatTracker::setRecordStatus(bool inBool) {
 void StatTracker::setTagSetId(Tag::TagSet tag_set) {
     std::cout << "TagSet Id=" << tag_set.id << "," << "TagSet Name=" << tag_set.name << "\n";
     m_state.tag_set_id = tag_set.id;
+}
+
+void StatTracker::clearTagSetId() {
+    std::cout << "Clearing TagSet" << "\n";
+    m_state.tag_set_id = std::nullopt;
 }
 
 

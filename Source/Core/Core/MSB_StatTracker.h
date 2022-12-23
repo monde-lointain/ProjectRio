@@ -688,6 +688,7 @@ public:
 
     struct Event{
         u16 event_num;
+        bool pick_off_attempt = false;
 
         u8 inning;
         u8 half_inning;
@@ -769,6 +770,9 @@ public:
         bool netplay;
         bool host;
         std::string netplay_opponent_alias;
+
+        //TagSet info
+        std::optional<int> tag_set_id = std::nullopt;
 
         //Quit?
         u8 quitter_team = 0xFF;
@@ -994,6 +998,7 @@ public:
     void setRankedStatus(bool inBool);
     void setRecordStatus(bool inBool);
     void setTagSetId(Tag::TagSet tag_set);
+    void clearTagSetId();
     void setNetplaySession(bool netplay_session, bool is_host=false, std::string opponent_name = "");
     void setAvgPing(int avgPing);
     void setLagSpikes(int nLagSpikes);
