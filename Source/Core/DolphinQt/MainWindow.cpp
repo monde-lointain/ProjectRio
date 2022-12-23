@@ -1309,6 +1309,27 @@ void MainWindow::ShowGraphicsWindow()
 
 void MainWindow::ShowNetPlaySetupDialog()
 {
+  // Validate Rio User
+  std::string url = "https://api.projectrio.app/validate_user_from_client/?username=" +
+                    LocalPlayers::m_online_player.GetUsername() +
+                    "&rio_key=" + LocalPlayers::m_online_player.GetUserID();
+  const Common::HttpRequest::Response response = m_http.Get(url);
+  if (!response)
+  {
+    ModalMessageBox::critical(
+        this, tr("Error"),
+        tr("The Username and Rio Key of the Online Player could not be validated. You must make a "
+           "Rio account to access online play.\n\n"
+           "To access online play, please follow these steps:\n"
+           "- open the \"Rio Config\" tab and click the \"Add Player\" button.\n"
+           "- click \"Create Account\" and create a Rio account through the Project Rio website.\n"
+           "- make sure to verify your email and receive your Rio Key.\n"
+           "- enter your username and Rio Key into the appropriate text boxes, then click "
+           "\"Save\".\n"
+           "- set the \"Online Player\" combo box to your newly added account."));
+    return;
+  }
+
   m_netplay_setup_dialog->show();
   m_netplay_setup_dialog->raise();
   m_netplay_setup_dialog->activateWindow();
