@@ -112,14 +112,10 @@ void DefaultGeckoCodes::AddRankedCodes()
   Memory::Write_U32(0x60000000, aPitchClock_1);
   Memory::Write_U32(0x60000000, aPitchClock_2);
   Memory::Write_U32(0x60000000, aPitchClock_3);
-
-  WriteAsm(sPitchClock);
- 
   Memory::Write_U32(0x386001bb, aBatSound);
 
-  if (Memory::Read_U32(aBanBatterPausing) == 0xA0040006)
-    Memory::Write_U32(0x38000000, aBanBatterPausing);
-
+  WriteAsm(sPitchClock);
+  WriteAsm(sRestrictBatterPausing);
   WriteAsm(sHazardless);
   WriteAsm(sHazardless_1);
 }

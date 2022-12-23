@@ -60,9 +60,6 @@ class DefaultGeckoCodes {
     static const u32 aNeverCull_3 = 0x806ab8b4;  // write to 0x38000001
     static const u32 aNeverCull_4 = 0x806f7b7c;  // write to 0x38000003 if equal to 0x881a0093
 
-    // Ban Batter Pausing [LittleCoaks]
-    static const u32 aBanBatterPausing = 0x806eed5c; // write to 0x38000000 if equal to 0xA0040006
-
     // Disable Replays [LittleCoaks]
     static const u32 aDisableReplays = 0x806bb214; // write  to 0x38000000 if equal to 0x38000001
 
@@ -267,6 +264,12 @@ class DefaultGeckoCodes {
         0x8072FDC8, 0xC0010044,
         {0x3E608035, 0x6273323B, 0x3AA00000, 0x7E93A8AE, 0x2C140001, 0x41820018, 0x3AB50001, 0x2C150012,
         0x4082FFEC, 0x3E204348, 0x92210044, 0xC0010044}
+
+    // Restrict Batter Pausing [LittleCoaks]
+    const DefaultGeckoCode sRestrictBatterPausing = {
+        0x806EED5C, 0xA0040006,
+        {0x3CC08089, 0x60C6099D, 0x88060000, 0x3CC08089, 0x60C609AD, 0x88C60000,
+        0x7CC03214, 0xA0040006, 0x2C060000, 0x41820008, 0x38000000}
     };
 
     // Highlight Ball Shadow [LittleCoaks]
