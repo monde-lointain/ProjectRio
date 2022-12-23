@@ -869,7 +869,7 @@ std::string StatTracker::getStatJsonPath(std::string prefix){
                    + "-Vs-" + home_player_name
                    + "_" + std::to_string(m_game_info.game_id) + ".json";
 
-    std::string full_file_path = File::GetUserPath(D_STATFILES_IDX) + file_name;
+    std::string full_file_path = File::GetUserPath(D_MSSBFILES_IDX) + file_name;
 
     return full_file_path;
 }
