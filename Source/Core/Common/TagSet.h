@@ -5,7 +5,19 @@
 #include <optional>
 #include <utility>
 
+#include <picojson.h>
+#include "sstream"
+
 #include "HttpRequest.h"
+
+enum ClientCode {
+    DisableDingusBunt,
+    DisableManualFielderSelect,
+    DisableAntiQuickPitch,
+    DisableUnlimitedExtraInnings,
+    EnableHazardless,
+    EnableGameModeration
+};
 
 namespace Tag
 {
@@ -13,14 +25,15 @@ namespace Tag
     {
     public:
         Tag() {}
-        Tag(int in_id, std::string in_name, bool in_active, int in_date_created, std::string in_desc, int in_community_id, std::string in_type):
+        Tag(int in_id, std::string in_name, bool in_active, int in_date_created, std::string in_desc, int in_community_id, std::string in_type, std::optional<ClientCode> in_client_code, std::optional<std::string> gecko_code):
             id(in_id), 
             name(in_name),
             active(in_active),
             date_created(in_date_created),
             desc(in_desc),
             community_id(in_community_id),
-            type(in_type)
+            type(in_type),
+            client_code(in_client_code)
             {}
         int id;
         std::string name;
@@ -29,6 +42,8 @@ namespace Tag
         std::string desc;
         int community_id;
         std::string type;
+        std::optional<ClientCode> client_code;
+        std::optional<std::string> gecko_code;
     };
 
 
@@ -93,259 +108,439 @@ namespace Tag
             ids += "]";
             return ids;
         }
+
+        // Create vector of client code enums
+        std::optional<std::vector<ClientCode>> client_codes_vector() 
+        {
+            std::vector<ClientCode> client_codes = {};
+            for (Tag tag : tags) {
+                if (tag.client_code.has_value()) {
+                    client_codes.push_back(tag.client_code.value());
+                }
+            }
+
+            if (client_codes.size() != 0) {
+                return client_codes;
+            } else {
+                return std::nullopt;
+            }
+            
+        }
+
+        // Create monster code string
+        std::optional<std::string> gecko_codes_string() 
+        {
+            std::stringstream sstm;
+            std::vector<Tag>::const_iterator it;
+            
+            // iterate throught TagSet's Tags and create a stringstream of these tags
+            // space deliminated
+            for (it = tags.begin(); it != tags.end(); it++) {
+                if (it->gecko_code.has_value()) {
+                    sstm << it->gecko_code.value();
+                    if (it != tags.end()) {
+                        sstm << " ";
+                    }
+                }
+            }
+
+            // if the stringstream is not empty return string of gecko codes
+            if (sstm.tellp() != 0) {
+                std::string gecko_code_string = sstm.str();
+                return gecko_code_string;
+            // if stringstream is empty, return nullopt
+            } else {
+                return std::nullopt;
+            }
+        }
     };
 
 
-    //static std::optional<picojson::value> ParseResponse(const std::vector<u8>& response)
-    //{
-    //    const std::string response_string(reinterpret_cast<const char*>(response.data()),response.size());
-    //    picojson::value json;
-    //    const auto error = picojson::parse(json, response_string);
-    //    if (!error.empty())
-    //        return {};
-    //    return json;
-    //}
+    static std::optional<picojson::value> ParseResponse(const std::vector<u8>& response)
+    {
+       const std::string response_string(reinterpret_cast<const char*>(response.data()),response.size());
+       picojson::value json;
+       const auto error = picojson::parse(json, response_string);
+       if (!error.empty())
+           return {};
+       return json;
+    }
+
+    static std::optional<ClientCode> getTagClientCode(std::string tag_name) {
+        if (tag_name == "Disable Dingus Bunt") {
+            return ClientCode::DisableDingusBunt;
+        } else if (tag_name == "Disable Manual Fielder Select") {
+            return ClientCode::DisableManualFielderSelect;
+        } else if (tag_name == "Disable Anti Quick Pitch") {
+            return ClientCode::DisableAntiQuickPitch;
+        } else if (tag_name == "Disable Unlimited Extra Innings") {
+            return ClientCode::DisableUnlimitedExtraInnings;
+        } else if (tag_name == "Enable Hazardless") {
+            return ClientCode::EnableHazardless;
+        } else if (tag_name == "Enable Game Moderation") {
+            return ClientCode::EnableGameModeration;
+        } else {
+            return std::nullopt;
+        }
+    }
 
 
-    //static std::optional<TagSet> convertPicoJsonTagSet(picojson::value tag_set_pico_json) {
-    //    // Initializing variables needed for constructing TagSet
-    //    int id;
-    //    std::string name;
-    //    std::vector<Tag> tags_vector;
-    //    
-    //    if (tag_set_pico_json.get("ID").is<double>()){
-    //        // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
-    //        id = int(tag_set_pico_json.get("ID").get<double>());
-    //    }
-    //    else{
-    //        // If ID is not a double, return an empty TagSet because that is a breaking error
-    //        return std::nullopt;
-    //    };
+    static std::optional<TagSet> convertPicoJsonTagSet(picojson::value tag_set_pico_json) {
+        // Initializing variables needed for constructing TagSet
+        int id;
+        std::string name;
+        std::vector<Tag> tags_vector;
+        
+        if (tag_set_pico_json.get("ID").is<double>()){
+            // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
+            id = int(tag_set_pico_json.get("ID").get<double>());
+        }
+        else{
+            // If ID is not a double, return an empty TagSet because that is a breaking error
+            return std::nullopt;
+        };
 
-    //    if (tag_set_pico_json.get("Name").is<std::string>()){
-    //        name = tag_set_pico_json.get("Name").get<std::string>();
-    //    }
-    //    else{
-    //        // If Name is not a double, return an empty TagSet because that is a breaking error
-    //        return std::nullopt;
-    //    };
+        if (tag_set_pico_json.get("Name").is<std::string>()){
+            name = tag_set_pico_json.get("Name").get<std::string>();
+        }
+        else{
+            // If Name is not a double, return an empty TagSet because that is a breaking error
+            return std::nullopt;
+        };
 
 
-    //    // Get a vector of picojson::values for creating Tags 
-    //    const std::vector<picojson::value> tags = tag_set_pico_json.get("Tags").get<picojson::array>();
-    //    // Loop through the vector of picojson::values, 
-    //    // validate that the json data meets specifications, 
-    //    // and populate the empty tags_vector with Tags
-    //    for (picojson::value tag : tags){
-    //        // Initialize variables needed for Tag creation with default values
-    //        // to use in case provided JSON data does not meet validation requirements
-    //        int tag_id;
-    //        std::string tag_name;
-    //        bool active = false;
-    //        int date_created = -1;
-    //        std::string desc = "";
-    //        int community_id = -1;
-    //        std::string type = "";
+        // Get a vector of picojson::values for creating Tags 
+        const std::vector<picojson::value> tags = tag_set_pico_json.get("Tags").get<picojson::array>();
+        // Loop through the vector of picojson::values, 
+        // validate that the json data meets specifications, 
+        // and populate the empty tags_vector with Tags
+        for (picojson::value tag : tags){
+            // Initialize variables needed for Tag creation with default values
+            // to use in case provided JSON data does not meet validation requirements
+            int tag_id;
+            std::string tag_name;
+            bool active = false;
+            int date_created = -1;
+            std::string desc = "";
+            int community_id = -1;
+            std::string type = "";
+            std::optional<ClientCode> client_code = std::nullopt;
+            std::optional<std::string> gecko_code = std::nullopt;
 
-    //        if (tag.get("ID").is<double>()){
-    //            // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
-    //            tag_id = int(tag.get("ID").get<double>());
-    //        }
-    //        else{
-    //            // If ID is not a double, return an empty TagSet because that is a breaking error
-    //            std::cout << "Invalid Tag ID" << "\n";
-    //            return std::nullopt;
-    //        }
+            if (tag.get("ID").is<double>()){
+                // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
+                tag_id = int(tag.get("ID").get<double>());
+            }
+            else{
+                // If ID is not a double, return an empty TagSet because that is a breaking error
+                std::cout << "Invalid Tag ID" << "\n";
+                return std::nullopt;
+            }
 
-    //        if (tag.get("Name").is<std::string>()){
-    //            tag_name = tag.get("Name").get<std::string>();
-    //        }
-    //        else{
-    //            // If Name is not a string, return an empty TagSet because that is a breaking error
-    //            std::cout << "Invalid Name" << "\n";
-    //            return std::nullopt;
-    //        }
+            if (tag.get("Name").is<std::string>()){
+                tag_name = tag.get("Name").get<std::string>();
+            }
+            else{
+                // If Name is not a string, return an empty TagSet because that is a breaking error
+                std::cout << "Invalid Name" << "\n";
+                return std::nullopt;
+            }
 
-    //        if (tag.get("Active").is<bool>()){ active = tag.get("Active").get<bool>(); }
+            if (tag.get("Active").is<bool>()){ active = tag.get("Active").get<bool>(); }
 
-    //        // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
-    //        if (tag.get("Date Created").is<double>()){ date_created = int(tag.get("Date Created").get<double>()); }
-    //        
-    //        if (tag.get("Desc").is<std::string>()){ desc = tag.get("Desc").get<std::string>(); }
-    //        
-    //        // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
-    //        if (tag.get("Comm ID").is<double>()){ community_id = int(tag.get("Comm ID").get<double>()); }
-    //        
-    //        if (tag.get("Type").is<std::string>()){ tag.get("Type").get<std::string>(); }
-    //        
-    //        Tag tag_class = Tag{
-    //            tag_id,
-    //            tag_name,
-    //            active,
-    //            date_created,
-    //            desc,
-    //            community_id,
-    //            type
-    //        };
-    //        tags_vector.push_back(tag_class);    
-    //    };
+            // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
+            if (tag.get("Date Created").is<double>()){ date_created = int(tag.get("Date Created").get<double>()); }
+            
+            if (tag.get("Desc").is<std::string>()){ desc = tag.get("Desc").get<std::string>(); }
+            
+            // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
+            if (tag.get("Comm ID").is<double>()){ community_id = int(tag.get("Comm ID").get<double>()); }
+            
+            if (tag.get("Type").is<std::string>()){ type = tag.get("Type").get<std::string>(); }
 
-    //    TagSet tag_set = TagSet{
-    //        id,
-    //        name,
-    //        tags_vector
-    //    };
+            // Check if the tag's name is one of the Client Codes
+            client_code = getTagClientCode(tag_name);
 
-    //    return tag_set;
-    //}
+            // Check if the Tag has a Gecko Code
+            if (tag.get("code").is<std::string>()){ 
+                std::string code = tag.get("code").get<std::string>();
 
-    //static std::optional<TagSet> getTagSet(Common::HttpRequest &http, int tag_set_id){
-    //    // const Common::HttpRequest::Response response = m_http.Get("https://api.projectrio.app/tag_set/" + std::to_string(tag_set_id));
-    //    const Common::HttpRequest::Response response = http.Get("http://127.0.0.1:5000/tag_set/" + std::to_string(tag_set_id));
+                // If the code field is not empty, set Tag.gecko_code to the code
+                if (code != "") {
+                    gecko_code = code;
+                }
+            }
+            
+            Tag tag_class = Tag{
+                tag_id,
+                tag_name,
+                active,
+                date_created,
+                desc,
+                community_id,
+                type,
+                client_code,
+                gecko_code
+            };
+            tags_vector.push_back(tag_class);    
+        };
 
-    //    if (!response){
-    //        std::cout << "No Response" << "\n";
-    //        return std::nullopt;
-    //    }
+        TagSet tag_set = TagSet{
+            id,
+            name,
+            tags_vector
+        };
 
-    //    auto json = ParseResponse(response.value());
-    //    if (!json){
-    //        std::cout << "No JSON" << "\n"; 
-    //        return std::nullopt;
-    //    }
-    //    
-    //    picojson::value tag_set_pico_json = json->get("Tag Set").get<picojson::array>()[0];
+        return tag_set;
+    }
 
-    //    std::optional<TagSet> tag_set = convertPicoJsonTagSet(tag_set_pico_json);
-    //    
-    //    return tag_set;
-    //}
+    static std::optional<TagSet> getTagSet(Common::HttpRequest &http, int tag_set_id){
+       // const Common::HttpRequest::Response response = m_http.Get("https://api.projectrio.app/tag_set/" + std::to_string(tag_set_id));
+       const Common::HttpRequest::Response response = http.Get("http://127.0.0.1:5000/tag_set/" + std::to_string(tag_set_id));
 
-    //static std::optional<TagSet> getDummyTagSet() {
-    //    return TagSet(
-    //        1,
-    //        "Dummy Tag Set 1",
-    //        {
-    //            Tag(
-    //                1,
-    //                "Fake Tag 1",
-    //                true,
-    //                19419849,
-    //                "Fake Description",
-    //                1,
-    //                "Competition"
-    //            ), 
-    //            Tag(
-    //                2,
-    //                "Fake Tag 2",
-    //                true,
-    //                19419849,
-    //                "Fake Description",
-    //                1,
-    //                "Competition"
-    //            ), 
-    //        }
-    //    );
-    //}
+       if (!response){
+           std::cout << "No Response" << "\n";
+           return std::nullopt;
+       }
 
-    //static std::map<int, TagSet> getAvailableTagSets(Common::HttpRequest &http, std::string rio_key){
-    //    std::stringstream sstm;
-    //    sstm << "{\"Active\":\"true\", \"Rio Key\":\"" << rio_key << "\"}";
-    //    std::string payload = sstm.str(); 
-    //    const Common::HttpRequest::Response response = http.Post(
-    //        "http://127.0.0.1:5000/tag_set/list",
-    //        payload,
-    //        {{"Content-Type", "application/json"},}
-    //    );
+       auto json = ParseResponse(response.value());
+       if (!json){
+           std::cout << "No JSON" << "\n"; 
+           return std::nullopt;
+       }
+       
+       picojson::value tag_set_pico_json = json->get("Tag Set").get<picojson::array>()[0];
 
-    //    if (!response){
-    //        std::cout << "No Response" << "\n";
-    //        std::map<int, TagSet> empty_map;
-    //        return empty_map;
-    //    }
+       std::optional<TagSet> tag_set = convertPicoJsonTagSet(tag_set_pico_json);
+       
+       return tag_set;
+    }
 
-    //    auto json = ParseResponse(response.value());
-    //    if (!json){
-    //        std::cout << "No JSON" << "\n"; 
-    //        std::map<int, TagSet> empty_map;
-    //        return empty_map;
-    //    }
+    static std::optional<TagSet> getDummyTagSet() {
+       return TagSet(
+           1,
+           "Dummy Tag Set 1",
+           {
+               Tag(
+                    1,
+                    "Fake Client Code Tag 1",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition",
+                    ClientCode::EnableHazardless,
+                    std::nullopt
+               ), 
+               Tag(
+                    2,
+                    "Fake Competition Tag 1",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition",
+                    std::nullopt,
+                    std::nullopt
+               ),
+               Tag(
+                    3,
+                    "Fake Gecko Code Tag 1",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition",
+                    std::nullopt,
+                    "0123456 0123456"
+                ),
+                Tag(
+                    4,
+                    "Fake Gecko Code Tag 2",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Code",
+                    std::nullopt,
+                    "DEADBEEF DEADBEEF"
+                ),
+           }
+       );
+    }
 
-    //    // Initalize vector that will be populated with TagSets and returned at end of function
-    //    std::map<int, TagSet> tag_sets;
+    static std::map<int, TagSet> getAvailableTagSets(Common::HttpRequest &http, std::string rio_key){
+       std::stringstream sstm;
+       sstm << "{\"Active\":\"true\", \"Rio Key\":\"" << rio_key << "\"}";
+       std::string payload = sstm.str(); 
+       const Common::HttpRequest::Response response = http.Post(
+           "http://127.0.0.1:5000/tag_set/list",
+           payload,
+           {{"Content-Type", "application/json"},}
+       );
 
-    //    // Create a vector of tag_sets as picojson objects
-    //    std::vector<picojson::value> tag_sets_pico_json = json->get("Tag Sets").get<picojson::array>();
+       if (!response){
+           std::cout << "No Response" << "\n";
+           std::map<int, TagSet> empty_map;
+           return empty_map;
+       }
 
-    //    // Loop through each pico json tag set object
-    //    for (picojson::value tag_set_pico_json : tag_sets_pico_json){
-    //        std::optional<TagSet> tag_set = convertPicoJsonTagSet(tag_set_pico_json);     
+       auto json = ParseResponse(response.value());
+       if (!json){
+           std::cout << "No JSON" << "\n"; 
+           std::map<int, TagSet> empty_map;
+           return empty_map;
+       }
 
-    //        // If tag_set is valid, add to tag_sets vector
-    //        if (tag_set) {                
-    //            tag_sets.insert(std::make_pair(tag_set.value().id, tag_set.value()));
-    //        }
-    //    }
-    //    
-    //    return tag_sets;
-    //}
+       // Initalize vector that will be populated with TagSets and returned at end of function
+       std::map<int, TagSet> tag_sets;
 
-    //static std::map<int, TagSet> getDummyTagSets() {
-    //    TagSet tag_set_a = TagSet(
-    //        1,
-    //        "Dummy Tag Set 1",
-    //        {
-    //            Tag(
-    //                1,
-    //                "Fake Tag 1",
-    //                true,
-    //                19419849,
-    //                "Fake Description",
-    //                1,
-    //                "Competition"
-    //            ), 
-    //            Tag(
-    //                2,
-    //                "Fake Tag 2",
-    //                true,
-    //                19419849,
-    //                "Fake Description",
-    //                1,
-    //                "Competition"
-    //            ), 
-    //        }
-    //    );
+       // Create a vector of tag_sets as picojson objects
+       std::vector<picojson::value> tag_sets_pico_json = json->get("Tag Sets").get<picojson::array>();
 
-    //    TagSet tag_set_b = TagSet(
-    //        2,
-    //        "Dummy Tag Set 2",
-    //        {
-    //            Tag(
-    //                1,
-    //                "Fake Tag",
-    //                true,
-    //                19419849,
-    //                "Fake Description",
-    //                1,
-    //                "Competition"
-    //            ),
-    //            Tag(
-    //                2,
-    //                "Fake Tag 2",
-    //                true,
-    //                19419849,
-    //                "Fake Description",
-    //                1,
-    //                "Competition"
-    //            ),
-    //        }
-    //    );
+       // Loop through each pico json tag set object
+       for (picojson::value tag_set_pico_json : tag_sets_pico_json){
+           std::optional<TagSet> tag_set = convertPicoJsonTagSet(tag_set_pico_json);     
 
-    //    std::map<int, TagSet> dummy_tag_sets;
+           // If tag_set is valid, add to tag_sets vector
+           if (tag_set) {                
+               tag_sets.insert(std::make_pair(tag_set.value().id, tag_set.value()));
+           }
+       }
+       
+       return tag_sets;
+    }
 
-    //    dummy_tag_sets.insert(std::make_pair(tag_set_a.id, tag_set_a));
-    //    dummy_tag_sets.insert(std::make_pair(tag_set_b.id, tag_set_b));
+    static std::map<int, TagSet> getDummyTagSets() {
+       TagSet tag_set_a = TagSet(
+           1,
+           "Dummy Tag Set 1",
+           {
+                Tag(
+                    1,
+                    "Fake Client Code Tag 1",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition",
+                    ClientCode::EnableHazardless,
+                    std::nullopt
+                ), 
+                Tag(
+                    1,
+                    "Fake Client Code Tag 1",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition",
+                    ClientCode::DisableAntiQuickPitch,
+                    std::nullopt
+                ), 
+                Tag(
+                    2,
+                    "Fake Competition Tag 1",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition",
+                    std::nullopt,
+                    std::nullopt
+                ),
+                Tag(
+                    3,
+                    "Fake Gecko Code Tag 1",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition",
+                    std::nullopt,
+                    "0123456 0123456"
+                ),
+                Tag(
+                    4,
+                    "Fake Gecko Code Tag 2",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Code",
+                    std::nullopt,
+                    "DEADBEEF DEADBEEF"
+                ),
+           }
+       );
 
-    //    return dummy_tag_sets;
-    //}
+       TagSet tag_set_b = TagSet(
+           2,
+           "Dummy Tag Set 2",
+           {
+               Tag(
+                    1,
+                    "Fake Client Code Tag 1",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition",
+                    ClientCode::EnableHazardless,
+                    std::nullopt
+               ), 
+                Tag(
+                    1,
+                    "Fake Client Code Tag 1",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition",
+                    ClientCode::DisableAntiQuickPitch,
+                    std::nullopt
+                ), 
+               Tag(
+                    2,
+                    "Fake Competition Tag 1",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition",
+                    std::nullopt,
+                    std::nullopt
+               ),
+               Tag(
+                    3,
+                    "Fake Gecko Code Tag 1",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Competition",
+                    std::nullopt,
+                    "0123456 0123456"
+                ),
+                Tag(
+                    4,
+                    "Fake Gecko Code Tag 2",
+                    true,
+                    19419849,
+                    "Fake Description",
+                    1,
+                    "Code",
+                    std::nullopt,
+                    "DEADBEEF DEADBEEF"
+                ),
+           }
+       );
+
+       std::map<int, TagSet> dummy_tag_sets;
+
+       dummy_tag_sets.insert(std::make_pair(tag_set_a.id, tag_set_a));
+       dummy_tag_sets.insert(std::make_pair(tag_set_b.id, tag_set_b));
+
+       return dummy_tag_sets;
+    }
 }
