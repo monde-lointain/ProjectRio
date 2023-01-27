@@ -19,6 +19,7 @@
 #include <fmt/format.h>
 
 #include <iostream>
+#include "Config/MainSettings.h"
 
 void StatTracker::Run(){
     lookForTriggerEvents();
@@ -68,7 +69,7 @@ void StatTracker::lookForTriggerEvents(){
                     std::string batter_name = cCharIdToCharName.at(batter_char_id);
                     std::string pitcher_name = cCharIdToCharName.at(pitcher_char_id);
 
-                    if (mTrackerInfo.mDisplay)
+                    if (Config::Get(Config::MAIN_ENABLE_DEBUGGING))
                     {
                       OSD::AddTypedMessage(
                           OSD::MessageType::GameStatePreviousPlayResult,
@@ -83,10 +84,7 @@ void StatTracker::lookForTriggerEvents(){
                                       m_game_info.getCurrentEvent().outs, pitcher_name,
                                       batter_name),
                           10000, OSD::Color::RED);
-                    }
 
-                     if (mTrackerInfo.mDisplay)
-                    {
                       OSD::AddTypedMessage(
                           OSD::MessageType::GameStatePreviousPlayInfo,
                           fmt::format(
@@ -120,7 +118,7 @@ void StatTracker::lookForTriggerEvents(){
 
     if (m_game_state == GAME_STATE::INGAME) {
         if (m_game_info.currentEventVld()){
-          if (mTrackerInfo.mDisplay)
+          if (Config::Get(Config::MAIN_ENABLE_DEBUGGING))
           {
             OSD::AddTypedMessage(
                 OSD::MessageType::GameStateInfo,
@@ -148,7 +146,7 @@ void StatTracker::lookForTriggerEvents(){
           }
         }
     } else {
-      if (mTrackerInfo.mDisplay)
+      if (Config::Get(Config::MAIN_ENABLE_DEBUGGING))
       {
         OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(
             "Game State: {}\n"

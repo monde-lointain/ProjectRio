@@ -503,7 +503,6 @@ public:
     struct TrackerInfo{
         bool mRecord;
         bool mSubmit = true;
-        bool mDisplay = true;
     };
     TrackerInfo mTrackerInfo;
 
@@ -1003,7 +1002,6 @@ public:
     void setAvgPing(int avgPing);
     void setLagSpikes(int nLagSpikes);
     void setNetplayerUserInfo(std::map<int, LocalPlayers::LocalPlayers::Player> userInfo);
-    void setDisplayStats(bool bDisplay);
     void setGameID(u32 gameID);
     // void setTags(std::vector tags);
     // void setTagSet(int tagset);

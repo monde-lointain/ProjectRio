@@ -208,7 +208,6 @@ static int previousPing = 0;
 void setRecordStatus(bool inNewStatus);
 void setSubmitStatus(bool inNewStatus);
 void setRankedStatus(bool inNewStatus);
-void SetDisplayStats();
 void SetGameID(u32 gameID);
 void SetGameMode(std::string mode);
 
