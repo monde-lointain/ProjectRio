@@ -29,6 +29,7 @@
 #include "Core/GeckoCodeConfig.h"
 #include "Core/PowerPC/MMU.h"
 #include "Core/PowerPC/PowerPC.h"
+#include "Core/Core.h"
 
 namespace PatchEngine
 {
@@ -296,11 +297,16 @@ bool ApplyFramePatches()
     return false;
   }
 
-  ApplyPatches(s_on_frame);
+  // we run the rio functions first, since we will want user's gecko codes to overwrite the built-in rio ones
+  Core::RunRioFunctions();
+  if (!Core::isTagSetActive())
+  {
+    ApplyPatches(s_on_frame);
 
-  // Run the Gecko code handler
-  Gecko::RunCodeHandler();
-  ActionReplay::RunAllActive();
+    // Run the Gecko code handler
+    Gecko::RunCodeHandler();
+    ActionReplay::RunAllActive();
+  }
 
   return true;
 }

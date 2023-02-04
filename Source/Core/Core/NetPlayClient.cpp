@@ -2317,8 +2317,8 @@ bool NetPlayClient::GetNetPads(const int pad_nb, const bool batching, GCPadStatu
 
       unsigned int currentBuffer = m_pad_buffer[pad_nb].Size();
       const bool buffer_over_target = currentBuffer > m_target_buffer_size + 1;
-      bool isPitchInProgress = Memory::Read_U8(0x8088A81B) == 1;
-      bool pitchComplete = Memory::Read_U8(0x80890B18) == 1;
+      //bool isPitchInProgress = Memory::Read_U8(0x8088A81B) == 1;
+      //bool pitchComplete = Memory::Read_U8(0x80890B18) == 1;
       if (!buffer_over_target)
         m_buffer_under_target_last = std::chrono::steady_clock::now();
 
@@ -2327,15 +2327,15 @@ bool NetPlayClient::GetNetPads(const int pad_nb, const bool batching, GCPadStatu
       bool bDrainHotkeyPressed = HotkeyManagerEmu::IsPressed(HK_DRAIN_GOLF_BUFFER, true);
 
       if ((time_diff.count() >= 1.0 || (!buffer_over_target && !bDrainHotkeyPressed))
-        && !isPitchInProgress) // don't speed up game during a pitch
+        /*&& !isPitchInProgress*/) // don't speed up game during a pitch
       {
         // run fast if the buffer is overfilled, otherwise run normal speed
         Config::SetCurrent(Config::MAIN_EMULATION_SPEED, buffer_over_target ? 0.0f : 1.0f);
       }
       // after a pitch, we speed up game to keep buffer low
-      if (pitchComplete)
-        Config::SetCurrent(Config::MAIN_EMULATION_SPEED,
-          m_pad_buffer[pad_nb].Size() > 1 ? 0.0f : 1.0f);
+      //if (pitchComplete)
+      //  Config::SetCurrent(Config::MAIN_EMULATION_SPEED,
+      //    m_pad_buffer[pad_nb].Size() > 1 ? 0.0f : 1.0f);
       // Hotkey drains netplay buffer for non golfer
       if (bDrainHotkeyPressed)
         Config::SetCurrent(Config::MAIN_EMULATION_SPEED,
@@ -2812,7 +2812,7 @@ void NetPlayClient::SendGameStatus()
 
 void NetPlayClient::SendChecksum(u8 checksumId, u64 frame)
 {
-  u32 checksum = Memory::Read_U32(0x802EBFB8);
+  u32 checksum = PowerPC::HostRead_U32(0x802EBFB8);
   netplay_client->ourChecksum[checksumId] = checksum;
 
   if (frame < 1000) // dont send the initial ones since they're whack

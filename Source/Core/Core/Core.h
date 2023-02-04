@@ -123,6 +123,7 @@ void SaveScreenShot(std::string_view name);
 // This displays messages in a user-visible way.
 void DisplayMessage(std::string message, int time_in_ms);
 
+void RunRioFunctions();
 void FrameUpdateOnCPUThread();
 void OnFrameEnd();
 bool IsGolfMode();
@@ -187,13 +188,7 @@ void TrainingMode();
 void DisplayBatterFielder();
 void SetAvgPing();
 void SetNetplayerUserInfo();
-void SendGameID();
 void RunDraftTimer();
-
-static int avgPing = 0;
-static int nPing = 0;
-static int nLagSpikes = 0;
-static int previousPing = 0;
 
 //enum class GameMode
 //{

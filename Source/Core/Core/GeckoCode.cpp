@@ -19,7 +19,6 @@
 #include "Core/ConfigManager.h"
 #include "Core/PowerPC/MMU.h"
 #include "Core/PowerPC/PowerPC.h"
-#include <Core/Core.h>
 
 namespace Gecko
 {
@@ -234,8 +233,6 @@ void Shutdown()
 
 void RunCodeHandler()
 {
-  if (Core::isRankedMode())
-    return;
 
   // NOTE: Need to release the lock because of GUI deadlocks with PanicAlert in HostWrite_*
   {
