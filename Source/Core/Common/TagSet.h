@@ -1,4 +1,6 @@
 #pragma once
+#include <picojson.h>
+#include <sstream>
 #include <map>
 #include <string>
 #include <vector>
