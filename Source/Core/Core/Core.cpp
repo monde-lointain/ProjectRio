@@ -123,6 +123,8 @@ static bool s_frame_step = false;
 static std::atomic<bool> s_stop_frame_step;
 
 static u32 GameMode = 0;
+static std::optional<Tag::TagSet> tagset_local = std::nullopt;
+static std::optional<Tag::TagSet> tagset_netplay = std::nullopt;
 static bool previousContactMade = false;
 static bool runNetplayGameFunctions = true;
 
@@ -1677,23 +1679,44 @@ void SetGameID(u32 gameID)
   }
 }
 
-void SetGameMode(std::string mode)
+std::optional<Tag::TagSet> GetTagSet(bool netplay)
 {
-  if (mode == "Superstars OFF")
+  return netplay ? tagset_netplay : tagset_local;
+}
+
+void SetTagSet(std::optional<Tag::TagSet> tagset, bool netplay)
+{
+  netplay ? tagset_netplay = tagset : tagset_local = tagset;
+  
+  if (s_stat_tracker)
   {
-    GameMode = 1;
-    //GameMode = GameMode::StarsOff;
-  }
-  else if (mode == "Superstars ON")
-  {
-    GameMode = 2;
-    //GameMode = GameMode::StarsOn;
+    if (tagset.has_value())
+    {
+      s_stat_tracker->setTagSetId(tagset.value(), netplay);
+    }
+    else
+    {
+      s_stat_tracker->clearTagSetId(netplay);
+    }
   }
   else
   {
-    GameMode = 0;
-    //GameMode = GameMode::Custom;
+    s_stat_tracker = std::make_unique<StatTracker>();
+    s_stat_tracker->init();
+    if (tagset.has_value())
+    {
+      s_stat_tracker->setTagSetId(tagset.value(), netplay);
+    }
+    else
+    {
+      s_stat_tracker->clearTagSetId(netplay);
+    }
   }
+}
+
+bool isTagSetActive()
+{
+  return NetPlay::IsNetPlayRunning() ? tagset_netplay.has_value() : tagset_local.has_value();
 }
 
 }  // namespace Core

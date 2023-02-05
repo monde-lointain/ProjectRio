@@ -130,17 +130,18 @@ NetPlayClient::~NetPlayClient()
 }
 
 // called from ---GUI--- thread
-NetPlayClient::NetPlayClient(const std::string& address, const u16 port, NetPlayUI* dialog, const NetTraversalConfig& traversal_config)
+NetPlayClient::NetPlayClient(const std::string& address, const u16 port, NetPlayUI* dialog,
+                             const NetTraversalConfig& traversal_config,
+                             LocalPlayers::LocalPlayers::Player* player,
+                             std::map<int, Tag::TagSet>* tagset_map)
     : m_dialog(dialog)
 {
   ClearBuffers();
 
     // Validate Rio User
-  std::string url = "https://api.projectrio.app/validate_user_from_client/?username=" +
-                    LocalPlayers::m_online_player.GetUsername() +
-                    "&rio_key=" + LocalPlayers::m_online_player.GetUserID();
-  const Common::HttpRequest::Response response = m_http.Get(url);
-  if (!response)
+  LocalPlayers::LocalPlayers::AccountValidationType type = player->ValidateAccount(m_http);
+
+if (type == LocalPlayers::LocalPlayers::Invalid)
   {
     m_dialog->OnConnectionError(_trans("The Username and Rio Key of the Online Player could not be validated. You must make a Rio account to access online play.\n\n"
            "To access online play, please follow these steps:\n"
@@ -151,7 +152,10 @@ NetPlayClient::NetPlayClient(const std::string& address, const u16 port, NetPlay
         "- set the \"Online Player\" combo box to your newly added account."));
     return;  // no netplay for invalid account
   }
-  m_player_name = LocalPlayers::m_online_player.GetUsername();
+  ActiveOnlinePlayer = player;
+  TagSetMap = tagset_map;
+  m_player_name = ActiveOnlinePlayer->GetUsername();
+  m_player_key = ActiveOnlinePlayer->GetUserID();
 
   if (!traversal_config.use_traversal)
   {
@@ -262,6 +266,7 @@ bool NetPlayClient::Connect()
   packet << Common::GetScmRevGitStr();
   packet << Common::GetNetplayDolphinVer();
   packet << m_player_name;
+  packet << m_player_key;
   Send(packet);
   enet_host_flush(m_client);
   sf::Packet rpac;
@@ -312,6 +317,7 @@ bool NetPlayClient::Connect()
 
     Player player;
     player.name = m_player_name;
+    player.riokey = m_player_key;
     player.pid = m_pid;
     player.revision = Common::GetNetplayDolphinVer();
 
@@ -494,10 +500,6 @@ void NetPlayClient::OnData(sf::Packet& packet)
     OnRankedBoxMsg(packet);
     break;
   
-  case MessageID::PlayerData:
-    OnPlayerDataMsg(packet);
-    break;
-  
   case MessageID::SendCodes:
     OnSendCodesMsg(packet);
     break;
@@ -537,9 +539,10 @@ void NetPlayClient::OnPlayerJoin(sf::Packet& packet)
   Player player{};
   packet >> player.pid;
   packet >> player.name;
+  packet >> player.riokey;
   packet >> player.revision;
 
-  INFO_LOG_FMT(NETPLAY, "Player {} ({}) using {} joined", player.name, player.pid, player.revision);
+  INFO_LOG_FMT(NETPLAY, "Player {} (pid: {}) using {} joined", player.name, player.pid, player.revision);
 
   {
     std::lock_guard lkp(m_crit.players);
@@ -1536,29 +1539,21 @@ void NetPlayClient::OnMD5Abort()
 
 void NetPlayClient::OnGameModeMsg(sf::Packet& packet)
 {
-  std::string mode;
-  packet >> mode;
+  bool exists;
+  int tagset_id;
+  packet >> exists;
+  packet >> tagset_id;
+  std::optional<Tag::TagSet> current_tagset =
+      exists ? std::optional<Tag::TagSet> (TagSetMap->at(tagset_id)) : std::nullopt;
+  std::string mode = exists ? current_tagset.value().name : "None";
   m_dialog->OnGameMode(mode);
+  Core::SetTagSet(current_tagset, true);
 }
 
 void NetPlayClient::OnRankedBoxMsg(sf::Packet& packet)
 {
   packet >> m_ranked_client;
   m_dialog->OnRankedEnabled(m_ranked_client);
-}
-
-void NetPlayClient::OnPlayerDataMsg(sf::Packet& packet)
-{
-  u8 port;
-  packet >> port;
-
-  std::string userinfoStr;
-  packet >> userinfoStr;
-
-  LocalPlayers::LocalPlayers i_LocalPlayers;
-  LocalPlayers::LocalPlayers::Player userinfo = i_LocalPlayers.toLocalPlayer(userinfoStr);
-
-  NetplayerUserInfo[port] = userinfo;
 }
 
 void NetPlayClient::OnSendCodesMsg(sf::Packet& packet)
@@ -1672,9 +1667,7 @@ void NetPlayClient::DisplayBatterFielder(u8 BatterPortInt, u8 FielderPortInt)
   bool fielderExists = FielderPortInt >= 0 && FielderPortInt <= 3 ? true : false;  // checks that the port isn't a CPU
   if (fielderExists)
   {
-    playername = netplay_client->NetplayerUserInfo[FielderPortInt + 1].GetUsername();
-    if (playername == "" || playername == "No Player Selected")
-      playername = netplay_client->GetPortPlayer(FielderPortInt);
+    playername = netplay_client->m_players[netplay_client->m_pad_map[FielderPortInt]].name;
 
     color = portColor[FielderPortInt];
     OSD::AddTypedMessage(OSD::MessageType::CurrentFielder, fmt::format("Fielder: {}", playername),
@@ -1684,9 +1677,7 @@ void NetPlayClient::DisplayBatterFielder(u8 BatterPortInt, u8 FielderPortInt)
   bool batterExists = BatterPortInt >= 0 && BatterPortInt <= 3 ? true : false;  // checks that the port isn't a CPU
   if (batterExists)
   {
-    playername = netplay_client->NetplayerUserInfo[BatterPortInt + 1].GetUsername();
-    if (playername == "" || playername == "No Player Selected")
-      playername = netplay_client->GetPortPlayer(BatterPortInt);
+    playername = netplay_client->m_players[netplay_client->m_pad_map[BatterPortInt]].name;
 
     color = portColor[BatterPortInt];
     OSD::AddTypedMessage(OSD::MessageType::CurrentBatter, fmt::format("Batter: {}", playername),
@@ -1696,19 +1687,22 @@ void NetPlayClient::DisplayBatterFielder(u8 BatterPortInt, u8 FielderPortInt)
 
 std::map<int, LocalPlayers::LocalPlayers::Player> NetPlayClient::getNetplayerUserInfo()
 {
-  // send player usernames & keys here
-  netplay_client->SendLocalPlayerNetplay(netplay_client->GetLocalPlayerNetplay());
-  return netplay_client->NetplayerUserInfo;
-}
+  std::map<int, LocalPlayers::LocalPlayers::Player> NetplayerUserInfo;
+  for (auto& player : netplay_client->m_players)
+  {
+    LocalPlayers::LocalPlayers::Player player_info;
+    player_info.username = player.second.name;
+    player_info.userid = player.second.riokey;
+    int player_port = 0;
 
-std::string NetPlayClient::sGetPortPlayer(int PortInt)
-{
-  return netplay_client->GetPortPlayer(PortInt - 1);
-}
-
-std::string NetPlayClient::GetPortPlayer(int PortInt)
-{
-  return m_players[m_pad_map[PortInt]].name;
+    for (int i = 0; i < netplay_client->m_pad_map.size(); i++)
+    {
+      if (netplay_client->m_pad_map[i] == player.first)
+        player_port = i + 1;
+    }
+    NetplayerUserInfo.emplace(std::pair<int, LocalPlayers::LocalPlayers::Player>(player_port, player_info));
+  }
+  return NetplayerUserInfo;
 }
 
 u32 NetPlayClient::sGetPlayersMaxPing()
@@ -3105,40 +3099,6 @@ void NetPlay_Disable()
 {
   std::lock_guard lk(crit_netplay_client);
   netplay_client = nullptr;
-}
-
-void NetPlayClient::SendLocalPlayerNetplay(LocalPlayers::LocalPlayers::Player userinfo)
-{
-  for (auto player_id : m_pad_map)
-  {
-    if (player_id == m_local_player->pid)
-    {
-      sf::Packet packet;
-      packet << MessageID::PlayerData;
-
-      NetplayerUserInfo[player_id] = userinfo;  // if the client is mapped to a port, that port is set to the local player at the client's port 1
-      packet << player_id;
-      packet << userinfo.LocalPlayerToStr();  // have to sent the string over netplay; will convert this back later
-
-      SendAsync(std::move(packet));
-    }
-  }
-
-}
-
-LocalPlayers::LocalPlayers::Player NetPlayClient::GetLocalPlayerNetplay()
-{
-  // get online player in rio config
-  // if no one is set, use netplay nickname
-  LocalPlayers::LocalPlayers::Player netplay_player;
-  if (LocalPlayers::m_online_player.GetUsername() == "" || LocalPlayers::m_online_player.GetUsername() == "No Player Selected")
-  {
-    netplay_player.username = m_players[m_local_player->pid].name;
-    netplay_player.userid = "0";
-  }
-  else
-    netplay_player = LocalPlayers::m_online_player;
-  return netplay_player;
 }
 
 }  // namespace NetPlay

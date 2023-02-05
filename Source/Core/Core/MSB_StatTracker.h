@@ -985,7 +985,8 @@ public:
         bool m_is_host = false;
         std::optional<int> m_tag_set;
         std::string m_netplay_opponent_alias = "";
-        std::optional<int> tag_set_id = std::nullopt;
+        std::optional<int> tag_set_id_local = std::nullopt;
+        std::optional<int> tag_set_id_netplay = std::nullopt;
     } m_state;
 
     union
@@ -996,8 +997,8 @@ public:
 
     void setRankedStatus(bool inBool);
     void setRecordStatus(bool inBool);
-    void setTagSetId(Tag::TagSet tag_set);
-    void clearTagSetId();
+    void setTagSetId(Tag::TagSet tag_set, bool netplay);
+    void clearTagSetId(bool netplay);
     void setNetplaySession(bool netplay_session, bool is_host=false, std::string opponent_name = "");
     void setAvgPing(int avgPing);
     void setLagSpikes(int nLagSpikes);

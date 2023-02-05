@@ -1310,11 +1310,9 @@ void MainWindow::ShowGraphicsWindow()
 void MainWindow::ShowNetPlaySetupDialog()
 {
   // Validate Rio User
-  std::string url = "https://api.projectrio.app/validate_user_from_client/?username=" +
-                    LocalPlayers::m_online_player.GetUsername() +
-                    "&rio_key=" + LocalPlayers::m_online_player.GetUserID();
-  const Common::HttpRequest::Response response = m_http.Get(url);
-  if (!response)
+  LocalPlayers::LocalPlayers::AccountValidationType type = LocalPlayers::m_online_player.ValidateAccount(m_http);
+
+  if (type == LocalPlayers::LocalPlayers::Invalid)
   {
     ModalMessageBox::critical(
         this, tr("Error"),
@@ -1333,6 +1331,8 @@ void MainWindow::ShowNetPlaySetupDialog()
   m_netplay_setup_dialog->show();
   m_netplay_setup_dialog->raise();
   m_netplay_setup_dialog->activateWindow();
+  user_tagsets = m_netplay_setup_dialog->assignOnlineAccount(LocalPlayers::m_online_player);
+  m_active_account.SetUserInfo(LocalPlayers::m_online_player);
 }
 
 void MainWindow::ShowNetPlayBrowser()
@@ -1522,20 +1522,21 @@ bool MainWindow::NetPlayJoin()
   const std::string network_mode = Config::Get(Config::NETPLAY_NETWORK_MODE);
   const bool host_input_authority = network_mode == "hostinputauthority" || network_mode == "golf";
 
-
-  if (server)
+  const bool is_hosting_netplay = server != nullptr;
+  if (is_hosting_netplay)
   {
     server->SetHostInputAuthority(host_input_authority);
     server->AdjustPadBufferSize(Config::Get(Config::NETPLAY_BUFFER_SIZE));
-    //server->AdjustRankedBox(Config::Get(Config::NETPLAY_RANKED));
+    bool tagset_exists = Core::GetTagSet(true).has_value();
+    int tagset_id = tagset_exists ? Core::GetTagSet(true).value().id : 0;
+    server->SetTagSet(tagset_exists, tagset_id);
   }
 
   // Create Client
-  const bool is_hosting_netplay = server != nullptr;
   Settings::Instance().ResetNetPlayClient(new NetPlay::NetPlayClient(
       host_ip, host_port, m_netplay_dialog,
       NetPlay::NetTraversalConfig{is_hosting_netplay ? false : is_traversal, traversal_host,
-                                  traversal_port}));
+                                  traversal_port}, &m_active_account, &user_tagsets));
 
   if (!Settings::Instance().GetNetPlayClient()->IsConnected())
   {

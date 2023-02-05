@@ -479,7 +479,8 @@ void StatTracker::lookForTriggerEvents(){
                 m_game_info.netplay = m_state.m_netplay_session;
                 m_game_info.host    = m_state.m_is_host;
                 m_game_info.netplay_opponent_alias = m_state.m_netplay_opponent_alias;
-                m_game_info.tag_set_id = m_state.tag_set_id;
+                m_game_info.tag_set_id =
+                    m_state.m_netplay_session ? m_state.tag_set_id_netplay : m_state.tag_set_id_local;
 
                 //If TagSet provided, get tags from server
                 if (m_state.m_tag_set.has_value()){
@@ -1691,14 +1692,14 @@ void StatTracker::setRecordStatus(bool inBool) {
     // }
 }
 
-void StatTracker::setTagSetId(Tag::TagSet tag_set) {
+void StatTracker::setTagSetId(Tag::TagSet tag_set, bool netplay) {
     std::cout << "TagSet Id=" << tag_set.id << "," << "TagSet Name=" << tag_set.name << "\n";
-    m_state.tag_set_id = tag_set.id;
+    netplay ? m_state.tag_set_id_netplay = tag_set.id : m_state.tag_set_id_local = tag_set.id;
 }
 
-void StatTracker::clearTagSetId() {
+void StatTracker::clearTagSetId(bool netplay) {
     std::cout << "Clearing TagSet" << "\n";
-    m_state.tag_set_id = std::nullopt;
+    netplay ? m_state.tag_set_id_netplay = std::nullopt : m_state.tag_set_id_local = std::nullopt;
 }
 
 

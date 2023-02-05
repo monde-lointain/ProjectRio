@@ -24,6 +24,7 @@
 #include "InputCommon/GCPadStatus.h"
 #include "Core/LocalPlayers.h"
 #include <Common/HttpRequest.h>
+#include "Common/TagSet.h"
 
 class BootSessionData;
 
@@ -106,6 +107,7 @@ class Player
 public:
   PlayerId pid{};
   std::string name;
+  std::string riokey;
   std::string revision;
   u32 ping = 0;
   SyncIdentifierComparison game_status = SyncIdentifierComparison::Unknown;
@@ -120,15 +122,14 @@ public:
   void SendAsync(sf::Packet&& packet, u8 channel_id = DEFAULT_CHANNEL);
 
   NetPlayClient(const std::string& address, const u16 port, NetPlayUI* dialog,
-                const NetTraversalConfig& traversal_config);
+                const NetTraversalConfig& traversal_config,
+                LocalPlayers::LocalPlayers::Player* player, std::map<int, Tag::TagSet>* tagset_map);
   ~NetPlayClient();
 
   std::vector<const Player*> GetPlayers();
   const NetSettings& GetNetSettings() const;
-  std::map<int, LocalPlayers::LocalPlayers::Player> NetplayerUserInfo; // int is port
-
-  void SendLocalPlayerNetplay(LocalPlayers::LocalPlayers::Player userinfo);
-  LocalPlayers::LocalPlayers::Player GetLocalPlayerNetplay();
+  LocalPlayers::LocalPlayers::Player* ActiveOnlinePlayer;
+  std::map<int, Tag::TagSet>* TagSetMap;
 
   // Called from the GUI thread.
   bool IsConnected() const { return m_is_connected; }
@@ -291,7 +292,6 @@ private:
   void ComputeMD5(const SyncIdentifier& sync_identifier);
   void DisplayPlayersPing();
 
-  std::string GetPortPlayer(int PortInt);
   void AutoGolfModeLogic(bool isField, int BatPort, int FieldPort);
   u32 GetPlayersMaxPing() const;
 
@@ -341,7 +341,6 @@ private:
   void OnMD5Abort();
   void OnGameModeMsg(sf::Packet& packet);
   void OnRankedBoxMsg(sf::Packet& packet);
-  void OnPlayerDataMsg(sf::Packet& packet);
   void OnSendCodesMsg(sf::Packet& packet);
   void OnCoinFlipMsg(sf::Packet& packet);
   void OnNightMsg(sf::Packet& packet);
@@ -360,6 +359,7 @@ private:
   std::map<PlayerId, Player> m_players;
   std::string m_host_spec;
   std::string m_player_name;
+  std::string m_player_key;
   bool m_connecting = false;
   TraversalClient* m_traversal_client = nullptr;
   std::thread m_MD5_thread;

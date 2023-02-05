@@ -7,7 +7,9 @@
 
 #include <array>
 
+#include "Common/HttpRequest.h"
 #include "Core/LocalPlayers.h"
+#include "Common/TagSet.h"
 
 class QComboBox;
 class QHBoxLayout;
@@ -33,10 +35,15 @@ private:
   void UpdatePlayers();
 
   void SetPortInfo();
+  void PopulateTagsetCombobox();
+  void SetTagSet();
+
+  bool IsValidUser(LocalPlayers::LocalPlayers::Player player);
 
   void ConnectWidgets();
 
   QGroupBox* m_player_box;
+  QGroupBox* m_options_box;
   QGridLayout* m_player_layout;
   QListWidget* m_player_list;
 
@@ -47,6 +54,9 @@ private:
   QComboBox* m_player_list_4;
   std::array<QComboBox*, 5> m_port_array;
 
+  QComboBox* m_local_tagset;
+  Common::HttpRequest m_http{std::chrono::minutes{3}};
+
   QPushButton* m_add_button;
   QPushButton* m_remove_button;
   std::array<QHBoxLayout*, 4> m_player_groups;
@@ -54,4 +64,6 @@ private:
   std::vector<LocalPlayers::LocalPlayers::Player> m_local_players; // vector of player objects
   std::map<std::string, std::string> m_player_map; // maps player key to username
   std::map<std::string, int> m_player_index_map; // maps player key to vector index
+
+  std::map<int, std::optional<Tag::TagSet>> m_tagset_combobox_map; // maps combobox index to tagset
 };

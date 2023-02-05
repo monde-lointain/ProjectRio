@@ -7,6 +7,8 @@
 
 #include "DolphinQt/GameList/GameListModel.h"
 #include "UICommon/NetPlayIndex.h"
+#include "Core/LocalPlayers.h"
+#include "Common/TagSet.h"
 
 class QCheckBox;
 class QComboBox;
@@ -36,6 +38,7 @@ public:
 
   void accept() override;
   void show();
+  std::map<int, Tag::TagSet>& assignOnlineAccount(LocalPlayers::LocalPlayers::Player online_player);
 
 signals:
   bool Join();
@@ -63,6 +66,7 @@ private:
 
   void SaveSettings();
   void SaveLobbySettings();
+  void SetTagSet();
 
   void OnConnectionTypeChanged(int index);
 
@@ -73,6 +77,8 @@ private:
   QTabWidget* m_tab_widget;
   QPushButton* m_reset_traversal_button;
   QPushButton* m_latency_test;
+  QLabel* m_account_name;
+  QGroupBox* m_account_box;
 
   // Connection Widget
   QLabel* m_ip_label;
@@ -84,7 +90,8 @@ private:
   // Host Widget
   QLabel* m_host_port_label;
   QSpinBox* m_host_port_box;
-  QListWidget* m_host_games;
+  QComboBox* m_host_games;
+  std::map<int, UICommon::GameFile> host_games_map;
   QPushButton* m_host_button;
   QCheckBox* m_host_force_port_check;
   QSpinBox* m_host_force_port_box;
@@ -96,7 +103,6 @@ private:
   QComboBox* m_host_server_region;
   QCheckBox* m_host_ranked;
   QComboBox* m_host_game_mode;
-  QLabel* m_host_option_label;
 
   // Browser Tab
   QTableWidget* m_table_widget;
@@ -112,6 +118,7 @@ private:
   QLabel* m_online_count;
 
   std::vector<NetPlaySession> m_sessions;
+  LocalPlayers::LocalPlayers::Player m_active_account;
 
   std::thread m_refresh_thread;
   std::optional<std::map<std::string, std::string>> m_refresh_filters;
@@ -123,5 +130,8 @@ private:
   QCheckBox* m_host_upnp;
 #endif
 
+  std::map<int, Tag::TagSet> user_tagsets;
+  std::map<int, std::optional<Tag::TagSet>> tagset_map; // maps the index of the tagset combo box to the tagset id
   const GameListModel& m_game_list_model;
+  Common::HttpRequest m_http{std::chrono::minutes{3}};
 };

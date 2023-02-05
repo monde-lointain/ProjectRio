@@ -17,6 +17,7 @@
 #include "Common/CommonTypes.h"
 
 #include "Core/HW/Memmap.h"
+#include "Common/TagSet.h"
 
 struct BootParameters;
 struct WindowSystemInfo;
@@ -204,7 +205,9 @@ void setRecordStatus(bool inNewStatus);
 void setSubmitStatus(bool inNewStatus);
 void setRankedStatus(bool inNewStatus);
 void SetGameID(u32 gameID);
-void SetGameMode(std::string mode);
+std::optional<Tag::TagSet> GetTagSet(bool netplay);
+void SetTagSet(std::optional<Tag::TagSet> tagset, bool netplay);
+bool isTagSetActive();
 
 union{
   u32 num;

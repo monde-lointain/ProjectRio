@@ -413,6 +413,7 @@ ConnectionError NetPlayServer::OnConnect(ENetPeer* socket, sf::Packet& rpac)
 
   rpac >> player.revision;
   rpac >> player.name;
+  rpac >> player.riokey;
 
   if (StringUTF8CodePointCount(LocalPlayers::m_online_player.username) > MAX_NAME_LENGTH)
     return ConnectionError::NameTooLong;
@@ -436,7 +437,7 @@ ConnectionError NetPlayServer::OnConnect(ENetPeer* socket, sf::Packet& rpac)
   // send join message to already connected clients
   sf::Packet spac;
   spac << MessageID::PlayerJoin;
-  spac << player.pid << player.name << player.revision;
+  spac << player.pid << player.name << player.riokey << player.revision;
   SendToClients(spac);
 
   // send new client success message with their ID
@@ -474,8 +475,8 @@ ConnectionError NetPlayServer::OnConnect(ENetPeer* socket, sf::Packet& rpac)
   // send Game Mode state
   spac.clear();
   spac << MessageID::GameMode;
-  std::string game_mode = Config::Get(Config::NETPLAY_GAME_MODE);
-  spac << game_mode;
+  spac << m_tagset_id.has_value();
+  spac << m_tagset_id.value();
   Send(player.socket, spac);
 
   // send night stadium state
@@ -501,7 +502,7 @@ ConnectionError NetPlayServer::OnConnect(ENetPeer* socket, sf::Packet& rpac)
   {
     spac.clear();
     spac << MessageID::PlayerJoin;
-    spac << p.second.pid << p.second.name << p.second.revision;
+    spac << p.second.pid << p.second.name << p.second.riokey << p.second.revision;
     Send(player.socket, spac);
 
     spac.clear();
@@ -741,6 +742,19 @@ void NetPlayServer::AdjustReplays(const bool disable)
   SendAsyncToClients(std::move(spac));
 }
 
+void NetPlayServer::SetTagSet(bool exists, int tagset_id)
+{
+  exists ? m_tagset_id = tagset_id : m_tagset_id = std::nullopt;
+
+  // tell clients about the new value
+  sf::Packet spac;
+  spac << MessageID::GameMode;
+  spac << m_tagset_id.has_value();
+  spac << m_tagset_id.value();
+
+  SendAsyncToClients(std::move(spac));
+}
+
 void NetPlayServer::SetHostInputAuthority(const bool enable)
 {
   std::lock_guard lkg(m_crit.game);
@@ -931,23 +945,6 @@ unsigned int NetPlayServer::OnData(sf::Packet& packet, Client& player)
     sf::Packet spac;
     spac << MessageID::DisableReplays;
     spac << disable;
-
-    SendToClients(spac);
-  }
-  break;
-
-  case MessageID::PlayerData:
-  {
-    u8 port;
-    packet >> port;
-    std::string userinfoStr;
-    packet >> userinfoStr;
-
-    // send userinfo to other clients
-    sf::Packet spac;
-    spac << MessageID::PlayerData;
-    spac << port;
-    spac << userinfoStr;
 
     SendToClients(spac);
   }
@@ -1600,7 +1597,6 @@ bool NetPlayServer::SetupNetSettings()
   settings.m_UseFMA = DoAllPlayersHaveHardwareFMA();
   settings.m_HideRemoteGBAs = Config::Get(Config::NETPLAY_HIDE_REMOTE_GBAS);
   settings.m_RankedMode = Config::Get(Config::NETPLAY_RANKED);
-  settings.m_GameMode = Config::Get(Config::NETPLAY_GAME_MODE);
 
   // Unload GameINI to restore things to normal
   Config::RemoveLayer(Config::LayerType::GlobalGame);

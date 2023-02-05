@@ -166,6 +166,26 @@ void LocalPlayers::Player::SetUserInfo(LocalPlayers::Player player)
 {
   this->username = player.GetUsername();
   this->userid = player.GetUserID();
-} 
+}
+
+enum LocalPlayers::AccountValidationType LocalPlayers::Player::ValidateAccount(Common::HttpRequest &m_http)
+{
+  AccountValidationType validationType;
+  std::string url = "https://api.projectrio.app/validate_user_from_client/?username=" +
+                    this->username + "&rio_key=" + this->userid;
+
+  const Common::HttpRequest::Response response = m_http.Get(url/*, {}, Common::HttpRequest::AllowedReturnCodes::All*/);
+
+  if (!response)
+  {
+    validationType = Invalid;
+  }
+  else
+  {
+    validationType = Valid;
+  }
+
+  return validationType;
+}
 
 }  // namespace LocalPlayers
