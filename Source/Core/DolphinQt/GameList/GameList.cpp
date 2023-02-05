@@ -273,8 +273,9 @@ void GameList::UpdateColumnVisibility()
 void GameList::MakeEmptyView()
 {
   const QString refreshing_msg = tr("Refreshing...");
-  const QString empty_msg = tr("Dolphin could not find any GameCube/Wii ISOs or WADs.\n"
-                               "Double-click here to set a games directory...");
+  const QString empty_msg = tr("Rio could not find any <u>Mario Superstar Baseball (USA)</u> ISOs.\n"
+                               "<h1>DOUBLE-CLICK HERE</h1>\n"
+                               "and <u><b>select the folder</b></u> which contains your ISO file.");
 
   m_empty = new QLabel(this);
   m_empty->setText(refreshing_msg);
@@ -301,6 +302,7 @@ void GameList::MakeEmptyView()
           });
   connect(&Settings::Instance(), &Settings::GameListRefreshCompleted, this,
           [this, empty_msg = empty_msg] {
+            m_empty->setTextFormat(Qt::RichText);
             m_empty->setText(empty_msg);
             m_empty->setEnabled(true);
           });
