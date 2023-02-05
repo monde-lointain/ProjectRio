@@ -128,6 +128,11 @@ static std::optional<Tag::TagSet> tagset_netplay = std::nullopt;
 static bool previousContactMade = false;
 static bool runNetplayGameFunctions = true;
 
+static int avgPing = 0;
+static int nPing = 0;
+static int nLagSpikes = 0;
+static int previousPing = 50;
+
 static int draftTimer = 0;
 
 #ifdef USE_MEMORYWATCHER

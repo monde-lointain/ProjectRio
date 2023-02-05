@@ -329,12 +329,6 @@ bool LocalPlayersWidget::IsValidUser(LocalPlayers::LocalPlayers::Player player)
   }
 }
 
-{
-}
-
-{
-}
-
 void LocalPlayersWidget::ConnectWidgets()
 {
   connect(m_player_list_0, qOverload<int>(&QComboBox::activated), this,
