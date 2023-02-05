@@ -184,13 +184,13 @@ public:
   static bool isNight();
   static bool isDisableReplays();
   static u32 sGetPlayersMaxPing();
-  static std::string sGetPortPlayer(int PortInt);
   static std::map<int, LocalPlayers::LocalPlayers::Player> getNetplayerUserInfo();
   static void SendGameID(u32 gameId);
   bool m_ranked_client = false;
   bool m_night_stadium = false;
   bool m_disable_replays = false;
-  
+  u32 maxPing;
+
   const PadMappingArray& GetPadMapping() const;
   const GBAConfigArray& GetGBAConfig() const;
   const PadMappingArray& GetWiimoteMapping() const;

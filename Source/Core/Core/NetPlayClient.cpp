@@ -1633,10 +1633,11 @@ void NetPlayClient::Send(const sf::Packet& packet, const u8 channel_id)
 
 void NetPlayClient::DisplayPlayersPing()
 {
+  maxPing = GetPlayersMaxPing();
   if (!g_ActiveConfig.bShowNetPlayPing)
     return;
 
-  OSD::AddTypedMessage(OSD::MessageType::NetPlayPing, fmt::format("Ping: {}", GetPlayersMaxPing()),
+  OSD::AddTypedMessage(OSD::MessageType::NetPlayPing, fmt::format("Ping: {}", maxPing),
                        OSD::Duration::SHORT, OSD::Color::CYAN);
 }
 
@@ -1707,7 +1708,7 @@ std::map<int, LocalPlayers::LocalPlayers::Player> NetPlayClient::getNetplayerUse
 
 u32 NetPlayClient::sGetPlayersMaxPing()
 {
-  return netplay_client->GetPlayersMaxPing();
+  return netplay_client->maxPing;
 }
 
 u32 NetPlayClient::GetPlayersMaxPing() const
