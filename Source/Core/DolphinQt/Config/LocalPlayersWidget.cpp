@@ -33,7 +33,7 @@
 //#include "Common/TagSet.h"
 
 #include "DolphinQt/Settings.h"
-#include <ModalMessageBox.h>
+#include "DolphinQt/QtUtils/ModalMessageBox.h"
 
 LocalPlayersWidget::LocalPlayersWidget(QWidget* parent) : QWidget(parent)
 {
