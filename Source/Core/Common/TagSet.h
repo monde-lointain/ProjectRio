@@ -201,7 +201,7 @@ namespace Tag
         return tag_set;
     }
 
-    static std::optional<TagSet> getTagSet(Common::HttpRequest &http, int tag_set_id){
+    static inline std::optional<TagSet> getTagSet(Common::HttpRequest &http, int tag_set_id){
         // const Common::HttpRequest::Response response = m_http.Get("https://api.projectrio.app/tag_set/" + std::to_string(tag_set_id));
         const Common::HttpRequest::Response response = http.Get("http://127.0.0.1:5000/tag_set/" + std::to_string(tag_set_id));
 
@@ -250,7 +250,7 @@ namespace Tag
     //    );
     //}
 
-    static std::map<int, TagSet> getAvailableTagSets(Common::HttpRequest &http, std::string rio_key){
+    static inline std::map<int, TagSet> getAvailableTagSets(Common::HttpRequest &http, std::string rio_key){
         std::stringstream sstm;
         sstm << "{\"Active\":\"true\", \"Rio Key\":\"" << rio_key << "\"}";
         std::string payload = sstm.str(); 
