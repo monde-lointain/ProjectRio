@@ -17,13 +17,18 @@
 #include "Common/CommonTypes.h"
 
 #include "Core/HW/Memmap.h"
-#include "Common/TagSet.h"
+
 
 struct BootParameters;
 struct WindowSystemInfo;
 
+namespace Tag {
+  class TagSet;
+};
+
 namespace Core
 {
+
 bool GetIsThrottlerTempDisabled();
 void SetIsThrottlerTempDisabled(bool disable);
 
@@ -199,6 +204,8 @@ void RunDraftTimer();
 //};
 
 // auto GameMode = GameMode::Custom;
+
+using namespace Tag;
 
 //void setRankedStatus(bool inNewStatus);
 void setRecordStatus(bool inNewStatus);

@@ -9,7 +9,6 @@
 
 #include "Common/HttpRequest.h"
 #include "Core/LocalPlayers.h"
-#include "Common/TagSet.h"
 
 class QComboBox;
 class QHBoxLayout;
@@ -17,6 +16,10 @@ class QGridLayout;
 class QGroupBox;
 class QPushButton;
 class QListWidget;
+
+namespace Tag {
+  class TagSet;
+};
 
 // class AddPlayers;
 

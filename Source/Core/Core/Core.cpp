@@ -96,6 +96,8 @@
 #include "VideoCommon/VideoBackendBase.h"
 #include "VideoCommon/VideoConfig.h"
 
+#include "Common/TagSet.h"
+
 #ifdef ANDROID
 #include "jni/AndroidCommon/IDCache.h"
 #endif

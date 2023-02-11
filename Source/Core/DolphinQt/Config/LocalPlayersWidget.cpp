@@ -30,7 +30,7 @@
 #include "Core/HW/SI/SI.h"
 #include "Core/HW/SI/SI_Device.h"
 
-//#include "Common/TagSet.h"
+#include "Common/TagSet.h"
 
 #include "DolphinQt/Settings.h"
 #include "DolphinQt/QtUtils/ModalMessageBox.h"

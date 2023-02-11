@@ -131,6 +131,8 @@
 #include "VideoCommon/NetPlayChatUI.h"
 #include "VideoCommon/VideoConfig.h"
 
+#include "Common/TagSet.h"
+
 #ifdef HAVE_XRANDR
 #include "UICommon/X11Utils.h"
 // This #define within X11/X.h conflicts with our WiimoteSource enum.

@@ -21,6 +21,8 @@
 #include <iostream>
 #include "Config/MainSettings.h"
 
+#include "Common/TagSet.h"
+
 void StatTracker::Run(){
     lookForTriggerEvents();
 }

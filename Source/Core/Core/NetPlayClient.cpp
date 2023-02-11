@@ -79,6 +79,7 @@
 #include "Core/HotkeyManager.h"
 #include "Core/LocalPlayersConfig.h"
 #include "Core/Core.h"
+#include "Common/TagSet.h"
 
 namespace NetPlay
 {

@@ -29,6 +29,10 @@ namespace UICommon
 class GameFile;
 }
 
+namespace Tag {
+class TagSet;
+}
+
 class NetPlaySetupDialog : public QDialog
 {
   Q_OBJECT

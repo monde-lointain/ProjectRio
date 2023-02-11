@@ -39,6 +39,7 @@
 #include <qdesktopservices.h>
 #include <Core/Core.h>
 //#include "Core/NetPlayServer.h"
+#include "Common/TagSet.h"
 
 
 NetPlaySetupDialog::NetPlaySetupDialog(const GameListModel& game_list_model, QWidget* parent)

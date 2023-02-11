@@ -24,7 +24,6 @@
 #include "InputCommon/GCPadStatus.h"
 #include "Core/LocalPlayers.h"
 #include <Common/HttpRequest.h>
-#include "Common/TagSet.h"
 
 class BootSessionData;
 
@@ -36,6 +35,10 @@ class FileSystem;
 namespace UICommon
 {
 class GameFile;
+}
+
+namespace Tag {
+class TagSet;
 }
 
 namespace NetPlay
