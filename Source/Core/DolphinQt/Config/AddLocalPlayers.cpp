@@ -139,20 +139,13 @@ bool AddLocalPlayersEditor::AcceptPlayer()
     ModalMessageBox::critical(this, tr("Error"), tr("You must enter a Rio Key"));
     return false;
   }
-  
-  
-  std::string url = "https://api.projectrio.app/validate_user_from_client/?username=" 
-                  + m_local_player->username
-                  + "&rio_key=" + m_local_player->userid;
-  const Common::HttpRequest::Response response = m_http.Get(url);
-  if (!response){
-    //TODO Error if user is not validated when full beta releases
-    //ModalMessageBox::critical(this, tr("Error"), tr("Username and Rio Key could not be validated"));
-    //return false;
 
-    ModalMessageBox::warning(this, tr("Warning"), tr("Username and Rio Key could not be validated.\n"
-                                                     "If you are part of the beta please double check your\n"
-                                                     "info otherwise please ignore and continue"));
+  LocalPlayers::LocalPlayers::AccountValidationType type = m_local_player->ValidateAccount(m_http);
+  if (type == LocalPlayers::LocalPlayers::Invalid)
+  {
+    ModalMessageBox::critical(this, tr("Error"), tr("Username and Rio Key could not be validated. Verify that you are entering\n"
+      "the correct information, or check your internet conenction."));
+    return false;
   }
   return true;
 }

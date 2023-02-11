@@ -600,8 +600,12 @@ void MenuBar::AddHelpMenu()
   QAction* projectrio = help_menu->addAction(tr("&Project Rio Website"));
   connect(projectrio, &QAction::triggered, this,
           []() { QDesktopServices::openUrl(QUrl(QStringLiteral("https://www.projectrio.online/"))); });
-  QAction* discord = help_menu->addAction(tr("&Discord"));
-  connect(discord, &QAction::triggered, this, []() {
+  QAction* rio_discord = help_menu->addAction(tr("&Project Rio Discord"));
+  connect(rio_discord, &QAction::triggered, this, []() {
+    QDesktopServices::openUrl(QUrl(QStringLiteral("https://discord.com/invite/c3r9PabfRU")));
+  });
+  QAction* mssb_discord = help_menu->addAction(tr("&Mario Baseball Discord"));
+  connect(mssb_discord, &QAction::triggered, this, []() {
     QDesktopServices::openUrl(QUrl(QStringLiteral("https://discord.com/invite/9ZZtpuEPCd")));
   });
 

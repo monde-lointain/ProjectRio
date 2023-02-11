@@ -17,6 +17,7 @@
 #include "Common/CommonTypes.h"
 
 #include "Core/HW/Memmap.h"
+#include "Common/TagSet.h"
 
 struct BootParameters;
 struct WindowSystemInfo;
@@ -123,6 +124,7 @@ void SaveScreenShot(std::string_view name);
 // This displays messages in a user-visible way.
 void DisplayMessage(std::string message, int time_in_ms);
 
+void RunRioFunctions();
 void FrameUpdateOnCPUThread();
 void OnFrameEnd();
 bool IsGolfMode();
@@ -187,13 +189,7 @@ void TrainingMode();
 void DisplayBatterFielder();
 void SetAvgPing();
 void SetNetplayerUserInfo();
-void SendGameID();
 void RunDraftTimer();
-
-static int avgPing = 0;
-static int nPing = 0;
-static int nLagSpikes = 0;
-static int previousPing = 0;
 
 //enum class GameMode
 //{
@@ -208,9 +204,10 @@ static int previousPing = 0;
 void setRecordStatus(bool inNewStatus);
 void setSubmitStatus(bool inNewStatus);
 void setRankedStatus(bool inNewStatus);
-void SetDisplayStats();
 void SetGameID(u32 gameID);
-void SetGameMode(std::string mode);
+std::optional<Tag::TagSet> GetTagSet(bool netplay);
+void SetTagSet(std::optional<Tag::TagSet> tagset, bool netplay);
+bool isTagSetActive();
 
 union{
   u32 num;

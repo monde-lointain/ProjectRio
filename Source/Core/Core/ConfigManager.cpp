@@ -392,6 +392,21 @@ DiscIO::Language SConfig::GetLanguageAdjustedForRegion(bool wii, DiscIO::Region 
   return language;
 }
 
+bool SConfig::GameIsAllowed() const
+{
+  std::vector<std::string> games_list = {"GYQE01"};
+  bool can_play = false;
+  std::string current_game = GetGameID_Wrapper();
+  for (std::string game : games_list)
+  {
+    if (current_game == game)
+    {
+      can_play = true;
+    }
+  }
+  return can_play;
+}
+
 bool SConfig::GameHasDefaultGameIni() const
 {
   return GameHasDefaultGameIni(GetGameID_Wrapper(), m_revision);

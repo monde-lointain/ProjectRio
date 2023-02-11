@@ -66,6 +66,7 @@ public:
 
   void AdjustPadBufferSize(unsigned int size);
   void SetHostInputAuthority(bool enable);
+  void SetTagSet(bool exists, int tagset_id);
 
   void AdjustRankedBox(bool is_ranked);
   void AdjustNightStadium(bool is_night);
@@ -86,6 +87,7 @@ private:
   public:
     PlayerId pid{};
     std::string name;
+    std::string riokey;
     std::string revision;
     SyncIdentifierComparison game_status = SyncIdentifierComparison::Unknown;
     bool has_ipl_dump = false;
@@ -175,6 +177,7 @@ private:
   bool m_current_ranked_value = false;
   bool m_current_night_value = false;
   bool m_current_disable_replays_value = false;
+  std::optional<int> m_tagset_id = std::nullopt;
 
   std::map<PlayerId, Client> m_players;
 

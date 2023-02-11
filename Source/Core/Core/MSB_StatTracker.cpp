@@ -19,6 +19,7 @@
 #include <fmt/format.h>
 
 #include <iostream>
+#include "Config/MainSettings.h"
 
 void StatTracker::Run(){
     lookForTriggerEvents();
@@ -68,7 +69,7 @@ void StatTracker::lookForTriggerEvents(){
                     std::string batter_name = cCharIdToCharName.at(batter_char_id);
                     std::string pitcher_name = cCharIdToCharName.at(pitcher_char_id);
 
-                    if (mTrackerInfo.mDisplay)
+                    if (Config::Get(Config::MAIN_ENABLE_DEBUGGING))
                     {
                       OSD::AddTypedMessage(
                           OSD::MessageType::GameStatePreviousPlayResult,
@@ -83,10 +84,7 @@ void StatTracker::lookForTriggerEvents(){
                                       m_game_info.getCurrentEvent().outs, pitcher_name,
                                       batter_name),
                           10000, OSD::Color::RED);
-                    }
 
-                     if (mTrackerInfo.mDisplay)
-                    {
                       OSD::AddTypedMessage(
                           OSD::MessageType::GameStatePreviousPlayInfo,
                           fmt::format(
@@ -120,7 +118,7 @@ void StatTracker::lookForTriggerEvents(){
 
     if (m_game_state == GAME_STATE::INGAME) {
         if (m_game_info.currentEventVld()){
-          if (mTrackerInfo.mDisplay)
+          if (Config::Get(Config::MAIN_ENABLE_DEBUGGING))
           {
             OSD::AddTypedMessage(
                 OSD::MessageType::GameStateInfo,
@@ -148,7 +146,7 @@ void StatTracker::lookForTriggerEvents(){
           }
         }
     } else {
-      if (mTrackerInfo.mDisplay)
+      if (Config::Get(Config::MAIN_ENABLE_DEBUGGING))
       {
         OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(
             "Game State: {}\n"
@@ -166,7 +164,7 @@ void StatTracker::lookForTriggerEvents(){
                 //Create new event, collect runner data
 
                 //Capture the rising edge of the AtBat Scene
-                if (Memory::Read_U8(aGameControlStateCurr) == 0x1 && Memory::Read_U8(aGameControlStatePrev) != 0x1){
+                if (PowerPC::HostRead_U8(aGameControlStateCurr) == 0x1 && PowerPC::HostRead_U8(aGameControlStatePrev) != 0x1){
 
                     m_game_info.events[m_game_info.event_num] = Event();
                     m_game_info.getCurrentEvent().event_num = m_game_info.event_num;
@@ -188,7 +186,7 @@ void StatTracker::lookForTriggerEvents(){
 
                     std::cout << "Init event " << std::to_string(m_game_info.event_num) << "\n";
                 }
-                else if (Memory::Read_U32(aGameId) == 0){
+                else if (PowerPC::HostRead_U32(aGameId) == 0){
                     onGameQuit();
 
                     //Remove current event, wasn't finished
@@ -201,7 +199,7 @@ void StatTracker::lookForTriggerEvents(){
             //Look for Pitch
             case (EVENT_STATE::WAITING_FOR_EVENT):
                 //Handle quit to main menu
-                if (Memory::Read_U32(aGameId) == 0){
+                if (PowerPC::HostRead_U32(aGameId) == 0){
                     onGameQuit();
 
                     //Remove current event, wasn't finished
@@ -216,12 +214,12 @@ void StatTracker::lookForTriggerEvents(){
                 //1. Are runners stealing and pitcher stepped off the mound
                 //2. Has pitch started?
                 //3. Has game been paused, reinit 
-                if (Memory::Read_U8(aGameControlStateCurr) == 0xb){
+                if (PowerPC::HostRead_U8(aGameControlStateCurr) == 0xb){
                     std::cout << "Game paused, need to re-init event " << std::to_string(m_game_info.event_num) << "\n";
                     m_event_state = EVENT_STATE::INIT_EVENT;
                 }
                 //Watch for Runners Stealing
-                if (Memory::Read_U8(aAB_PitchThrown) || Memory::Read_U8(aAB_PickoffAttempt)){
+                if (PowerPC::HostRead_U8(aAB_PitchThrown) || PowerPC::HostRead_U8(aAB_PickoffAttempt)){
                     //If HUD not produced for this event, produce HUD JSON
                     logGameInfo();
 
@@ -239,7 +237,7 @@ void StatTracker::lookForTriggerEvents(){
                         m_game_info.getCurrentEvent().write_hud_ab.first = false;
                     }
 
-                    if(Memory::Read_U8(aAB_PitchThrown)){
+                    if(PowerPC::HostRead_U8(aAB_PitchThrown)){
                         std::cout << "Pitch detected!\n";
 
                         //Check for fielder swaps
@@ -249,7 +247,7 @@ void StatTracker::lookForTriggerEvents(){
                         m_game_info.getCurrentEvent().pitch = std::make_optional(Pitch());
 
                         //Check if pitcher was at center of mound, if so this is a potential DB
-                        if (Memory::Read_U8(aFielder_Pos_X) == 0){
+                        if (PowerPC::HostRead_U8(aFielder_Pos_X) == 0){
                             m_game_info.getCurrentEvent().pitch->potential_db = true;
                             std::cout << "Potential DB!\n";
                         }
@@ -257,7 +255,7 @@ void StatTracker::lookForTriggerEvents(){
                         //Pitch has started
                         m_event_state = EVENT_STATE::PITCH_RESULT;
                     }
-                    else if(Memory::Read_U8(aAB_PickoffAttempt)) {
+                    else if(PowerPC::HostRead_U8(aAB_PickoffAttempt)) {
                         std::cout << "Pick of attempt detected!\n";
                         m_event_state = EVENT_STATE::MONITOR_RUNNERS;
                         m_game_info.getCurrentEvent().pick_off_attempt = true;
@@ -270,8 +268,8 @@ void StatTracker::lookForTriggerEvents(){
                 //DBs
                 //If the pitcher started in the center of the mound this is a potential DB
                 //If the ball curves at any point it is no longer a DB
-                if (m_game_info.getCurrentEvent().pitch->potential_db && (Memory::Read_U8(aAB_PitcherHasCtrlofPitch) == 1)) {
-                    if (floatConverter(Memory::Read_U32(aAB_PitchCurveInput)) != 0) {
+                if (m_game_info.getCurrentEvent().pitch->potential_db && (PowerPC::HostRead_U8(aAB_PitcherHasCtrlofPitch) == 1)) {
+                    if (floatConverter(PowerPC::HostRead_U32(aAB_PitchCurveInput)) != 0) {
                         std::cout << "No longer potential DB!\n";
                         m_game_info.getCurrentEvent().pitch->potential_db = false;
                     }
@@ -292,28 +290,28 @@ void StatTracker::lookForTriggerEvents(){
 
                 //Conditions to leave the state: Contact, Ball beyond batter, HBP
                 //Contact
-                if (Memory::Read_U8(aAB_ContactMade)){
+                if (PowerPC::HostRead_U8(aAB_ContactMade)){
                     logPitch(m_game_info.getCurrentEvent());
                     logContact(m_game_info.getCurrentEvent());
                     m_event_state = EVENT_STATE::CONTACT_RESULT;
                 }
                 //If the ball gets behind the batter while mid pitch OR play flag is false (safety incase we miss the first cond), record miss
-                else if (Memory::Read_U8(aAB_MissedBall)){
+                else if (PowerPC::HostRead_U8(aAB_MissedBall)){
                     logPitch(m_game_info.getCurrentEvent());
                     m_event_state = EVENT_STATE::MONITOR_RUNNERS;
                 }
-                else if (Memory::Read_U8(aAB_HitByPitch) == 1){
+                else if (PowerPC::HostRead_U8(aAB_HitByPitch) == 1){
                     //Log HBP
                     logPitch(m_game_info.getCurrentEvent());
-                    if (!Memory::Read_U8(aAB_PitchThrown)) {
-                        m_game_info.getCurrentEvent().result_of_atbat = Memory::Read_U8(aAB_FinalResult);
+                    if (!PowerPC::HostRead_U8(aAB_PitchThrown)) {
+                        m_game_info.getCurrentEvent().result_of_atbat = PowerPC::HostRead_U8(aAB_FinalResult);
                         m_event_state = EVENT_STATE::PLAY_OVER;
                     }
                 }
 
                 break;
             case (EVENT_STATE::CONTACT_RESULT):                
-                if (Memory::Read_U8(aAB_ContactResult) != 0){
+                if (PowerPC::HostRead_U8(aAB_ContactResult) != 0){
                     //Indicate that pitch resulted in contact and log contact details
                     m_game_info.getCurrentEvent().pitch->pitch_result = 6;
                     logContactResult(&m_game_info.getCurrentEvent().pitch->contact.value()); //Land vs Caught vs Foul, Landing POS.
@@ -362,14 +360,14 @@ void StatTracker::lookForTriggerEvents(){
                 }
 
                 //Break out if play ends without fielding the ball (HR or other play ending hit)
-                if (!Memory::Read_U8(aAB_PitchThrown)) {
-                    m_game_info.getCurrentEvent().result_of_atbat = Memory::Read_U8(aAB_FinalResult);
+                if (!PowerPC::HostRead_U8(aAB_PitchThrown)) {
+                    m_game_info.getCurrentEvent().result_of_atbat = PowerPC::HostRead_U8(aAB_FinalResult);
                     m_event_state = EVENT_STATE::PLAY_OVER;
                 }
                 break;
             case (EVENT_STATE::MONITOR_RUNNERS):
-                if (!Memory::Read_U8(aAB_PitchThrown) && !Memory::Read_U8(aAB_PickoffAttempt)){
-                    m_game_info.getCurrentEvent().result_of_atbat = Memory::Read_U8(aAB_FinalResult);
+                if (!PowerPC::HostRead_U8(aAB_PitchThrown) && !PowerPC::HostRead_U8(aAB_PickoffAttempt)){
+                    m_game_info.getCurrentEvent().result_of_atbat = PowerPC::HostRead_U8(aAB_FinalResult);
                     m_event_state = EVENT_STATE::PLAY_OVER;
                 }
                 else {
@@ -386,8 +384,8 @@ void StatTracker::lookForTriggerEvents(){
                 }
                 break;
             case (EVENT_STATE::PLAY_OVER):
-                if (!Memory::Read_U8(aAB_PitchThrown)){
-                    m_game_info.getCurrentEvent().rbi = Memory::Read_U8(aAB_RBI);
+                if (!PowerPC::HostRead_U8(aAB_PitchThrown)){
+                    m_game_info.getCurrentEvent().rbi = PowerPC::HostRead_U8(aAB_RBI);
 
                     //runner_batter out, contact_secondary
                     logFinalResults(m_game_info.getCurrentEvent());
@@ -428,7 +426,7 @@ void StatTracker::lookForTriggerEvents(){
 
                 // === Transitions ===
 
-                if (Memory::Read_U8(aGameControlStateCurr) == 0x7){
+                if (PowerPC::HostRead_U8(aGameControlStateCurr) == 0x7){
                     //Increment event count
                     ++m_game_info.event_num;
                     //Save position as prev position
@@ -438,13 +436,13 @@ void StatTracker::lookForTriggerEvents(){
                     m_event_state = EVENT_STATE::INIT_EVENT;
                     std::cout << "Logging Final Result\n" << "Starting next AB\n\n";
                 }
-                else if (Memory::Read_U8(aGameControlStateCurr) == 0x1 && !m_game_info.previous_state.value().pitch.has_value()){
+                else if (PowerPC::HostRead_U8(aGameControlStateCurr) == 0x1 && !m_game_info.previous_state.value().pitch.has_value()){
                     //Increment event count
                     ++m_game_info.event_num;
                     m_event_state = EVENT_STATE::INIT_EVENT;
                     std::cout << "Logging Final Result\n" << "Pickoff over\n\n";
                 }
-                else if ((Memory::Read_U8(aGameControlStateCurr) == 0xE) || (Memory::Read_U8(aEndOfGameFlag) == 1)){ //MVP screen
+                else if ((PowerPC::HostRead_U8(aGameControlStateCurr) == 0xE) || (PowerPC::HostRead_U8(aEndOfGameFlag) == 1)){ //MVP screen
                     //Increment event count
                     m_event_state = EVENT_STATE::GAME_OVER;
                     std::cout << "Logging Final Result\n" << "Game Over\n\n";
@@ -473,15 +471,16 @@ void StatTracker::lookForTriggerEvents(){
     switch (m_game_state){
         case (GAME_STATE::PREGAME):
             //Start recording when GameId is set AND record button is pressed AND game has started
-            //std::cout << std::hex << "GameId=" << Memory::Read_U32(aGameId) << " Record=" << (mTrackerInfo.mRecord) << "GameState=" <<  Memory::Read_U8(aGameControlStateCurr) << '\n';
-            if ((Memory::Read_U32(aGameId) != 0) && (mTrackerInfo.mRecord) && (Memory::Read_U8(aGameControlStateCurr) == 0x5) ) {
-                m_game_info.game_id = Memory::Read_U32(aGameId);
+            //std::cout << std::hex << "GameId=" << PowerPC::HostRead_U32(aGameId) << " Record=" << (mTrackerInfo.mRecord) << "GameState=" <<  PowerPC::HostRead_U8(aGameControlStateCurr) << '\n';
+            if ((PowerPC::HostRead_U32(aGameId) != 0) && (mTrackerInfo.mRecord) && (PowerPC::HostRead_U8(aGameControlStateCurr) == 0x5) ) {
+                m_game_info.game_id = PowerPC::HostRead_U32(aGameId);
                 //Sample settings
                 m_game_info.ranked  = m_state.m_ranked_status;
                 m_game_info.netplay = m_state.m_netplay_session;
                 m_game_info.host    = m_state.m_is_host;
                 m_game_info.netplay_opponent_alias = m_state.m_netplay_opponent_alias;
-                m_game_info.tag_set_id = m_state.tag_set_id;
+                m_game_info.tag_set_id =
+                    m_state.m_netplay_session ? m_state.tag_set_id_netplay : m_state.tag_set_id_local;
 
                 //If TagSet provided, get tags from server
                 if (m_state.m_tag_set.has_value()){
@@ -564,23 +563,23 @@ void StatTracker::logGameInfo(){
     m_game_info.end_local_date_time = std::asctime(std::localtime(&unix_time));
     m_game_info.end_local_date_time.pop_back();
 
-    m_game_info.stadium = Memory::Read_U8(aStadiumId);
+    m_game_info.stadium = PowerPC::HostRead_U8(aStadiumId);
 
-    m_game_info.innings_selected = Memory::Read_U8(aInningsSelected);
-    m_game_info.innings_played   = Memory::Read_U8(aAB_Inning);
+    m_game_info.innings_selected = PowerPC::HostRead_U8(aInningsSelected);
+    m_game_info.innings_played   = PowerPC::HostRead_U8(aAB_Inning);
 
     ////Captains
     //if (m_game_info.away_port == m_game_info.team0_port){
-    //    m_game_info.away_captain = Memory::Read_U8(aTeam0_Captain);
-    //    m_game_info.home_captain = Memory::Read_U8(aTeam1_Captain);
+    //    m_game_info.away_captain = PowerPC::HostRead_U8(aTeam0_Captain);
+    //    m_game_info.home_captain = PowerPC::HostRead_U8(aTeam1_Captain);
     //}
     //else{
-    //    m_game_info.away_captain = Memory::Read_U8(aTeam1_Captain);
-    //    m_game_info.home_captain = Memory::Read_U8(aTeam0_Captain);
+    //    m_game_info.away_captain = PowerPC::HostRead_U8(aTeam1_Captain);
+    //    m_game_info.home_captain = PowerPC::HostRead_U8(aTeam0_Captain);
     //}
 
-    m_game_info.away_score = Memory::Read_U16(aAwayTeam_Score);
-    m_game_info.home_score = Memory::Read_U16(aHomeTeam_Score);
+    m_game_info.away_score = PowerPC::HostRead_U16(aAwayTeam_Score);
+    m_game_info.home_score = PowerPC::HostRead_U16(aHomeTeam_Score);
 
     for (int team=0; team < cNumOfTeams; ++team){
         for (int roster=0; roster < cRosterSize; ++roster){
@@ -601,27 +600,27 @@ void StatTracker::logDefensiveStats(int in_team_id, int roster_id){
     
     auto& stat = m_game_info.character_summaries[idx][roster_id].end_game_defensive_stats;
 
-    m_game_info.character_summaries[idx][roster_id].is_starred = Memory::Read_U8(aPitcher_IsStarred + is_starred_offset);
+    m_game_info.character_summaries[idx][roster_id].is_starred = PowerPC::HostRead_U8(aPitcher_IsStarred + is_starred_offset);
 
-    stat.batters_faced       = Memory::Read_U8(aPitcher_BattersFaced + offset);
-    stat.runs_allowed        = Memory::Read_U16(aPitcher_RunsAllowed + offset);
-    stat.earned_runs         = Memory::Read_U16(aPitcher_RunsAllowed + offset);
-    stat.batters_walked      = Memory::Read_U16(aPitcher_BattersWalked + offset);
-    stat.batters_hit         = Memory::Read_U16(aPitcher_BattersHit + offset);
-    stat.hits_allowed        = Memory::Read_U16(aPitcher_HitsAllowed + offset);
-    stat.homeruns_allowed    = Memory::Read_U16(aPitcher_HRsAllowed + offset);
-    stat.pitches_thrown      = Memory::Read_U16(aPitcher_PitchesThrown + offset);
-    stat.stamina             = Memory::Read_U16(aPitcher_Stamina + offset);
-    stat.was_pitcher         = Memory::Read_U8(aPitcher_WasPitcher + offset);
-    stat.batter_outs         = Memory::Read_U8(aPitcher_BatterOuts + offset);
-    stat.outs_pitched        = Memory::Read_U8(aPitcher_OutsPitched + offset);
-    stat.strike_outs         = Memory::Read_U8(aPitcher_StrikeOuts + offset);
-    stat.star_pitches_thrown = Memory::Read_U8(aPitcher_StarPitchesThrown + offset);
+    stat.batters_faced       = PowerPC::HostRead_U8(aPitcher_BattersFaced + offset);
+    stat.runs_allowed        = PowerPC::HostRead_U16(aPitcher_RunsAllowed + offset);
+    stat.earned_runs         = PowerPC::HostRead_U16(aPitcher_RunsAllowed + offset);
+    stat.batters_walked      = PowerPC::HostRead_U16(aPitcher_BattersWalked + offset);
+    stat.batters_hit         = PowerPC::HostRead_U16(aPitcher_BattersHit + offset);
+    stat.hits_allowed        = PowerPC::HostRead_U16(aPitcher_HitsAllowed + offset);
+    stat.homeruns_allowed    = PowerPC::HostRead_U16(aPitcher_HRsAllowed + offset);
+    stat.pitches_thrown      = PowerPC::HostRead_U16(aPitcher_PitchesThrown + offset);
+    stat.stamina             = PowerPC::HostRead_U16(aPitcher_Stamina + offset);
+    stat.was_pitcher         = PowerPC::HostRead_U8(aPitcher_WasPitcher + offset);
+    stat.batter_outs         = PowerPC::HostRead_U8(aPitcher_BatterOuts + offset);
+    stat.outs_pitched        = PowerPC::HostRead_U8(aPitcher_OutsPitched + offset);
+    stat.strike_outs         = PowerPC::HostRead_U8(aPitcher_StrikeOuts + offset);
+    stat.star_pitches_thrown = PowerPC::HostRead_U8(aPitcher_StarPitchesThrown + offset);
 
     //Get inherent values. Doesn't strictly belong here but we need the adjusted_team_id
-    m_game_info.character_summaries[idx][roster_id].char_id = Memory::Read_U8(aInGame_CharAttributes_CharId + ingame_attribute_table_offset);
-    m_game_info.character_summaries[idx][roster_id].fielding_hand = Memory::Read_U8(aInGame_CharAttributes_FieldingHand + ingame_attribute_table_offset);
-    m_game_info.character_summaries[idx][roster_id].batting_hand = Memory::Read_U8(aInGame_CharAttributes_BattingHand + ingame_attribute_table_offset);
+    m_game_info.character_summaries[idx][roster_id].char_id = PowerPC::HostRead_U8(aInGame_CharAttributes_CharId + ingame_attribute_table_offset);
+    m_game_info.character_summaries[idx][roster_id].fielding_hand = PowerPC::HostRead_U8(aInGame_CharAttributes_FieldingHand + ingame_attribute_table_offset);
+    m_game_info.character_summaries[idx][roster_id].batting_hand = PowerPC::HostRead_U8(aInGame_CharAttributes_BattingHand + ingame_attribute_table_offset);
 
 }
 
@@ -633,62 +632,62 @@ void StatTracker::logOffensiveStats(int in_team_id, int roster_id){
 
     auto& stat = m_game_info.character_summaries[idx][roster_id].end_game_offensive_stats;
 
-    stat.at_bats          = Memory::Read_U8(aBatter_AtBats + offset);
-    stat.hits             = Memory::Read_U8(aBatter_Hits + offset);
-    stat.singles          = Memory::Read_U8(aBatter_Singles + offset);
-    stat.doubles          = Memory::Read_U8(aBatter_Doubles + offset);
-    stat.triples          = Memory::Read_U8(aBatter_Triples + offset);
-    stat.homeruns         = Memory::Read_U8(aBatter_Homeruns + offset);
-    stat.successful_bunts = Memory::Read_U8(aBatter_BuntSuccess + offset);
-    stat.sac_flys         = Memory::Read_U8(aBatter_SacFlys + offset);
-    stat.strikouts        = Memory::Read_U8(aBatter_Strikeouts + offset);
-    stat.walks_4balls     = Memory::Read_U8(aBatter_Walks_4Balls + offset);
-    stat.walks_hit        = Memory::Read_U8(aBatter_Walks_Hit + offset);
-    stat.rbi              = Memory::Read_U8(aBatter_RBI + offset);
-    stat.bases_stolen     = Memory::Read_U8(aBatter_BasesStolen + offset);
-    stat.star_hits        = Memory::Read_U8(aBatter_StarHits + offset);
+    stat.at_bats          = PowerPC::HostRead_U8(aBatter_AtBats + offset);
+    stat.hits             = PowerPC::HostRead_U8(aBatter_Hits + offset);
+    stat.singles          = PowerPC::HostRead_U8(aBatter_Singles + offset);
+    stat.doubles          = PowerPC::HostRead_U8(aBatter_Doubles + offset);
+    stat.triples          = PowerPC::HostRead_U8(aBatter_Triples + offset);
+    stat.homeruns         = PowerPC::HostRead_U8(aBatter_Homeruns + offset);
+    stat.successful_bunts = PowerPC::HostRead_U8(aBatter_BuntSuccess + offset);
+    stat.sac_flys         = PowerPC::HostRead_U8(aBatter_SacFlys + offset);
+    stat.strikouts        = PowerPC::HostRead_U8(aBatter_Strikeouts + offset);
+    stat.walks_4balls     = PowerPC::HostRead_U8(aBatter_Walks_4Balls + offset);
+    stat.walks_hit        = PowerPC::HostRead_U8(aBatter_Walks_Hit + offset);
+    stat.rbi              = PowerPC::HostRead_U8(aBatter_RBI + offset);
+    stat.bases_stolen     = PowerPC::HostRead_U8(aBatter_BasesStolen + offset);
+    stat.star_hits        = PowerPC::HostRead_U8(aBatter_StarHits + offset);
 
-    m_game_info.character_summaries[idx][roster_id].end_game_defensive_stats.big_plays = Memory::Read_U8(aBatter_BigPlays + offset);
+    m_game_info.character_summaries[idx][roster_id].end_game_defensive_stats.big_plays = PowerPC::HostRead_U8(aBatter_BigPlays + offset);
 }
 
 void StatTracker::logEventState(Event& in_event){
-    in_event.inning          = Memory::Read_U8(aAB_Inning);
-    in_event.half_inning     = Memory::Read_U8(aAB_HalfInning);
+    in_event.inning          = PowerPC::HostRead_U8(aAB_Inning);
+    in_event.half_inning     = PowerPC::HostRead_U8(aAB_HalfInning);
 
     //Figure out scores
-    in_event.away_score = Memory::Read_U16(aAwayTeam_Score);
-    in_event.home_score = Memory::Read_U16(aHomeTeam_Score);
+    in_event.away_score = PowerPC::HostRead_U16(aAwayTeam_Score);
+    in_event.home_score = PowerPC::HostRead_U16(aHomeTeam_Score);
 
-    in_event.balls           = Memory::Read_U8(aAB_Balls);
-    in_event.strikes         = Memory::Read_U8(aAB_Strikes);
-    in_event.outs            = Memory::Read_U8(aAB_Outs);
+    in_event.balls           = PowerPC::HostRead_U8(aAB_Balls);
+    in_event.strikes         = PowerPC::HostRead_U8(aAB_Strikes);
+    in_event.outs            = PowerPC::HostRead_U8(aAB_Outs);
     
     //Figure out star ownership
     if (m_game_info.team0_port == m_game_info.away_port){
-        in_event.away_stars = Memory::Read_U8(aAB_P1_Stars);
-        in_event.home_stars = Memory::Read_U8(aAB_P2_Stars);
+        in_event.away_stars = PowerPC::HostRead_U8(aAB_P1_Stars);
+        in_event.home_stars = PowerPC::HostRead_U8(aAB_P2_Stars);
     }
     else {
-        in_event.away_stars = Memory::Read_U8(aAB_P2_Stars);
-        in_event.home_stars = Memory::Read_U8(aAB_P1_Stars);
+        in_event.away_stars = PowerPC::HostRead_U8(aAB_P2_Stars);
+        in_event.home_stars = PowerPC::HostRead_U8(aAB_P1_Stars);
     }
     
-    in_event.is_star_chance  = Memory::Read_U8(aAB_IsStarChance);
-    in_event.chem_links_ob   = Memory::Read_U8(aAB_ChemLinksOnBase);
+    in_event.is_star_chance  = PowerPC::HostRead_U8(aAB_IsStarChance);
+    in_event.chem_links_ob   = PowerPC::HostRead_U8(aAB_ChemLinksOnBase);
 
     //The following stamina lookup requires team_id to be in teams of team0 or team1
 
     auto batter_fielder_ports = getBatterFielderPorts();
     u8 pitching_team = (batter_fielder_ports.second == m_game_info.team1_port); //1 if the pitching team is team1
-    u8 pitcher_roster_loc = Memory::Read_U8(aAB_PitcherRosterID);
+    u8 pitcher_roster_loc = PowerPC::HostRead_U8(aAB_PitcherRosterID);
     
     //Calc the pitcher stamina offset and add it to the base stamina addr - TODO move to EventSummary
     u32 pitcherStaminaOffset = ((pitching_team * cRosterSize * c_defensive_stat_offset) + (pitcher_roster_loc * c_defensive_stat_offset));
-    in_event.pitcher_stamina = Memory::Read_U16(aPitcher_Stamina + pitcherStaminaOffset);
+    in_event.pitcher_stamina = PowerPC::HostRead_U16(aPitcher_Stamina + pitcherStaminaOffset);
 
-    in_event.pitcher_roster_loc = Memory::Read_U8(aAB_PitcherRosterID);
-    in_event.batter_roster_loc  = Memory::Read_U8(aAB_BatterRosterID);
-    in_event.catcher_roster_loc = Memory::Read_U8(aFielder_RosterLoc + (1 * cFielder_Offset));
+    in_event.pitcher_roster_loc = PowerPC::HostRead_U8(aAB_PitcherRosterID);
+    in_event.batter_roster_loc  = PowerPC::HostRead_U8(aAB_BatterRosterID);
+    in_event.catcher_roster_loc = PowerPC::HostRead_U8(aFielder_RosterLoc + (1 * cFielder_Offset));
 }
 
 void StatTracker::logContact(Event& in_event){
@@ -725,8 +724,8 @@ void StatTracker::logContact(Event& in_event){
     contact->ball_hang_time.read_value();
 
     u32 aStickInput = aAB_ControlStickInput + (getBatterFielderPorts().first * cControl_Offset);
-    //std::cout << "Batter Port=" << std::to_string(getBatterFielderPorts().first) << " Stick Addr=" << std::hex << aStickInput << " Stick Value=" << (Memory::Read_U16(aStickInput) & 0xF) << "\n";
-    contact->input_direction_stick.set_value(Memory::Read_U16(aStickInput) & 0xF); //Mask off the lower 4 bits which are the control stick directions
+    //std::cout << "Batter Port=" << std::to_string(getBatterFielderPorts().first) << " Stick Addr=" << std::hex << aStickInput << " Stick Value=" << (PowerPC::HostRead_U16(aStickInput) & 0xF) << "\n";
+    contact->input_direction_stick.set_value(PowerPC::HostRead_U16(aStickInput) & 0xF); //Mask off the lower 4 bits which are the control stick directions
     //std::cout << "  Stick Value Decoded=" << decode("StickVec", contact->input_direction_stick.get_value(), true) << "\n";
     std::cout << "SWING: " << contact->frame_of_swing.get_key_value_string().first << "=" << contact->frame_of_swing.get_key_value_string().second << "\n";
     std::cout << "\n";
@@ -737,26 +736,26 @@ void StatTracker::logPitch(Event& in_event){
 
     in_event.pitch->logged = true;
     in_event.pitch->pitcher_team_id    = !in_event.half_inning;
-    in_event.pitch->pitcher_char_id    = Memory::Read_U8(aAB_PitcherID);
-    in_event.pitch->pitch_type         = Memory::Read_U8(aAB_PitchType);
-    in_event.pitch->charge_type        = Memory::Read_U8(aAB_ChargePitchType);
-    in_event.pitch->star_pitch         = ((Memory::Read_U8(aAB_StarPitch_NonCaptain) > 0) || (Memory::Read_U8(aAB_StarPitch_Captain) > 0));
-    in_event.pitch->pitch_speed        = Memory::Read_U8(aAB_PitchSpeed);
+    in_event.pitch->pitcher_char_id    = PowerPC::HostRead_U8(aAB_PitcherID);
+    in_event.pitch->pitch_type         = PowerPC::HostRead_U8(aAB_PitchType);
+    in_event.pitch->charge_type        = PowerPC::HostRead_U8(aAB_ChargePitchType);
+    in_event.pitch->star_pitch         = ((PowerPC::HostRead_U8(aAB_StarPitch_NonCaptain) > 0) || (PowerPC::HostRead_U8(aAB_StarPitch_Captain) > 0));
+    in_event.pitch->pitch_speed        = PowerPC::HostRead_U8(aAB_PitchSpeed);
 
-    in_event.pitch->ball_z_strike_vs_ball = Memory::Read_U32(aAB_PitchBallPosZStrikezone);
+    in_event.pitch->ball_z_strike_vs_ball = PowerPC::HostRead_U32(aAB_PitchBallPosZStrikezone);
     in_event.pitch->bat_contact_x_pos.read_value();
     in_event.pitch->bat_contact_z_pos.read_value();
 
     float ballposz_strikezone = floatConverter(in_event.pitch->ball_z_strike_vs_ball);
-    float strikezone_left = floatConverter(Memory::Read_U32(aAB_PitchStrikezoneEdgeLeft));
-    float strikezone_right = floatConverter(Memory::Read_U32(aAB_PitchStrikezoneEdgeRight));
+    float strikezone_left = floatConverter(PowerPC::HostRead_U32(aAB_PitchStrikezoneEdgeLeft));
+    float strikezone_right = floatConverter(PowerPC::HostRead_U32(aAB_PitchStrikezoneEdgeRight));
     in_event.pitch->ball_in_strikezone = (strikezone_left < ballposz_strikezone && ballposz_strikezone < strikezone_right) ? 1 : 0;
     
     // === Batter info ===
 
     //First slap,charge,star,bunt
-    u8 swing_type = Memory::Read_U8(aAB_TypeOfSwing); //0=Slap, 1=charge, 3=bunt
-    u8 star_swing = Memory::Read_U8(aAB_StarSwing);
+    u8 swing_type = PowerPC::HostRead_U8(aAB_TypeOfSwing); //0=Slap, 1=charge, 3=bunt
+    u8 star_swing = PowerPC::HostRead_U8(aAB_StarSwing);
     u8 adjusted_swing = 0; //0=miss, 1=slap, 2=charge, 3=star, 4=bunt
     //Adjust swing to definition
     if (star_swing != 0){
@@ -767,7 +766,7 @@ void StatTracker::logPitch(Event& in_event){
     }
 
     //Use adjusted swing if swing and miss, else 0 (or 4 for bunt)
-    u8 any_swing = Memory::Read_U8(aAB_AnySwing); //0=No swing, 1=swing
+    u8 any_swing = PowerPC::HostRead_U8(aAB_AnySwing); //0=No swing, 1=swing
     if (any_swing == 0) {
         in_event.pitch->type_of_swing = 0;
     }
@@ -776,13 +775,13 @@ void StatTracker::logPitch(Event& in_event){
     }
 
     std::cout << "SWING: Swing Type=" << std::to_string(swing_type) << " Star Swing=" << std::to_string(star_swing) 
-              << " AnySwing=" << std::to_string(Memory::Read_U8(aAB_AnySwing)) << " Final=" << std::to_string(in_event.pitch->type_of_swing) << "\n";
+              << " AnySwing=" << std::to_string(PowerPC::HostRead_U8(aAB_AnySwing)) << " Final=" << std::to_string(in_event.pitch->type_of_swing) << "\n";
 }
 
 void StatTracker::logContactResult(Contact* in_contact){
     std::cout << "Logging Contact Result\n";
 
-    u8 result = Memory::Read_U8(aAB_ContactResult);
+    u8 result = PowerPC::HostRead_U8(aAB_ContactResult);
 
     //Log primary contact result (and secondary if possible)
     if (result == 1 || result == 2){
@@ -1527,27 +1526,27 @@ std::optional<StatTracker::Fielder> StatTracker::logFielderWithBall() {
         u32 aFielderRosterLoc = aFielder_RosterLoc + (pos * cFielder_Offset);
         u32 aFielderCharId = aFielder_CharId + (pos * cFielder_Offset);
 
-        bool fielder_has_ball = (Memory::Read_U8(aFielderControlStatus) == 0xA);
+        bool fielder_has_ball = (PowerPC::HostRead_U8(aFielderControlStatus) == 0xA);
 
         if (fielder_has_ball) {
             Fielder fielder_with_ball;
             //get char id
-            fielder_with_ball.fielder_roster_loc = Memory::Read_U8(aFielderRosterLoc);
-            fielder_with_ball.fielder_char_id = Memory::Read_U8(aFielderCharId);
+            fielder_with_ball.fielder_roster_loc = PowerPC::HostRead_U8(aFielderRosterLoc);
+            fielder_with_ball.fielder_char_id = PowerPC::HostRead_U8(aFielderCharId);
             fielder_with_ball.fielder_pos = pos;
 
-            fielder_with_ball.fielder_x_pos = Memory::Read_U32(aFielderPosX);
-            fielder_with_ball.fielder_y_pos = Memory::Read_U32(aFielderPosY);
-            fielder_with_ball.fielder_z_pos = Memory::Read_U32(aFielderPosZ);
+            fielder_with_ball.fielder_x_pos = PowerPC::HostRead_U32(aFielderPosX);
+            fielder_with_ball.fielder_y_pos = PowerPC::HostRead_U32(aFielderPosY);
+            fielder_with_ball.fielder_z_pos = PowerPC::HostRead_U32(aFielderPosZ);
 
-            if (Memory::Read_U8(aFielderAction)) {
-                fielder_with_ball.fielder_action = Memory::Read_U8(aFielderAction); //2 = Slide, 3 = Walljump
+            if (PowerPC::HostRead_U8(aFielderAction)) {
+                fielder_with_ball.fielder_action = PowerPC::HostRead_U8(aFielderAction); //2 = Slide, 3 = Walljump
             }
-            if (Memory::Read_U8(aFielderJump)) {
-                fielder_with_ball.fielder_jump = Memory::Read_U8(aFielderJump); //1 = jump
+            if (PowerPC::HostRead_U8(aFielderJump)) {
+                fielder_with_ball.fielder_jump = PowerPC::HostRead_U8(aFielderJump); //1 = jump
             }
 
-            fielder_with_ball.fielder_manual_select_arg = Memory::Read_U8(aFielder_ManualSelectArg);
+            fielder_with_ball.fielder_manual_select_arg = PowerPC::HostRead_U8(aFielder_ManualSelectArg);
 
             std::cout << "Fielder Pos=" << std::to_string(pos) << " Fielder RosterLoc=" << std::to_string(fielder_with_ball.fielder_roster_loc)
                       << " Fielder Action: " << std::to_string(fielder_with_ball.fielder_action)
@@ -1579,8 +1578,8 @@ std::optional<StatTracker::Fielder> StatTracker::logFielderBobble() {
         u32 aFielderCharId = aFielder_CharId + (pos * cFielder_Offset);
         
         u8 typeOfFielderDisruption = 0x0;
-        u8 bobble_addr = Memory::Read_U8(aFielderBobbleStatus);
-        u8 knockout_addr = Memory::Read_U8(aFielderKnockoutStatus);
+        u8 bobble_addr = PowerPC::HostRead_U8(aFielderBobbleStatus);
+        u8 knockout_addr = PowerPC::HostRead_U8(aFielderKnockoutStatus);
 
         if (knockout_addr) {
             typeOfFielderDisruption = 0x10; //Knockout - no bobble
@@ -1592,24 +1591,24 @@ std::optional<StatTracker::Fielder> StatTracker::logFielderBobble() {
         if (typeOfFielderDisruption > 0x1) {
             Fielder fielder_that_bobbled;
             //get char id
-            fielder_that_bobbled.fielder_roster_loc = Memory::Read_U8(aFielderRosterLoc);
-            fielder_that_bobbled.fielder_char_id = Memory::Read_U8(aFielderCharId);
+            fielder_that_bobbled.fielder_roster_loc = PowerPC::HostRead_U8(aFielderRosterLoc);
+            fielder_that_bobbled.fielder_char_id = PowerPC::HostRead_U8(aFielderCharId);
 
-            fielder_that_bobbled.fielder_x_pos = Memory::Read_U32(aFielderPosX);
-            fielder_that_bobbled.fielder_y_pos = Memory::Read_U32(aFielderPosY);
-            fielder_that_bobbled.fielder_z_pos = Memory::Read_U32(aFielderPosZ);
+            fielder_that_bobbled.fielder_x_pos = PowerPC::HostRead_U32(aFielderPosX);
+            fielder_that_bobbled.fielder_y_pos = PowerPC::HostRead_U32(aFielderPosY);
+            fielder_that_bobbled.fielder_z_pos = PowerPC::HostRead_U32(aFielderPosZ);
             fielder_that_bobbled.fielder_pos = pos;
             fielder_that_bobbled.bobble = typeOfFielderDisruption;
 
-            if (Memory::Read_U8(aFielderAction)) {
-                fielder_that_bobbled.fielder_action = Memory::Read_U8(aFielderAction); //2 = Slide, 3 = Walljump
+            if (PowerPC::HostRead_U8(aFielderAction)) {
+                fielder_that_bobbled.fielder_action = PowerPC::HostRead_U8(aFielderAction); //2 = Slide, 3 = Walljump
             }
-            if (Memory::Read_U8(aFielderJump)) {
-                fielder_that_bobbled.fielder_jump = Memory::Read_U8(aFielderJump); //1 = jump
+            if (PowerPC::HostRead_U8(aFielderJump)) {
+                fielder_that_bobbled.fielder_jump = PowerPC::HostRead_U8(aFielderJump); //1 = jump
             }
 
             //We can read manual select now because we don't have the ball
-            fielder_that_bobbled.fielder_manual_select_arg = Memory::Read_U8(aFielder_ManualSelectArg);
+            fielder_that_bobbled.fielder_manual_select_arg = PowerPC::HostRead_U8(aFielder_ManualSelectArg);
 
             std::cout << "Fielder Pos=" << std::to_string(pos) << " Fielder RosterLoc=" << std::to_string(fielder_that_bobbled.fielder_roster_loc)
                       << " Fielder Action: " << std::to_string(fielder_that_bobbled.fielder_action) 
@@ -1693,14 +1692,14 @@ void StatTracker::setRecordStatus(bool inBool) {
     // }
 }
 
-void StatTracker::setTagSetId(Tag::TagSet tag_set) {
+void StatTracker::setTagSetId(Tag::TagSet tag_set, bool netplay) {
     std::cout << "TagSet Id=" << tag_set.id << "," << "TagSet Name=" << tag_set.name << "\n";
-    m_state.tag_set_id = tag_set.id;
+    netplay ? m_state.tag_set_id_netplay = tag_set.id : m_state.tag_set_id_local = tag_set.id;
 }
 
-void StatTracker::clearTagSetId() {
+void StatTracker::clearTagSetId(bool netplay) {
     std::cout << "Clearing TagSet" << "\n";
-    m_state.tag_set_id = std::nullopt;
+    netplay ? m_state.tag_set_id_netplay = std::nullopt : m_state.tag_set_id_local = std::nullopt;
 }
 
 
@@ -1753,10 +1752,10 @@ void StatTracker::initPlayerInfo(){
     //Collect port info for players
     if (m_game_info.team0_port == 0xFF && m_game_info.team1_port == 0xFF){
         //From Roeming
-        std::array<u8, 2> ports = {Memory::Read_U8(0x800e874c), Memory::Read_U8(0x800e874d)};
+        std::array<u8, 2> ports = {PowerPC::HostRead_U8(0x800e874c), PowerPC::HostRead_U8(0x800e874d)};
         
-        u8 BattingPort = ports[Memory::Read_U32(0x80892990)];
-        u8 FieldingPort = ports[Memory::Read_U32(0x80892994)];
+        u8 BattingPort = ports[PowerPC::HostRead_U32(0x80892990)];
+        u8 FieldingPort = ports[PowerPC::HostRead_U32(0x80892994)];
         
         m_game_info.team0_port = ports[0];
         m_game_info.team1_port = ports[1];
@@ -1777,8 +1776,8 @@ void StatTracker::initPlayerInfo(){
             away_player_name = m_game_info.team1_player.GetUsername();
             home_player_name = m_game_info.team0_player.GetUsername();
         }
-        std::cout << "ports[0]=" << std::to_string(Memory::Read_U8(0x800e874c)) << " ports[1]=" << std::to_string(Memory::Read_U8(0x800e874d)) << "\n";
-        std::cout << "BattingPort=" << std::to_string(Memory::Read_U32(0x80892990)) << " FieldingPort=" << std::to_string(Memory::Read_U32(0x80892994)) << "\n";
+        std::cout << "ports[0]=" << std::to_string(PowerPC::HostRead_U8(0x800e874c)) << " ports[1]=" << std::to_string(PowerPC::HostRead_U8(0x800e874d)) << "\n";
+        std::cout << "BattingPort=" << std::to_string(PowerPC::HostRead_U32(0x80892990)) << " FieldingPort=" << std::to_string(PowerPC::HostRead_U32(0x80892994)) << "\n";
 
         std::cout << "Info:  Fielder Port=" << std::to_string(FieldingPort) << ", Batter Port=" << std::to_string(BattingPort) << "\n";
         std::cout << "Info:  Team0 Port=" << std::to_string(m_game_info.team0_port) << ", Team1 Port=" << std::to_string(m_game_info.team1_port) << "\n";
@@ -1788,13 +1787,13 @@ void StatTracker::initPlayerInfo(){
 
     //Get captain roster positions
     if ((m_game_info.team0_captain_roster_loc == 0xFF) || (m_game_info.team1_captain_roster_loc == 0xFF)) {
-        m_game_info.team0_captain_roster_loc = Memory::Read_U8(aTeam0_Captain_Roster_Loc);
-        m_game_info.team1_captain_roster_loc = Memory::Read_U8(aTeam1_Captain_Roster_Loc);
+        m_game_info.team0_captain_roster_loc = PowerPC::HostRead_U8(aTeam0_Captain_Roster_Loc);
+        m_game_info.team1_captain_roster_loc = PowerPC::HostRead_U8(aTeam1_Captain_Roster_Loc);
     }
 }
 
 void StatTracker::onGameQuit(){
-    u8 quitter_port = Memory::Read_U8(aWhoQuit);
+    u8 quitter_port = PowerPC::HostRead_U8(aWhoQuit);
     m_game_info.quitter_team = (quitter_port == m_game_info.away_port);
     logGameInfo();
 
@@ -1826,12 +1825,12 @@ void StatTracker::onGameQuit(){
 std::optional<StatTracker::Runner> StatTracker::logRunnerInfo(u8 base){
     std::optional<Runner> runner;
     //See if there is a runner in this pos
-    if (Memory::Read_U8(aRunner_RosterLoc + (base * cRunner_Offset)) != 0xFF){
+    if (PowerPC::HostRead_U8(aRunner_RosterLoc + (base * cRunner_Offset)) != 0xFF){
         Runner init_runner;
-        init_runner.roster_loc = Memory::Read_U8(aRunner_RosterLoc + (base * cRunner_Offset));
-        init_runner.char_id = Memory::Read_U8(aRunner_CharId + (base * cRunner_Offset));
+        init_runner.roster_loc = PowerPC::HostRead_U8(aRunner_RosterLoc + (base * cRunner_Offset));
+        init_runner.char_id = PowerPC::HostRead_U8(aRunner_CharId + (base * cRunner_Offset));
         init_runner.initial_base = base;
-        init_runner.basepath_location = Memory::Read_U32(aRunner_BasepathPercentage + (base * cRunner_Offset));
+        init_runner.basepath_location = PowerPC::HostRead_U32(aRunner_BasepathPercentage + (base * cRunner_Offset));
         runner = std::make_optional(init_runner);
         return runner;        
     }
@@ -1839,9 +1838,9 @@ std::optional<StatTracker::Runner> StatTracker::logRunnerInfo(u8 base){
 }
 
 bool StatTracker::anyRunnerStealing(Event& in_event){
-    u8 runner_1_stealing = Memory::Read_U8(aRunner_Stealing + (1 * cRunner_Offset));
-    u8 runner_2_stealing = Memory::Read_U8(aRunner_Stealing + (2 * cRunner_Offset));
-    u8 runner_3_stealing = Memory::Read_U8(aRunner_Stealing + (3 * cRunner_Offset));
+    u8 runner_1_stealing = PowerPC::HostRead_U8(aRunner_Stealing + (1 * cRunner_Offset));
+    u8 runner_2_stealing = PowerPC::HostRead_U8(aRunner_Stealing + (2 * cRunner_Offset));
+    u8 runner_3_stealing = PowerPC::HostRead_U8(aRunner_Stealing + (3 * cRunner_Offset));
 
     return (runner_1_stealing || runner_2_stealing || runner_3_stealing);
 }
@@ -1851,21 +1850,21 @@ void StatTracker::logRunnerEvents(Runner* in_runner){
     if (in_runner->out_type != 0 ) { return; }
 
     //Return if runner has already gotten out
-    in_runner->out_type = Memory::Read_U8(aRunner_OutType + (in_runner->initial_base * cRunner_Offset));
+    in_runner->out_type = PowerPC::HostRead_U8(aRunner_OutType + (in_runner->initial_base * cRunner_Offset));
     if (in_runner->out_type != 0) {
-        in_runner->out_location = Memory::Read_U8(aRunner_CurrentBase + (in_runner->initial_base * cRunner_Offset));
+        in_runner->out_location = PowerPC::HostRead_U8(aRunner_CurrentBase + (in_runner->initial_base * cRunner_Offset));
         in_runner->result_base = 0xFF;
-        in_runner->basepath_location = Memory::Read_U32(aRunner_BasepathPercentage + (in_runner->initial_base * cRunner_Offset));
+        in_runner->basepath_location = PowerPC::HostRead_U32(aRunner_BasepathPercentage + (in_runner->initial_base * cRunner_Offset));
 
         std::cout << "Logging Runner " << std::to_string(in_runner->initial_base) << ": Out. Type=" << std::to_string(in_runner->out_type)
         << " Location=" << std::to_string(in_runner->out_location) << "\n";
     }
     else{
-        in_runner->result_base = Memory::Read_U8(aRunner_CurrentBase + (in_runner->initial_base * cRunner_Offset));
+        in_runner->result_base = PowerPC::HostRead_U8(aRunner_CurrentBase + (in_runner->initial_base * cRunner_Offset));
     }
 
-    if (Memory::Read_U8(aRunner_Stealing + (in_runner->initial_base * cRunner_Offset)) > in_runner->steal){
-        in_runner->steal = Memory::Read_U8(aRunner_Stealing + (in_runner->initial_base * cRunner_Offset));
+    if (PowerPC::HostRead_U8(aRunner_Stealing + (in_runner->initial_base * cRunner_Offset)) > in_runner->steal){
+        in_runner->steal = PowerPC::HostRead_U8(aRunner_Stealing + (in_runner->initial_base * cRunner_Offset));
         std::cout << "Logging Runner " << std::to_string(in_runner->initial_base) << ": Steal. Type=" << std::to_string(in_runner->steal)<< "\n";
     }
 }

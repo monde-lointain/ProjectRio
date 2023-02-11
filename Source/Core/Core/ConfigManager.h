@@ -80,6 +80,7 @@ struct SConfig
 
 	u16 GetGameRevision() const;
   std::string GetGameID_Wrapper() const;
+  bool GameIsAllowed() const;
   bool GameHasDefaultGameIni() const;
   IniFile LoadDefaultGameIni() const;
   IniFile LoadLocalGameIni() const;

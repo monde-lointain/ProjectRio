@@ -142,7 +142,7 @@ void ToolBar::MakeActions()
   m_controllers_action = addAction(tr("Controllers"), this, &ToolBar::ControllersPressed);
   m_controllers_action->setEnabled(true);
 
-  m_view_gecko_codes_action = addAction(tr("Gecko Codes"), this, &ToolBar::ViewGeckoCodes);
+  m_view_gecko_codes_action = addAction(tr("Mods"), this, &ToolBar::ViewGeckoCodes);
 
   addSeparator();
 
