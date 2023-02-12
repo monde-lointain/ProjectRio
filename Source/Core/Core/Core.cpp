@@ -125,8 +125,8 @@ static bool s_frame_step = false;
 static std::atomic<bool> s_stop_frame_step;
 
 static u32 GameMode = 0;
-static std::optional<Tag::TagSet> tagset_local = std::nullopt;
-static std::optional<Tag::TagSet> tagset_netplay = std::nullopt;
+static std::optional<TagSet> tagset_local = std::nullopt;
+static std::optional<TagSet> tagset_netplay = std::nullopt;
 static bool previousContactMade = false;
 static bool runNetplayGameFunctions = true;
 
@@ -1686,12 +1686,12 @@ void SetGameID(u32 gameID)
   }
 }
 
-std::optional<Tag::TagSet> GetTagSet(bool netplay)
+std::optional<TagSet> GetActiveTagSet(bool netplay)
 {
   return netplay ? tagset_netplay : tagset_local;
 }
 
-void SetTagSet(std::optional<Tag::TagSet> tagset, bool netplay)
+void SetTagSet(std::optional<TagSet> tagset, bool netplay)
 {
   netplay ? tagset_netplay = tagset : tagset_local = tagset;
   

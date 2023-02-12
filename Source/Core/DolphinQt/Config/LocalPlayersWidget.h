@@ -17,12 +17,6 @@ class QGroupBox;
 class QPushButton;
 class QListWidget;
 
-namespace Tag {
-  class TagSet;
-};
-
-// class AddPlayers;
-
 class LocalPlayersWidget final : public QWidget
 {
   Q_OBJECT
@@ -67,6 +61,4 @@ private:
   std::vector<LocalPlayers::LocalPlayers::Player> m_local_players; // vector of player objects
   std::map<std::string, std::string> m_player_map; // maps player key to username
   std::map<std::string, int> m_player_index_map; // maps player key to vector index
-
-  std::map<int, std::optional<Tag::TagSet>> m_tagset_combobox_map; // maps combobox index to tagset
 };

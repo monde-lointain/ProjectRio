@@ -38,7 +38,7 @@ class GameFile;
 }
 
 namespace Tag {
-class TagSet;
+  class TagSet;
 }
 
 namespace NetPlay

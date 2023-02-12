@@ -8,7 +8,7 @@
 #include "DolphinQt/GameList/GameListModel.h"
 #include "UICommon/NetPlayIndex.h"
 #include "Core/LocalPlayers.h"
-#include "Common/TagSet.h"
+//#include "Common/TagSet.h"
 
 class QCheckBox;
 class QComboBox;
