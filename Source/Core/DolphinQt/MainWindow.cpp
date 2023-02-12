@@ -131,6 +131,8 @@
 #include "VideoCommon/NetPlayChatUI.h"
 #include "VideoCommon/VideoConfig.h"
 
+#include "Common/TagSet.h"
+
 #ifdef HAVE_XRANDR
 #include "UICommon/X11Utils.h"
 // This #define within X11/X.h conflicts with our WiimoteSource enum.
@@ -1527,8 +1529,8 @@ bool MainWindow::NetPlayJoin()
   {
     server->SetHostInputAuthority(host_input_authority);
     server->AdjustPadBufferSize(Config::Get(Config::NETPLAY_BUFFER_SIZE));
-    bool tagset_exists = Core::GetTagSet(true).has_value();
-    int tagset_id = tagset_exists ? Core::GetTagSet(true).value().id : 0;
+    bool tagset_exists = Core::GetActiveTagSet(true).has_value();
+    int tagset_id = tagset_exists ? Core::GetActiveTagSet(true).value().id : 0;
     server->SetTagSet(tagset_exists, tagset_id);
   }
 

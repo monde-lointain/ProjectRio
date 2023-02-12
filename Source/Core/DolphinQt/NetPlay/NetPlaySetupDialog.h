@@ -8,7 +8,7 @@
 #include "DolphinQt/GameList/GameListModel.h"
 #include "UICommon/NetPlayIndex.h"
 #include "Core/LocalPlayers.h"
-#include "Common/TagSet.h"
+//#include "Common/TagSet.h"
 
 class QCheckBox;
 class QComboBox;
@@ -27,6 +27,10 @@ class QRadioButton;
 namespace UICommon
 {
 class GameFile;
+}
+
+namespace Tag {
+class TagSet;
 }
 
 class NetPlaySetupDialog : public QDialog

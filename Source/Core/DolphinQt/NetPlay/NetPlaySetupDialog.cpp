@@ -37,8 +37,9 @@
 #include "DolphinQt/NetPlay/NetPlayBrowser.h"
 #include "Common/Version.h"
 #include <qdesktopservices.h>
-#include <Core/Core.h>
+#include "Core/Core.h"
 //#include "Core/NetPlayServer.h"
+#include "Common/TagSet.h"
 
 
 NetPlaySetupDialog::NetPlaySetupDialog(const GameListModel& game_list_model, QWidget* parent)
@@ -732,7 +733,7 @@ void NetPlaySetupDialog::UpdateListBrowser()
     auto* version = new QTableWidgetItem(QString::fromStdString(entry.version));
 
     bool enabled = Common::GetRioRevStr() == entry.version;
-    int tagset_id = stoi(game_tags[2]);
+    int tagset_id = stoi(game_tags[2]); // should make this safe in the future to catch when it can't convert to int cleanly
     if (user_tagsets.find(tagset_id) == user_tagsets.end())
       enabled = false;
     if (tagset_id == 0)

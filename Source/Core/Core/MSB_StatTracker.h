@@ -16,12 +16,12 @@
 #include "Common/FileUtil.h"
 
 #include "Core/LocalPlayers.h"
-
 #include "Core/Logger.h"
-
 #include "Core/TrackerAdr.h"
 
-#include "Common/TagSet.h"
+namespace Tag {
+class TagSet;
+}
 
 enum class GAME_STATE
 {

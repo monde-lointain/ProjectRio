@@ -21,6 +21,8 @@
 #include <iostream>
 #include "Config/MainSettings.h"
 
+#include "Common/TagSet.h"
+
 void StatTracker::Run(){
     lookForTriggerEvents();
 }
@@ -1726,12 +1728,6 @@ void StatTracker::setLagSpikes(int nLagSpikes)
   //std::cout << "Number of Lag Spikes=" << nLagSpikes << "\n";
   m_game_info.lag_spikes = nLagSpikes;
 }
-
-void StatTracker::setDisplayStats(bool bDisplay)
-{
-  mTrackerInfo.mDisplay = bDisplay;
-}
-
 void StatTracker::setNetplayerUserInfo(std::map<int, LocalPlayers::LocalPlayers::Player> userInfo)
 {
   for (auto player : userInfo)

@@ -13,17 +13,23 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <optional>
 
 #include "Common/CommonTypes.h"
 
 #include "Core/HW/Memmap.h"
-#include "Common/TagSet.h"
+
 
 struct BootParameters;
 struct WindowSystemInfo;
 
+namespace Tag {
+  class TagSet;
+};
+
 namespace Core
 {
+
 bool GetIsThrottlerTempDisabled();
 void SetIsThrottlerTempDisabled(bool disable);
 
@@ -200,13 +206,15 @@ void RunDraftTimer();
 
 // auto GameMode = GameMode::Custom;
 
+using namespace Tag;
+
 //void setRankedStatus(bool inNewStatus);
 void setRecordStatus(bool inNewStatus);
 void setSubmitStatus(bool inNewStatus);
 void setRankedStatus(bool inNewStatus);
 void SetGameID(u32 gameID);
-std::optional<Tag::TagSet> GetTagSet(bool netplay);
-void SetTagSet(std::optional<Tag::TagSet> tagset, bool netplay);
+std::optional<TagSet> GetActiveTagSet(bool netplay);
+void SetTagSet(std::optional<TagSet> tagset, bool netplay);
 bool isTagSetActive();
 
 union{

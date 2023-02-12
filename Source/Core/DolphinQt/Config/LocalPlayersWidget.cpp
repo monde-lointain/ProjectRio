@@ -12,7 +12,6 @@
 #include <QVBoxLayout>
 #include <QListWidget>
 
-#include <optional>
 #include <utility>
 #include <vector>
 
@@ -30,10 +29,12 @@
 #include "Core/HW/SI/SI.h"
 #include "Core/HW/SI/SI_Device.h"
 
-//#include "Common/TagSet.h"
+#include "Common/TagSet.h"
 
 #include "DolphinQt/Settings.h"
-#include <ModalMessageBox.h>
+#include "DolphinQt/QtUtils/ModalMessageBox.h"
+
+std::map<int, std::optional<Tag::TagSet>> m_tagset_combobox_map;  // maps combobox index to tagset
 
 LocalPlayersWidget::LocalPlayersWidget(QWidget* parent) : QWidget(parent)
 {
@@ -327,12 +328,6 @@ bool LocalPlayersWidget::IsValidUser(LocalPlayers::LocalPlayers::Player player)
   {
     return true;
   }
-}
-
-{
-}
-
-{
 }
 
 void LocalPlayersWidget::ConnectWidgets()

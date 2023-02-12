@@ -11,9 +11,8 @@
 #include <optional>
 #include <string>
 
-#include <Common/HttpRequest.h>
+//#include <Common/HttpRequest.h>
 #include "Core/LocalPlayersConfig.h"
-#include "Common/TagSet.h"
 
 class QStackedWidget;
 class QString;
@@ -66,6 +65,10 @@ namespace X11Utils
 {
 class XRRConfiguration;
 }
+
+namespace Tag {
+  class TagSet;
+};
 
 class MainWindow final : public QMainWindow
 {

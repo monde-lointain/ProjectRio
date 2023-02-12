@@ -1,4 +1,5 @@
 #pragma once
+
 #include <picojson.h>
 #include <sstream>
 #include <map>
@@ -10,7 +11,7 @@
 #include <picojson.h>
 #include "sstream"
 
-#include "HttpRequest.h"
+#include "Common/HttpRequest.h"
 
 enum ClientCode {
     DisableDingusBunt,
@@ -184,6 +185,13 @@ namespace Tag
         } else {
             return std::nullopt;
         }
+        
+        const std::string response_string(reinterpret_cast<const char*>(response.data()),response.size());
+        picojson::value json;
+        const auto error = picojson::parse(json, response_string);
+        if (!error.empty())
+            return {};
+        return json;
     }
 
 
