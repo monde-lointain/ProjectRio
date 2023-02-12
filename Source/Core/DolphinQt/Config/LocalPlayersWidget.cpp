@@ -12,7 +12,6 @@
 #include <QVBoxLayout>
 #include <QListWidget>
 
-#include <optional>
 #include <utility>
 #include <vector>
 
@@ -34,6 +33,8 @@
 
 #include "DolphinQt/Settings.h"
 #include "DolphinQt/QtUtils/ModalMessageBox.h"
+
+std::map<int, std::optional<Tag::TagSet>> m_tagset_combobox_map;  // maps combobox index to tagset
 
 LocalPlayersWidget::LocalPlayersWidget(QWidget* parent) : QWidget(parent)
 {

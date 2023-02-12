@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <optional>
 
 #include "Common/CommonTypes.h"
 
@@ -212,8 +213,8 @@ void setRecordStatus(bool inNewStatus);
 void setSubmitStatus(bool inNewStatus);
 void setRankedStatus(bool inNewStatus);
 void SetGameID(u32 gameID);
-std::optional<Tag::TagSet> GetTagSet(bool netplay);
-void SetTagSet(std::optional<Tag::TagSet> tagset, bool netplay);
+std::optional<TagSet> GetActiveTagSet(bool netplay);
+void SetTagSet(std::optional<TagSet> tagset, bool netplay);
 bool isTagSetActive();
 
 union{

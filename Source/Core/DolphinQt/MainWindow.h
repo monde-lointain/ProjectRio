@@ -11,7 +11,7 @@
 #include <optional>
 #include <string>
 
-#include <Common/HttpRequest.h>
+//#include <Common/HttpRequest.h>
 #include "Core/LocalPlayersConfig.h"
 
 class QStackedWidget;
