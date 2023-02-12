@@ -723,6 +723,7 @@ public:
 
         //Partial game. indicates this game has not been finished
         std::pair<bool, bool> write_hud_ab = {true, true};
+        bool update_ongoing_game = true;
 
         std::vector<EVENT_STATE> history;
         std::string stringifyHistory() {
@@ -1056,6 +1057,9 @@ public:
     std::string getHUDJSON(std::string in_event_num, Event& in_curr_event, std::optional<Event> in_prev_event, bool inDecode);
     //Returns path to save json
     std::string getStatJsonPath(std::string prefix);
+
+    void postOngoingGame(Event& in_event);
+    void updateOngoingGame(Event& in_event);
 
     std::pair<u8,u8> getBatterFielderPorts(){
         // These values are the actual port numbers

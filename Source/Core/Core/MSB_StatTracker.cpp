@@ -212,6 +212,12 @@ void StatTracker::lookForTriggerEvents(){
                     break;
                 }
 
+                //Update OngoingGame
+                if (m_game_info.getCurrentEvent().update_ongoing_game){
+                    updateOngoingGame(m_game_info.getCurrentEvent());
+                    m_game_info.getCurrentEvent().update_ongoing_game = false;
+                }
+
                 //Trigger Events to look for
                 //1. Are runners stealing and pitcher stepped off the mound
                 //2. Has pitch started?
@@ -228,6 +234,7 @@ void StatTracker::lookForTriggerEvents(){
 
                     if (m_game_info.event_num == 0) {
                         initPlayerInfo();
+                        postOngoingGame(m_game_info.getCurrentEvent());
                     }
 
                     if (m_game_info.getCurrentEvent().write_hud_ab.first) {
@@ -2009,4 +2016,72 @@ std::string StatTracker::decode(std::string type, u8 value, bool decode){
         retVal += ". Invalid Value (" + std::to_string(value) + ").";
     }
     return ("\"" + retVal + "\"");
+}
+
+void StatTracker::postOngoingGame(Event& in_curr_event){
+    std::stringstream json_stream;
+
+    json_stream << "{\n";
+    std::string start_date_time = m_game_info.start_unix_date_time;
+    json_stream << "  \"GameID\": \"" << m_game_info.game_id << "\",\n";
+    json_stream << "  \"Date - Start\": \"" << start_date_time << "\",\n";
+    
+    std::string tag_set_id_str = "";
+    if (m_game_info.tag_set_id.has_value()){
+        tag_set_id_str = std::to_string(m_game_info.tag_set_id.value());
+    }
+    json_stream << "  \"TagSetID\": " << tag_set_id_str << ",\n";
+    json_stream << "  \"StadiumID\": " << decode("Stadium", m_game_info.stadium, false) << ",\n";
+    json_stream << "  \"Away Player\": \""           << m_game_info.getAwayTeamPlayer().GetUserID() << "\",\n";
+    json_stream << "  \"Home Player\": \""           << m_game_info.getHomeTeamPlayer().GetUserID() << "\",\n";
+
+    u8 away_captain_roster_loc = (m_game_info.away_port == m_game_info.team0_port) ? m_game_info.team0_captain_roster_loc : m_game_info.team1_captain_roster_loc;
+    u8 home_captain_roster_loc = (m_game_info.home_port == m_game_info.team0_port) ? m_game_info.team0_captain_roster_loc : m_game_info.team1_captain_roster_loc;
+
+    json_stream << "  \"Away Captain\": "            << std::to_string(away_captain_roster_loc) << ",\n";
+    json_stream << "  \"Home Captain\": "            << std::to_string(home_captain_roster_loc) << ",\n";
+    json_stream << "  \"Away Stars\": "              << std::to_string(in_curr_event.away_stars) << ",\n";
+    json_stream << "  \"Home Stars\": "              << std::to_string(in_curr_event.home_stars) << ",\n";
+    json_stream << "  \"Pitcher\": "                 << std::to_string(in_curr_event.pitcher_roster_loc) << ",\n";
+    json_stream << "}\n";
+
+    const Common::HttpRequest::Response response =
+        m_http.Post("http://127.0.0.1:5000//populate_db/ongoing_game/", json_stream.str(),
+            {
+                {"Content-Type", "application/json"},
+            }
+        );
+}
+void StatTracker::updateOngoingGame(Event& in_curr_event){
+    std::stringstream json_stream;
+
+    json_stream << "{\n";
+    json_stream << "  \"GameID\": \"" << m_game_info.game_id << "\",\n";
+    json_stream << "  \"Inning\": "                  << std::to_string(in_curr_event.inning) << ",\n";
+    json_stream << "  \"Half Inning\": "             << std::to_string(in_curr_event.half_inning) << ",\n";
+    json_stream << "  \"Away Score\": "              << std::dec << in_curr_event.away_score << ",\n";
+    json_stream << "  \"Home Score\": "              << std::dec << in_curr_event.home_score << ",\n";
+    json_stream << "  \"Outs\": "                    << std::to_string(in_curr_event.outs) << ",\n";
+    json_stream << "  \"Away Stars\": "              << std::to_string(in_curr_event.away_stars) << ",\n";
+    json_stream << "  \"Home Stars\": "              << std::to_string(in_curr_event.home_stars) << ",\n";
+    //json_stream << "  \"Chemistry Links on Base\": " << std::to_string(in_curr_event.chem_links_ob) << ",\n";
+    json_stream << "  \"Pitcher\": "      << std::to_string(in_curr_event.pitcher_roster_loc) << ",\n";
+    json_stream << "  \"Leadoff Batter\": "       << std::to_string(in_curr_event.batter_roster_loc) << ",\n";
+
+    bool runner_1, runner_2, runner_3;
+    runner_1 = (in_curr_event.runner_1.has_value());
+    runner_2 = (in_curr_event.runner_2.has_value());
+    runner_3 = (in_curr_event.runner_3.has_value());
+
+    json_stream << "  \"Runner 1B\": "       << std::to_string(runner_1) << ",\n";
+    json_stream << "  \"Runner 2B\": "       << std::to_string(runner_2) << ",\n";
+    json_stream << "  \"Runner 3B\": "       << std::to_string(runner_3) << "\n";
+    json_stream << "}\n";
+
+    const Common::HttpRequest::Response response =
+        m_http.Post("http://127.0.0.1:5000/populate_db/ongoing_game/", json_stream.str(),
+            {
+                {"Content-Type", "application/json"},
+            }
+        );
 }
