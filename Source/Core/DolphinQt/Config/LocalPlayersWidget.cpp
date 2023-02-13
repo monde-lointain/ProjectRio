@@ -221,6 +221,7 @@ void LocalPlayersWidget::SetPortInfo()
 
   LocalPlayers::SaveLocalPorts();
   SavePlayers();
+  PopulateTagsetCombobox();
 }
 
 void LocalPlayersWidget::PopulateTagsetCombobox()
