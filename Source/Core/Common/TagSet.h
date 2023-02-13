@@ -216,6 +216,7 @@ namespace Tag
             return std::nullopt;
         };
 
+        std::cout << "So far so good" << "\n";
 
         // Get a vector of picojson::values for creating Tags 
         const std::vector<picojson::value> tags = tag_set_pico_json.get("tags").get<picojson::array>();
@@ -254,7 +255,7 @@ namespace Tag
                 return std::nullopt;
             }
 
-            if (tag.get("active").is<bool>()){ active = tag.get("Active").get<bool>(); }
+            if (tag.get("active").is<bool>()){ active = tag.get("active").get<bool>(); }
 
             // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
             if (tag.get("date_created").is<double>()){ date_created = int(tag.get("date_created").get<double>()); }
