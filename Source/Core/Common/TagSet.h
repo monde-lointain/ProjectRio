@@ -28,7 +28,7 @@ namespace Tag
     {
     public:
         Tag() {}
-        Tag(int in_id, std::string in_name, bool in_active, int in_date_created, std::string in_desc, int in_community_id, std::string in_type, std::optional<ClientCode> in_client_code, std::optional<std::string> gecko_code):
+        Tag(int in_id, std::string in_name, bool in_active, int in_date_created, std::string in_desc, int in_community_id, std::string in_type, std::optional<ClientCode> in_client_code, std::optional<std::string> in_gecko_code):
             id(in_id), 
             name(in_name),
             active(in_active),
@@ -36,7 +36,8 @@ namespace Tag
             desc(in_desc),
             community_id(in_community_id),
             type(in_type),
-            client_code(in_client_code)
+            client_code(in_client_code),
+            gecko_code(in_gecko_code)
             {}
         int id;
         std::string name;
@@ -169,7 +170,11 @@ namespace Tag
        return json;
     }
 
-    static std::optional<ClientCode> getTagClientCode(std::string tag_name) {
+    static std::optional<ClientCode> getTagClientCode(std::string tag_name, bool is_client_code) {
+        if (!is_client_code){
+            return std::nullopt;
+        }
+        
         if (tag_name == "Disable Dingus Bunt") {
             return ClientCode::DisableDingusBunt;
         } else if (tag_name == "Disable Manual Fielder Select") {
@@ -185,13 +190,6 @@ namespace Tag
         } else {
             return std::nullopt;
         }
-        
-        const std::string response_string(reinterpret_cast<const char*>(response.data()),response.size());
-        picojson::value json;
-        const auto error = picojson::parse(json, response_string);
-        if (!error.empty())
-            return {};
-        return json;
     }
 
 
@@ -201,17 +199,17 @@ namespace Tag
         std::string name;
         std::vector<Tag> tags_vector;
         
-        if (tag_set_pico_json.get("ID").is<double>()){
+        if (tag_set_pico_json.get("id").is<double>()){
             // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
-            id = int(tag_set_pico_json.get("ID").get<double>());
+            id = int(tag_set_pico_json.get("id").get<double>());
         }
         else{
             // If ID is not a double, return an empty TagSet because that is a breaking error
             return std::nullopt;
         };
 
-        if (tag_set_pico_json.get("Name").is<std::string>()){
-            name = tag_set_pico_json.get("Name").get<std::string>();
+        if (tag_set_pico_json.get("name").is<std::string>()){
+            name = tag_set_pico_json.get("name").get<std::string>();
         }
         else{
             // If Name is not a double, return an empty TagSet because that is a breaking error
@@ -220,7 +218,7 @@ namespace Tag
 
 
         // Get a vector of picojson::values for creating Tags 
-        const std::vector<picojson::value> tags = tag_set_pico_json.get("Tags").get<picojson::array>();
+        const std::vector<picojson::value> tags = tag_set_pico_json.get("tags").get<picojson::array>();
         // Loop through the vector of picojson::values, 
         // validate that the json data meets specifications, 
         // and populate the empty tags_vector with Tags
@@ -237,9 +235,9 @@ namespace Tag
             std::optional<ClientCode> client_code = std::nullopt;
             std::optional<std::string> gecko_code = std::nullopt;
 
-            if (tag.get("ID").is<double>()){
+            if (tag.get("id").is<double>()){
                 // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
-                tag_id = int(tag.get("ID").get<double>());
+                tag_id = int(tag.get("id").get<double>());
             }
             else{
                 // If ID is not a double, return an empty TagSet because that is a breaking error
@@ -247,8 +245,8 @@ namespace Tag
                 return std::nullopt;
             }
 
-            if (tag.get("Name").is<std::string>()){
-                tag_name = tag.get("Name").get<std::string>();
+            if (tag.get("name").is<std::string>()){
+                tag_name = tag.get("name").get<std::string>();
             }
             else{
                 // If Name is not a string, return an empty TagSet because that is a breaking error
@@ -256,24 +254,24 @@ namespace Tag
                 return std::nullopt;
             }
 
-            if (tag.get("Active").is<bool>()){ active = tag.get("Active").get<bool>(); }
+            if (tag.get("active").is<bool>()){ active = tag.get("Active").get<bool>(); }
 
             // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
-            if (tag.get("Date Created").is<double>()){ date_created = int(tag.get("Date Created").get<double>()); }
+            if (tag.get("date_created").is<double>()){ date_created = int(tag.get("date_created").get<double>()); }
             
-            if (tag.get("Desc").is<std::string>()){ desc = tag.get("Desc").get<std::string>(); }
+            if (tag.get("desc").is<std::string>()){ desc = tag.get("desc").get<std::string>(); }
             
             // picojson does not support the .get method for ints, so we are retrieving a double and converting to int.
-            if (tag.get("Comm ID").is<double>()){ community_id = int(tag.get("Comm ID").get<double>()); }
+            if (tag.get("comm_id").is<double>()){ community_id = int(tag.get("comm_id").get<double>()); }
             
-            if (tag.get("Type").is<std::string>()){ type = tag.get("Type").get<std::string>(); }
+            if (tag.get("type").is<std::string>()){ type = tag.get("type").get<std::string>(); }
 
             // Check if the tag's name is one of the Client Codes
-            client_code = getTagClientCode(tag_name);
+            client_code = getTagClientCode(tag_name, (type == "Client Code"));
 
             // Check if the Tag has a Gecko Code
-            if (tag.get("code").is<std::string>()){ 
-                std::string code = tag.get("code").get<std::string>();
+            if (tag.get("gecko_code").is<std::string>()){ 
+                std::string code = tag.get("gecko_code").get<std::string>();
 
                 // If the code field is not empty, set Tag.gecko_code to the code
                 if (code != "") {
@@ -304,7 +302,7 @@ namespace Tag
         return tag_set;
     }
 
-    static std::optional<TagSet> getTagSet(Common::HttpRequest &http, int tag_set_id){
+    static inline std::optional<TagSet> getTagSet(Common::HttpRequest &http, int tag_set_id){
        // const Common::HttpRequest::Response response = m_http.Get("https://api.projectrio.app/tag_set/" + std::to_string(tag_set_id));
        const Common::HttpRequest::Response response = http.Get("http://127.0.0.1:5000/tag_set/" + std::to_string(tag_set_id));
 
@@ -379,7 +377,7 @@ namespace Tag
        );
     }
 
-    static std::map<int, TagSet> getAvailableTagSets(Common::HttpRequest &http, std::string rio_key){
+    static inline std::map<int, TagSet> getAvailableTagSets(Common::HttpRequest &http, std::string rio_key){
        std::stringstream sstm;
        sstm << "{\"Active\":\"true\", \"Rio Key\":\"" << rio_key << "\"}";
        std::string payload = sstm.str(); 
