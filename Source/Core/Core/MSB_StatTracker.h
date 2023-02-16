@@ -788,6 +788,7 @@ public:
         std::map<u16, Event> events;
         std::optional<Event> previous_state;
         bool write_hud = true;
+        bool init_game = true;
 
         //Buffer used to delay the event init by num of frames (60 for now)
         u8 event_init_frame_buffer = 0;
@@ -1091,6 +1092,7 @@ public:
     */
 
     void initPlayerInfo();
+    void initCaptains();
 
     //If mid-game, dump game
     void dumpGame(){
