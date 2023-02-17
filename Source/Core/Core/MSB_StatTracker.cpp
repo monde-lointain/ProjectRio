@@ -174,6 +174,13 @@ void StatTracker::lookForTriggerEvents(){
                     logEventState(m_game_info.getCurrentEvent());
                     logGameInfo();
 
+                    //Get users and captains
+                    //POST OngoingGame
+                    if (m_game_info.init_game == true) {
+                        m_game_info.init_game = false;
+                        initPlayerInfo();
+                    }
+
                     m_game_info.getCurrentEvent().runner_batter = logRunnerInfo(0);
                     m_game_info.getCurrentEvent().runner_1 = logRunnerInfo(1);
                     m_game_info.getCurrentEvent().runner_2 = logRunnerInfo(2);
@@ -213,9 +220,9 @@ void StatTracker::lookForTriggerEvents(){
                 }
 
                 //Update OngoingGame
-                if (m_game_info.getCurrentEvent().update_ongoing_game){
+                if (!m_game_info.post_ongoing_game && m_game_info.update_ongoing_game){
                     updateOngoingGame(m_game_info.getCurrentEvent());
-                    m_game_info.getCurrentEvent().update_ongoing_game = false;
+                    m_game_info.update_ongoing_game = false;
                 }
 
                 //Trigger Events to look for
@@ -228,11 +235,6 @@ void StatTracker::lookForTriggerEvents(){
                 }
                 //Watch for Runners Stealing
                 if (PowerPC::HostRead_U8(aAB_PitchThrown) || PowerPC::HostRead_U8(aAB_PickoffAttempt)){
-                    //Get users and captains
-                    if (m_game_info.event_num == 0) {
-                        initPlayerInfo();
-                    }
-
                     //If HUD not produced for this event, produce HUD JSON
                     logGameInfo();
 
@@ -420,6 +422,11 @@ void StatTracker::lookForTriggerEvents(){
                     //Fill in current state for HUD
                     logGameInfo();
 
+                    if (m_game_info.post_ongoing_game == true) {
+                        m_game_info.post_ongoing_game = false;
+                        postOngoingGame(m_game_info.getCurrentEvent());
+                    }
+
                     //Store current state as previous state
                     m_game_info.previous_state = m_game_info.getCurrentEvent();
 
@@ -430,12 +437,6 @@ void StatTracker::lookForTriggerEvents(){
 
                     //No longer need to write HUD B
                     m_game_info.getCurrentEvent().write_hud_ab.second = false;
-
-                    //POST OngoingGame
-                    if (m_game_info.init_game == true) {
-                        m_game_info.init_game = false;
-                        postOngoingGame(m_game_info.getCurrentEvent());
-                    }
                 }
 
                 // === Transitions ===
@@ -448,6 +449,7 @@ void StatTracker::lookForTriggerEvents(){
                     m_fielder_tracker[fielding_team_id].incrementBattersForPosition();
                     m_fielder_tracker[fielding_team_id].newBatter();
                     m_event_state = EVENT_STATE::INIT_EVENT;
+                    m_game_info.update_ongoing_game = true;
                     std::cout << "Logging Final Result\n" << "Starting next AB\n\n";
                 }
                 else if (PowerPC::HostRead_U8(aGameControlStateCurr) == 0x1 && !m_game_info.previous_state.value().pitch.has_value()){
@@ -1698,8 +1700,10 @@ void StatTracker::clearTagSetId(bool netplay) {
 
 bool StatTracker::shouldSubmitGame() {
     bool cpuInGame = (m_game_info.getAwayTeamPlayer().GetUserID() == "CPU") || (m_game_info.getHomeTeamPlayer().GetUserID() == "CPU");
-    std::cout << "Checking game submission... " << "mTrackerInfo.mSubmit: " << mTrackerInfo.mSubmit << " cpuInGame: " << cpuInGame << "\n";
-    return (!cpuInGame && mTrackerInfo.mSubmit);
+    bool tag_set_game = m_game_info.tag_set_id.has_value();
+    std::cout << "Checking game submission. TagSetSelected=" << tag_set_game << " cpuInGame=" << cpuInGame << "\n";
+
+    return (!cpuInGame && tag_set_game);
 }
 
 void StatTracker::setNetplaySession(bool netplay_session, bool is_host, std::string opponent_name){
@@ -2061,7 +2065,7 @@ void StatTracker::postOngoingGame(Event& in_curr_event){
     json_stream << "}\n";
 
     const Common::HttpRequest::Response response =
-        m_http.Post("http://127.0.0.1:5000//populate_db/ongoing_game/", json_stream.str(),
+        m_http.Post("http://127.0.0.1:5000/populate_db/ongoing_game/", json_stream.str(),
             {
                 {"Content-Type", "application/json"},
             }
