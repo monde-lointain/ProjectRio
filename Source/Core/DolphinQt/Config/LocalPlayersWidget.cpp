@@ -321,7 +321,7 @@ bool LocalPlayersWidget::IsValidUser(LocalPlayers::LocalPlayers::Player player)
 
   if (type == LocalPlayers::LocalPlayers::Invalid)
   {
-    std::string errormsg = "Invalid Rio Account: " + player.username + "\n\nMake sure to use a valid Rio account, or check your intener connection.";
+    std::string errormsg = "Invalid Rio Account: " + player.username + "\n\nMake sure to use a valid Rio account, or check your intenet connection.";
     ModalMessageBox::critical(this, tr("Error"), QString::fromStdString(errormsg));
     return false;
   }
