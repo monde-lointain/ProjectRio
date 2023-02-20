@@ -723,7 +723,6 @@ public:
 
         //Partial game. indicates this game has not been finished
         std::pair<bool, bool> write_hud_ab = {true, true};
-        bool update_ongoing_game = true;
 
         std::vector<EVENT_STATE> history;
         std::string stringifyHistory() {
@@ -737,6 +736,7 @@ public:
     
     struct GameInfo{
         u32 game_id;
+        bool init_game = true;
         bool game_active = false;
         std::string start_unix_date_time;
         std::string start_local_date_time;
@@ -780,6 +780,10 @@ public:
         //Bookkeeping
         //int pitch_num = 0;
         int event_num = 0;
+
+        //Update server with new AB
+        bool update_ongoing_game = true;
+        bool post_ongoing_game = true;
 
         //Array of both teams' character summaries
         std::array<std::array<CharacterSummary, cRosterSize>, cNumOfTeams> character_summaries;
@@ -1091,6 +1095,7 @@ public:
     */
 
     void initPlayerInfo();
+    void initCaptains();
 
     //If mid-game, dump game
     void dumpGame(){

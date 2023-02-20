@@ -325,7 +325,7 @@ namespace Tag
        return tag_set;
     }
 
-    static std::optional<TagSet> getDummyTagSet() {
+    static inline std::optional<TagSet> getDummyTagSet() {
        return TagSet(
            1,
            "Dummy Tag Set 1",
@@ -420,7 +420,7 @@ namespace Tag
        return tag_sets;
     }
 
-    static std::map<int, TagSet> getDummyTagSets() {
+    static inline std::map<int, TagSet> getDummyTagSets() {
        TagSet tag_set_a = TagSet(
            1,
            "Dummy Tag Set 1",

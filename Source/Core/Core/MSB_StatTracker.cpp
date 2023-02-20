@@ -174,6 +174,13 @@ void StatTracker::lookForTriggerEvents(){
                     logEventState(m_game_info.getCurrentEvent());
                     logGameInfo();
 
+                    //Get users and captains
+                    //POST OngoingGame
+                    if (m_game_info.init_game == true) {
+                        m_game_info.init_game = false;
+                        initPlayerInfo();
+                    }
+
                     m_game_info.getCurrentEvent().runner_batter = logRunnerInfo(0);
                     m_game_info.getCurrentEvent().runner_1 = logRunnerInfo(1);
                     m_game_info.getCurrentEvent().runner_2 = logRunnerInfo(2);
@@ -213,9 +220,9 @@ void StatTracker::lookForTriggerEvents(){
                 }
 
                 //Update OngoingGame
-                if (m_game_info.getCurrentEvent().update_ongoing_game){
+                if (!m_game_info.post_ongoing_game && m_game_info.update_ongoing_game){
                     updateOngoingGame(m_game_info.getCurrentEvent());
-                    m_game_info.getCurrentEvent().update_ongoing_game = false;
+                    m_game_info.update_ongoing_game = false;
                 }
 
                 //Trigger Events to look for
@@ -230,12 +237,6 @@ void StatTracker::lookForTriggerEvents(){
                 if (PowerPC::HostRead_U8(aAB_PitchThrown) || PowerPC::HostRead_U8(aAB_PickoffAttempt)){
                     //If HUD not produced for this event, produce HUD JSON
                     logGameInfo();
-
-
-                    if (m_game_info.event_num == 0) {
-                        initPlayerInfo();
-                        postOngoingGame(m_game_info.getCurrentEvent());
-                    }
 
                     if (m_game_info.getCurrentEvent().write_hud_ab.first) {
                         std::string hud_file_path = File::GetUserPath(D_HUDFILES_IDX) + "decoded.hud.json";
@@ -421,6 +422,11 @@ void StatTracker::lookForTriggerEvents(){
                     //Fill in current state for HUD
                     logGameInfo();
 
+                    if (m_game_info.post_ongoing_game == true) {
+                        m_game_info.post_ongoing_game = false;
+                        postOngoingGame(m_game_info.getCurrentEvent());
+                    }
+
                     //Store current state as previous state
                     m_game_info.previous_state = m_game_info.getCurrentEvent();
 
@@ -443,6 +449,7 @@ void StatTracker::lookForTriggerEvents(){
                     m_fielder_tracker[fielding_team_id].incrementBattersForPosition();
                     m_fielder_tracker[fielding_team_id].newBatter();
                     m_event_state = EVENT_STATE::INIT_EVENT;
+                    m_game_info.update_ongoing_game = true;
                     std::cout << "Logging Final Result\n" << "Starting next AB\n\n";
                 }
                 else if (PowerPC::HostRead_U8(aGameControlStateCurr) == 0x1 && !m_game_info.previous_state.value().pitch.has_value()){
@@ -491,13 +498,14 @@ void StatTracker::lookForTriggerEvents(){
                 m_game_info.tag_set_id =
                     m_state.m_netplay_session ? m_state.tag_set_id_netplay : m_state.tag_set_id_local;
 
-                //If TagSet provided, get tags from server
-                if (m_state.m_tag_set.has_value()){
-                    //Get tags from tag_set
-                }
 
                 m_game_state = GAME_STATE::INGAME;
-                std::cout << "PREGAME->INGAME (GameID=" << std::to_string(m_game_info.game_id) << ", Ranked=" << m_game_info.ranked <<")\n";
+
+                std::string tag_set_id_str = "";
+                if (m_game_info.tag_set_id.has_value()){
+                    tag_set_id_str = std::to_string(m_game_info.tag_set_id.value());
+                }
+                std::cout << "PREGAME->INGAME (GameID=" << std::to_string(m_game_info.game_id) << ", TagSetID=" << tag_set_id_str <<")\n";
                 std::cout << "                (Netplay=" << m_game_info.netplay << ", Host=" << m_game_info.host << ")\n";
             }
             break;
@@ -517,7 +525,7 @@ void StatTracker::lookForTriggerEvents(){
                 File::WriteStringToFile(jsonPath, json);
 
                 //File::WriteStringToFile(jsonPath, json);
-                //https://api.projectrio.app/populate_db
+                //http://127.0.0.1:5000/populate_db
 
                 //Print server warning message
                 OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(
@@ -528,7 +536,7 @@ void StatTracker::lookForTriggerEvents(){
                 json = getStatJSON(false, false);
                 if (shouldSubmitGame()) {
                     const Common::HttpRequest::Response response =
-                    m_http.Post("https://api.projectrio.app/populate_db/", json,
+                    m_http.Post("http://127.0.0.1:5000/populate_db/", json,
                         {
                             {"Content-Type", "application/json"},
                         }
@@ -924,7 +932,7 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
     if (m_game_info.tag_set_id.has_value()){
         tag_set_id_str = std::to_string(m_game_info.tag_set_id.value());
     }
-    json_stream << "  \"Tags\": [" << tag_set_id_str << "],\n";
+    json_stream << "  \"TagSetID\": " << tag_set_id_str << ",\n";
     json_stream << "  \"Netplay\": " << std::to_string(m_game_info.netplay) << ",\n";
     json_stream << "  \"StadiumID\": " << decode("Stadium", m_game_info.stadium, inDecode) << ",\n";
     json_stream << "  \"Away Player\": \"" << away_player_info << "\",\n"; //TODO MAKE THIS AN ID
@@ -1677,28 +1685,6 @@ void StatTracker::setRankedStatus(bool inBool) {
 void StatTracker::setRecordStatus(bool inBool) {
     std::cout << "Record Status=" << inBool << "\n";
     mTrackerInfo.mRecord = inBool;
-
-    //std::map<int, Tag::TagSet> dummy_tag_sets = Tag::getDummyTagSets();
-    //std::cout << dummy_tag_sets.at(1).tag_ids_string() << "\n";
-    //std::cout << dummy_tag_sets.at(1).tag_names_string() << "\n";
-
-    //std::optional<Tag::TagSet> dummy_tag_set = Tag::getDummyTagSet();
-    //if (dummy_tag_set) {
-    //    std::cout << dummy_tag_set.value().id << "\n";
-    //}
-
-    // std::map<int, Tag::TagSet> tag_sets = Tag::getAvailableTagSets(m_http, "YYoXDBoQg6rBc23T4xs_qmPWZxubBO9v9cq8UjJkmD0");
-    // for (const auto &tag_set_pair : tag_sets) {
-    //     std::cout << "MAP KEY: " << tag_set_pair.first << "\n";
-    //     std::cout << "MAP VALUE ID: " << tag_set_pair.second.id << "\n";
-    // }
-    // std::cout << tag_sets.at(1).tag_ids_string() << "\n";
-    // std::cout << tag_sets.at(1).tag_names_string() << "\n";
-
-    // std::optional<Tag::TagSet> tag_set = Tag::getTagSet(m_http, 1);
-    // if (tag_set) {
-    //     std::cout << tag_set.value().id << "\n";
-    // }
 }
 
 void StatTracker::setTagSetId(Tag::TagSet tag_set, bool netplay) {
@@ -1714,8 +1700,10 @@ void StatTracker::clearTagSetId(bool netplay) {
 
 bool StatTracker::shouldSubmitGame() {
     bool cpuInGame = (m_game_info.getAwayTeamPlayer().GetUserID() == "CPU") || (m_game_info.getHomeTeamPlayer().GetUserID() == "CPU");
-    std::cout << "Checking game submission... " << "mTrackerInfo.mSubmit: " << mTrackerInfo.mSubmit << " cpuInGame: " << cpuInGame << "\n";
-    return (!cpuInGame && mTrackerInfo.mSubmit);
+    bool tag_set_game = m_game_info.tag_set_id.has_value();
+    std::cout << "Checking game submission. TagSetSelected=" << tag_set_game << " cpuInGame=" << cpuInGame << "\n";
+
+    return (!cpuInGame && tag_set_game);
 }
 
 void StatTracker::setNetplaySession(bool netplay_session, bool is_host, std::string opponent_name){
@@ -1779,20 +1767,28 @@ void StatTracker::initPlayerInfo(){
             away_player_name = m_game_info.team1_player.GetUsername();
             home_player_name = m_game_info.team0_player.GetUsername();
         }
+
         std::cout << "ports[0]=" << std::to_string(PowerPC::HostRead_U8(0x800e874c)) << " ports[1]=" << std::to_string(PowerPC::HostRead_U8(0x800e874d)) << "\n";
         std::cout << "BattingPort=" << std::to_string(PowerPC::HostRead_U32(0x80892990)) << " FieldingPort=" << std::to_string(PowerPC::HostRead_U32(0x80892994)) << "\n";
 
         std::cout << "Info:  Fielder Port=" << std::to_string(FieldingPort) << ", Batter Port=" << std::to_string(BattingPort) << "\n";
         std::cout << "Info:  Team0 Port=" << std::to_string(m_game_info.team0_port) << ", Team1 Port=" << std::to_string(m_game_info.team1_port) << "\n";
         std::cout << "Info:  Away Port=" << std::to_string(m_game_info.away_port) << ", Home Port=" << std::to_string(m_game_info.home_port) << "\n";
-        std::cout << "Info:  Away Player=" << (away_player_name) << ", Home Player=" << (home_player_name) << "\n\n";
-    }
+        std::cout << "Info:  Away Player=" << (away_player_name) << ", Home Player=" << (home_player_name) << "\n";
 
-    //Get captain roster positions
-    if ((m_game_info.team0_captain_roster_loc == 0xFF) || (m_game_info.team1_captain_roster_loc == 0xFF)) {
-        m_game_info.team0_captain_roster_loc = PowerPC::HostRead_U8(aTeam0_Captain_Roster_Loc);
-        m_game_info.team1_captain_roster_loc = PowerPC::HostRead_U8(aTeam1_Captain_Roster_Loc);
+        initCaptains();
     }
+}
+
+void StatTracker::initCaptains(){
+    m_game_info.team0_captain_roster_loc = PowerPC::HostRead_U8(aTeam0_Captain_Roster_Loc);
+    m_game_info.team1_captain_roster_loc = PowerPC::HostRead_U8(aTeam1_Captain_Roster_Loc);
+
+    u8 away_captain_roster_loc = (m_game_info.away_port == m_game_info.team0_port) ? m_game_info.team0_captain_roster_loc : m_game_info.team1_captain_roster_loc;
+    u8 home_captain_roster_loc = (m_game_info.home_port == m_game_info.team0_port) ? m_game_info.team0_captain_roster_loc : m_game_info.team1_captain_roster_loc;
+
+    std::cout << "Info:  Team0 Captain=" << std::to_string(m_game_info.team0_captain_roster_loc) << ", Home Captain=" << (std::to_string(m_game_info.team1_captain_roster_loc)) << "\n";
+    std::cout << "Info:  Away Captain=" << std::to_string(away_captain_roster_loc) << ", Home Captain=" << (std::to_string(home_captain_roster_loc)) << "\n\n";
 }
 
 void StatTracker::onGameQuit(){
@@ -1813,16 +1809,15 @@ void StatTracker::onGameQuit(){
     
     File::WriteStringToFile(jsonPath, json);
 
-
-    json = getStatJSON(false, false);
-    if (shouldSubmitGame()) {
-        const Common::HttpRequest::Response response =
-        m_http.Post("https://api.projectrio.app/populate_db/", json,
-            {
-                {"Content-Type", "application/json"},
-            }
-        );
-    }
+    // json = getStatJSON(false, false);
+    // if (shouldSubmitGame()) {
+    //     const Common::HttpRequest::Response response =
+    //     m_http.Post("http://127.0.0.1:5000/populate_db/", json,
+    //         {
+    //             {"Content-Type", "application/json"},
+    //         }
+    //     );
+    // }
 }
 
 std::optional<StatTracker::Runner> StatTracker::logRunnerInfo(u8 base){
@@ -2019,6 +2014,10 @@ std::string StatTracker::decode(std::string type, u8 value, bool decode){
 }
 
 void StatTracker::postOngoingGame(Event& in_curr_event){
+    if (!shouldSubmitGame()){ return; }
+
+    std::cout << "postOngoingGame()\n";
+
     std::stringstream json_stream;
 
     json_stream << "{\n";
@@ -2040,19 +2039,41 @@ void StatTracker::postOngoingGame(Event& in_curr_event){
 
     json_stream << "  \"Away Captain\": "            << std::to_string(away_captain_roster_loc) << ",\n";
     json_stream << "  \"Home Captain\": "            << std::to_string(home_captain_roster_loc) << ",\n";
+
+    json_stream << "  \"Away Roster 0 CharID\": "            << std::to_string(m_game_info.character_summaries[0][0].char_id) << ",\n";
+    json_stream << "  \"Away Roster 1 CharID\": "            << std::to_string(m_game_info.character_summaries[0][1].char_id) << ",\n";
+    json_stream << "  \"Away Roster 2 CharID\": "            << std::to_string(m_game_info.character_summaries[0][2].char_id) << ",\n";
+    json_stream << "  \"Away Roster 3 CharID\": "            << std::to_string(m_game_info.character_summaries[0][3].char_id) << ",\n";
+    json_stream << "  \"Away Roster 4 CharID\": "            << std::to_string(m_game_info.character_summaries[0][4].char_id) << ",\n";
+    json_stream << "  \"Away Roster 5 CharID\": "            << std::to_string(m_game_info.character_summaries[0][5].char_id) << ",\n";
+    json_stream << "  \"Away Roster 6 CharID\": "            << std::to_string(m_game_info.character_summaries[0][6].char_id) << ",\n";
+    json_stream << "  \"Away Roster 7 CharID\": "            << std::to_string(m_game_info.character_summaries[0][7].char_id) << ",\n";
+    json_stream << "  \"Away Roster 8 CharID\": "            << std::to_string(m_game_info.character_summaries[0][8].char_id) << ",\n";
+    json_stream << "  \"Home Roster 0 CharID\": "            << std::to_string(m_game_info.character_summaries[1][0].char_id) << ",\n";
+    json_stream << "  \"Home Roster 1 CharID\": "            << std::to_string(m_game_info.character_summaries[1][1].char_id) << ",\n";
+    json_stream << "  \"Home Roster 2 CharID\": "            << std::to_string(m_game_info.character_summaries[1][2].char_id) << ",\n";
+    json_stream << "  \"Home Roster 3 CharID\": "            << std::to_string(m_game_info.character_summaries[1][3].char_id) << ",\n";
+    json_stream << "  \"Home Roster 4 CharID\": "            << std::to_string(m_game_info.character_summaries[1][4].char_id) << ",\n";
+    json_stream << "  \"Home Roster 5 CharID\": "            << std::to_string(m_game_info.character_summaries[1][5].char_id) << ",\n";
+    json_stream << "  \"Home Roster 6 CharID\": "            << std::to_string(m_game_info.character_summaries[1][6].char_id) << ",\n";
+    json_stream << "  \"Home Roster 7 CharID\": "            << std::to_string(m_game_info.character_summaries[1][7].char_id) << ",\n";
+    json_stream << "  \"Home Roster 8 CharID\": "            << std::to_string(m_game_info.character_summaries[1][8].char_id) << ",\n";
+
     json_stream << "  \"Away Stars\": "              << std::to_string(in_curr_event.away_stars) << ",\n";
     json_stream << "  \"Home Stars\": "              << std::to_string(in_curr_event.home_stars) << ",\n";
-    json_stream << "  \"Pitcher\": "                 << std::to_string(in_curr_event.pitcher_roster_loc) << ",\n";
+    json_stream << "  \"Pitcher\": "                 << std::to_string(in_curr_event.pitcher_roster_loc) << "\n";
     json_stream << "}\n";
 
     const Common::HttpRequest::Response response =
-        m_http.Post("http://127.0.0.1:5000//populate_db/ongoing_game/", json_stream.str(),
+        m_http.Post("http://127.0.0.1:5000/populate_db/ongoing_game/", json_stream.str(),
             {
                 {"Content-Type", "application/json"},
             }
         );
 }
 void StatTracker::updateOngoingGame(Event& in_curr_event){
+    if (!shouldSubmitGame()){ return; }
+    
     std::stringstream json_stream;
 
     json_stream << "{\n";
@@ -2066,7 +2087,7 @@ void StatTracker::updateOngoingGame(Event& in_curr_event){
     json_stream << "  \"Home Stars\": "              << std::to_string(in_curr_event.home_stars) << ",\n";
     //json_stream << "  \"Chemistry Links on Base\": " << std::to_string(in_curr_event.chem_links_ob) << ",\n";
     json_stream << "  \"Pitcher\": "      << std::to_string(in_curr_event.pitcher_roster_loc) << ",\n";
-    json_stream << "  \"Leadoff Batter\": "       << std::to_string(in_curr_event.batter_roster_loc) << ",\n";
+    json_stream << "  \"Batter\": "       << std::to_string(in_curr_event.batter_roster_loc) << ",\n";
 
     bool runner_1, runner_2, runner_3;
     runner_1 = (in_curr_event.runner_1.has_value());
