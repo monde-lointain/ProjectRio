@@ -132,27 +132,45 @@ namespace Tag
         }
 
         // Create monster code string
-        std::optional<std::string> gecko_codes_string() 
+        std::optional<std::vector<std::string>> gecko_codes_string() 
         {
-            std::stringstream sstm;
+            std::vector<std::string> code_segments;
             std::vector<Tag>::const_iterator it;
             
-            // iterate throught TagSet's Tags and create a stringstream of these tags
-            // space deliminated
+            // iterate throught TagSet's Tags and create a vector of code segments (half a code, a string u32)
             for (it = tags.begin(); it != tags.end(); it++) {
                 if (it->gecko_code.has_value()) {
-                    sstm << it->gecko_code.value();
-                    if (it != tags.end()) {
-                        sstm << " ";
+                    //sstm << it->gecko_code.value();
+                    std::string full_code = it->gecko_code.value();
+                    size_t line_pos = 0;
+                    std::string code_line;
+
+                    //First seperate line by line
+                    std::string line_delimiter = "\n";
+                    while ((line_pos = full_code.find(line_delimiter)) != std::string::npos) {
+                        code_line = full_code.substr(0, line_pos);
+                        std::cout << code_line << std::endl;
+                        full_code.erase(0, line_pos + line_delimiter.length());
+
+                        //Then seperate each line into a single word of code
+                        std::string half_line_delimiter = " ";
+                        size_t half_line_pos = 0;
+                        std::string half_line;
+                        while ((half_line_pos = code_line.find(half_line_delimiter)) != std::string::npos) {
+                            half_line = code_line.substr(0, half_line_pos);
+                            std::cout << half_line << std::endl;
+                            code_segments.push_back(half_line);
+                            code_line.erase(0, half_line_pos + half_line_delimiter.length());
+                        }
+                        code_segments.push_back(code_line); //Last half is accessed outside of loop
                     }
                 }
             }
 
-            // if the stringstream is not empty return string of gecko codes
-            if (sstm.tellp() != 0) {
-                std::string gecko_code_string = sstm.str();
-                return gecko_code_string;
-            // if stringstream is empty, return nullopt
+            // if the vector is not empty return string of gecko codes
+            if (code_segments.size() > 0) {
+                return code_segments;
+            // if vector is empty, return nullopt
             } else {
                 return std::nullopt;
             }
