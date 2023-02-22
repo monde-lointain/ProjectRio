@@ -7,18 +7,35 @@
 #include <set>
 #include <tuple>
 #include "Core/HW/Memmap.h"
+#include "Common/TagSet.h"
 
 class DefaultGeckoCodes {
   public:
-    void RunCodeInject(bool bNetplayEventCode, bool bIsRanked, bool bIsNight, u32 uGameMode, bool bDisableReplays);
+    void Init(std::optional<std::vector<ClientCode>> client_codes, bool tagset_active, bool is_night, bool disable_replays);
+    void RunCodeInject();
 
   private:
-    bool NetplayEventCode;
-    bool IsRanked;
-    bool IsNight;
-    u32 GameMode;
-    bool DisableReplays;
+    struct DefaultGeckoCode
+    {
+      u32 addr;
+      u32 conditionalVal;  // set to 0 if no onditional needed; condition is for when we don't want
+                           // to write at an addr every frame
+      std::vector<u32> codeLines;
+    };
+    // DefaultGeckoCode mGeckoCode;
 
+    void AddRequiredCodes();
+    void AddTagSetCodes();
+    void AddOptionalCodes();
+    void WriteAsm(DefaultGeckoCode CodeBlock);
+
+    u32 aWriteAddr;  // address where the first code gets written to
+
+    bool initiated = false;
+    bool TagSetActive;
+    std::optional<std::vector<ClientCode>> ClientCodes;
+    bool IsNight;
+    bool DisableReplays;
 
     // Default Rumble On [LittleCoaks]
     static const u32 aControllerRumble = 0x80366177;
@@ -61,19 +78,13 @@ class DefaultGeckoCodes {
     static const u32 aNeverCull_4 = 0x806f7b7c;  // write to 0x38000003 if equal to 0x881a0093
 
     // Disable Replays [LittleCoaks]
-    static const u32 aDisableReplays = 0x806bb214; // write  to 0x38000000 if equal to 0x38000001
+    static const u32 aDisableReplays = 0x806bb214; // write to 0x38000000 if equal to 0x38000001
 
-    void InjectNetplayEventCode();
-    void AddRankedCodes();
+    // Force Star Skills Off [LittleCoaks]
+    static const u32 aDisableStarSkills = 0x800498d4; // write to 0x98c7003d
+    static const u32 aDisableStarSkills_1 = 0x80049e64;  // write to 0x60000000
+    static const u32 aDisableStarSkills_2 = 0x80049fa8;  // write to 0x60000000
 
-
-    struct DefaultGeckoCode
-    {
-      u32 addr;
-      u32 conditionalVal;  // set to 0 if no onditional needed; condition is for when we don't want to write at an addr every frame
-      std::vector<u32> codeLines;
-    };
-    // DefaultGeckoCode mGeckoCode;
 
     // Generate the Game ID at 0x802EBF8C when Start Game is pressed [LittleCoaks]
     const DefaultGeckoCode sGenerateGameID = {
@@ -82,14 +93,14 @@ class DefaultGeckoCodes {
     };
 
     // Clear Game ID when exiting mid - game [LittleCoaks]
-    const DefaultGeckoCode sClearGameID_1 =
-        {0x806ed704, 0,
+    const DefaultGeckoCode sClearGameID_1 = {
+        0x806ed704, 0,
         {0x981F01D2, 0x3D00802E, 0x6108BF8C, 0x38000000, 0x90080000}
     };
 
     // Clear Game ID when exiting mid - game [LittleCoaks]
-    const DefaultGeckoCode sClearGameID_2 =
-        {0x806edf8c, 0,
+    const DefaultGeckoCode sClearGameID_2 = {
+        0x806edf8c, 0,
         {0x981F01D2, 0x3D00802E, 0x6108BF8C, 0x38000000, 0x90080000}
     };
 
@@ -248,24 +259,13 @@ class DefaultGeckoCodes {
     // Hazardless Stadiums [LittleCoaks, PeacockSlayer]
     const DefaultGeckoCode sHazardless = {
         0x80699508, 0x88a40009,
-        {0x88A40009, 0x9421FFB0, 0xBDC10008, 0x3E60803C, 0x62735F41, 0x8A730000, 0x2C130000,
-         0x41820028, 0x3E608035, 0x6273323B, 0x3AA00000, 0x7E93A8AE, 0x2C140001, 0x418200D8,
-         0x3AB50001, 0x2C150012, 0x4082FFEC, 0x2C050000, 0x418200C4, 0x2C050006, 0x408000BC,
-         0x2C050001, 0x41820028, 0x2C050002, 0x4182003C, 0x2C050003, 0x41820050, 0x2C050004,
-         0x4182005C, 0x2C050005, 0x4182007C, 0x48000090, 0x3E608070, 0x627356C8, 0x3E803860,
-         0x92930000, 0x3E803800, 0x92931638, 0x48000074, 0x3E608070, 0x6273FC30, 0x3E806000,
-         0x92930000, 0x3E803800, 0x9293376C, 0x48000058, 0x3E608069, 0x62739E54, 0x3E803800,
-         0x92930000, 0x48000044, 0x3E60807C, 0x6273D098, 0x3A800000, 0x3AA00000, 0x9A930011,
-         0x3AB50001, 0x3A730014, 0x2C150010, 0x4180FFF0, 0x4800001C, 0x3E608072, 0x6273F950,
-         0x3E806000, 0x92930000, 0x92934A54, 0x92934A60, 0xB9C10008, 0x38210050}
+        {0x88A40009, 0x9421FFB0, 0xBDC10008, 0x3E803800, 0x62940007, 0x2C050002, 0x40820030,
+         0x3E608070, 0x6273FC30, 0x3EA06000, 0x92B30000, 0x3EA03800, 0x92B3376C, 0x3E60807C,
+         0x62739964, 0x3EA042C8, 0x92B30000, 0x92B30034, 0x3E608070, 0x62737CB8, 0x92930000,
+         0x3E608072, 0x62734428, 0x92930000, 0x3E608073, 0x62739A28, 0x92930000, 0x3E608073,
+         0x62736D08, 0x92930000, 0x3E608073, 0x627343A4, 0x3EA06000, 0x92B30000, 0x92B3000C,
+         0xB9C10008, 0x38210050}
     };
-
-    const DefaultGeckoCode sHazardless_1 = {
-        0x8072FDC8, 0xC0010044,
-        {0x3E60803C, 0x62735F41, 0x8A730000, 0x2C130000, 0x41820028, 0x3E608035, 0x6273323B,
-         0x3AA00000, 0x7E93A8AE, 0x2C140001, 0x41820018, 0x3AB50001, 0x2C150012, 0x4082FFEC,
-         0x3E204348, 0x92210044, 0xC0010044}
-        };
 
     // Restrict Batter Pausing [LittleCoaks]
     const DefaultGeckoCode sRestrictBatterPausing = {
@@ -281,14 +281,19 @@ class DefaultGeckoCodes {
         0x9184001C}
     };
 
-    void WriteAsm(DefaultGeckoCode CodeBlock);
-    u32 aWriteAddr;  // address where the first code gets written to
-
-    std::vector<DefaultGeckoCode> sRequiredCodes =
-    {sGenerateGameID, sClearGameID_1, sClearGameID_2, sClearGameID_3,
-    sClearPortInfo, sClearHitResult, sStorePortInfo_1, sStorePortInfo_2,
-        sRememberWhoQuit_1, sRememberWhoQuit_2, sStoreRandBattingInts, sChecksum};
-
-    std::vector<DefaultGeckoCode> sNetplayCodes =
-    {sAntiQuickPitch, sDefaultCompetitiveRules, sManualSelect, sRemoveDingus};
+    std::vector<DefaultGeckoCode> sRequiredCodes = {
+      sGenerateGameID,
+      sClearGameID_1,
+      sClearGameID_2,
+      sClearGameID_3,
+      sClearPortInfo,
+      sClearHitResult,
+      sStorePortInfo_1,
+      sStorePortInfo_2,
+      sRememberWhoQuit_1,
+      sRememberWhoQuit_2,
+      sStoreRandBattingInts,
+      sChecksum,
+      sDefaultCompetitiveRules
+    };
 };

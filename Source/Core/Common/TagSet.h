@@ -14,10 +14,12 @@
 #include "Common/HttpRequest.h"
 
 enum ClientCode {
-    DisableDingusBunt,
     DisableManualFielderSelect,
     DisableAntiQuickPitch,
     DisableUnlimitedExtraInnings,
+    DisableSuperstars,
+    DisableStarSkills,
+    DisableAntiDingusBunt,
     EnableHazardless,
     EnableGameModeration
 };
@@ -152,16 +154,16 @@ namespace Tag
                         std::cout << code_line << std::endl;
                         full_code.erase(0, line_pos + line_delimiter.length());
 
-                        //Then seperate each line into a single word of code
-                        std::string half_line_delimiter = " ";
-                        size_t half_line_pos = 0;
-                        std::string half_line;
-                        while ((half_line_pos = code_line.find(half_line_delimiter)) != std::string::npos) {
-                            half_line = code_line.substr(0, half_line_pos);
-                            std::cout << half_line << std::endl;
-                            code_segments.push_back(half_line);
-                            code_line.erase(0, half_line_pos + half_line_delimiter.length());
-                        }
+                        ////Then seperate each line into a single word of code
+                        //std::string half_line_delimiter = " ";
+                        //size_t half_line_pos = 0;
+                        //std::string half_line;
+                        //while ((half_line_pos = code_line.find(half_line_delimiter)) != std::string::npos) {
+                        //    half_line = code_line.substr(0, half_line_pos);
+                        //    std::cout << half_line << std::endl;
+                        //    code_segments.push_back(half_line);
+                        //    code_line.erase(0, half_line_pos + half_line_delimiter.length());
+                        //}
                         code_segments.push_back(code_line); //Last half is accessed outside of loop
                     }
                 }
@@ -193,8 +195,8 @@ namespace Tag
             return std::nullopt;
         }
         
-        if (tag_name == "Disable Dingus Bunt") {
-            return ClientCode::DisableDingusBunt;
+        if (tag_name == "Disable Anti Dingus Bunt") {
+            return ClientCode::DisableAntiDingusBunt;
         } else if (tag_name == "Disable Manual Fielder Select") {
             return ClientCode::DisableManualFielderSelect;
         } else if (tag_name == "Disable Anti Quick Pitch") {
@@ -205,7 +207,11 @@ namespace Tag
             return ClientCode::EnableHazardless;
         } else if (tag_name == "Enable Game Moderation") {
             return ClientCode::EnableGameModeration;
-        } else {
+        } else if (tag_name == "Disable Superstars") {
+            return ClientCode::DisableSuperstars;
+        } else if (tag_name == "Disable Star Skills") {
+            return ClientCode::DisableStarSkills;
+        } else {                                
             return std::nullopt;
         }
     }
