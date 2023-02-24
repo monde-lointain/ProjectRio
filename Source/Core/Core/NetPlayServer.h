@@ -68,7 +68,6 @@ public:
   void SetHostInputAuthority(bool enable);
   void SetTagSet(bool exists, int tagset_id);
 
-  void AdjustRankedBox(bool is_ranked);
   void AdjustNightStadium(bool is_night);
   void AdjustReplays(bool disable);
 
@@ -174,7 +173,6 @@ private:
   PlayerId m_current_golfer = 1;
   PlayerId m_pending_golfer = 0;
 
-  bool m_current_ranked_value = false;
   bool m_current_night_value = false;
   bool m_current_disable_replays_value = false;
   std::optional<int> m_tagset_id = std::nullopt;

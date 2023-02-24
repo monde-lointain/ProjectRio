@@ -1659,18 +1659,6 @@ void setSubmitStatus(bool inNewStatus)
   settings.SaveSettings();
 }
 
-void setRankedStatus(bool inNewStatus)
-{
-  if (s_stat_tracker) {
-    s_stat_tracker->setRankedStatus(inNewStatus);
-  }
-  else {
-    s_stat_tracker = std::make_unique<StatTracker>();
-    s_stat_tracker->init();
-    s_stat_tracker->setRankedStatus(inNewStatus);
-  }
-}
-
 void SetGameID(u32 gameID)
 {
   if (s_stat_tracker)

@@ -465,13 +465,6 @@ ConnectionError NetPlayServer::OnConnect(ENetPeer* socket, sf::Packet& rpac)
     Send(player.socket, spac);
   }
 
-  // send ranked box state
-  spac.clear();
-  spac << MessageID::RankedBox;
-  m_current_ranked_value = Config::Get(Config::NETPLAY_RANKED);
-  spac << m_current_ranked_value;
-  Send(player.socket, spac);
-
   // send Game Mode state
   spac.clear();
   spac << MessageID::GameMode;
@@ -701,19 +694,6 @@ void NetPlayServer::AdjustPadBufferSize(unsigned int size)
 
     SendAsyncToClients(std::move(spac));
   }
-}
-
-void NetPlayServer::AdjustRankedBox(const bool is_ranked)
-{
-  std::lock_guard lkg(m_crit.game);
-  m_current_ranked_value = is_ranked;
-
-  // tell clients to change ranked box
-  sf::Packet spac;
-  spac << MessageID::RankedBox;
-  spac << m_current_ranked_value;
-
-  SendAsyncToClients(std::move(spac));
 }
 
 void NetPlayServer::AdjustNightStadium(const bool is_night)
@@ -1596,7 +1576,6 @@ bool NetPlayServer::SetupNetSettings()
   settings.m_GolfMode = Config::Get(Config::NETPLAY_NETWORK_MODE) == "golf";
   settings.m_UseFMA = DoAllPlayersHaveHardwareFMA();
   settings.m_HideRemoteGBAs = Config::Get(Config::NETPLAY_HIDE_REMOTE_GBAS);
-  settings.m_RankedMode = Config::Get(Config::NETPLAY_RANKED);
 
   // Unload GameINI to restore things to normal
   Config::RemoveLayer(Config::LayerType::GlobalGame);

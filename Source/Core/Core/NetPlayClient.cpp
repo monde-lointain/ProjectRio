@@ -497,10 +497,6 @@ void NetPlayClient::OnData(sf::Packet& packet)
     OnGameModeMsg(packet);
     break;
   
-  case MessageID::RankedBox:
-    OnRankedBoxMsg(packet);
-    break;
-  
   case MessageID::SendCodes:
     OnSendCodesMsg(packet);
     break;
@@ -970,7 +966,7 @@ void NetPlayClient::OnStartGame(sf::Packet& packet)
   }
 
   m_dialog->OnMsgStartGame();
-  m_dialog->RankedStartingMsg(m_ranked_client);
+  m_dialog->StartingMsg(Core::isTagSetActive());
 }
 
 void NetPlayClient::OnStopGame(sf::Packet& packet)
@@ -1551,12 +1547,6 @@ void NetPlayClient::OnGameModeMsg(sf::Packet& packet)
   Core::SetTagSet(current_tagset, true);
 }
 
-void NetPlayClient::OnRankedBoxMsg(sf::Packet& packet)
-{
-  packet >> m_ranked_client;
-  m_dialog->OnRankedEnabled(m_ranked_client);
-}
-
 void NetPlayClient::OnSendCodesMsg(sf::Packet& packet)
 {
   std::string codeStr;
@@ -1640,11 +1630,6 @@ void NetPlayClient::DisplayPlayersPing()
 
   OSD::AddTypedMessage(OSD::MessageType::NetPlayPing, fmt::format("Ping: {}", maxPing),
                        OSD::Duration::SHORT, OSD::Color::CYAN);
-}
-
-bool NetPlayClient::isRanked()
-{
-  return netplay_client->m_ranked_client;
 }
 
 bool NetPlayClient::isNight()
@@ -1888,8 +1873,8 @@ void NetPlayClient::SendDisableReplays(bool disable)
 
 void NetPlayClient::GetActiveGeckoCodes()
 {
-  // don't use any gecko codes if playing ranked
-  if (m_ranked_client)
+  // don't use any gecko codes if playing under a tagset
+  if (Core::isTagSetActive())
     return;
 
   // Find all INI files

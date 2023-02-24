@@ -141,13 +141,6 @@ void NetPlayDialog::CreateMainLayout()
   m_quit_button = new QPushButton(tr("Quit"));
   m_splitter = new QSplitter(Qt::Horizontal);
   m_menu_bar = new QMenuBar(this);
-  //m_ranked_box = new QCheckBox(tr("Ranked"));
-  //m_ranked_box->setToolTip(tr(
-  //    "Enabling Ranked Mode will mark down your games as being ranked in the stats files\n and "
-  //    "disable any extra gecko codes as well as Training Mode. This should be toggled for\n"
-  //    "serious/competitive/ranked games ase accurate and organized. Toggling this box will\n"
-  //    " always record stats, ignoring user configurations."));
-  //m_coin_flipper = new QPushButton(tr("Coin Flip"));
   m_night_stadium = new QCheckBox(tr("Night Mario Stadium"));
   m_disable_replays = new QCheckBox(tr("Disable Replays"));
   m_spectator_toggle = new QCheckBox(tr("Spectator"));
@@ -256,7 +249,6 @@ void NetPlayDialog::CreateMainLayout()
   options_widget->addWidget(m_buffer_size_box, 0, 2, Qt::AlignVCenter);
   options_widget->addWidget(m_quit_button, 0, 7, Qt::AlignVCenter | Qt::AlignRight);
   options_widget->setColumnStretch(4, 1000);
-  //options_widget->addWidget(m_ranked_box, 0, 3, Qt::AlignVCenter);
   //options_widget->addWidget(m_coin_flipper, 0, 3, Qt::AlignVCenter);
   options_widget->addWidget(m_night_stadium, 0, 3, Qt::AlignVCenter);
   options_widget->addWidget(m_disable_replays, 0, 4, Qt::AlignVCenter);
@@ -375,13 +367,6 @@ void NetPlayDialog::ConnectWidgets()
       client->AdjustPadBufferSize(value);
   });
 
-  //connect(m_ranked_box, &QCheckBox::stateChanged, [this](bool is_ranked) {
-  //  // auto client = Settings::Instance().GetNetPlayClient();
-  //  auto server = Settings::Instance().GetNetPlayServer();
-  //  if (server)
-  //    server->AdjustRankedBox(is_ranked);
-  //});
-
   connect(m_night_stadium, &QCheckBox::stateChanged, [this](bool is_night) {
     auto client = Settings::Instance().GetNetPlayClient();
     auto server = Settings::Instance().GetNetPlayServer();
@@ -455,7 +440,6 @@ void NetPlayDialog::ConnectWidgets()
 
   // SaveSettings() - Save Hosting-Dialog Settings
 
-  // connect(m_ranked_box, &QCheckBox::stateChanged, this, &NetPlayDialog::SaveSettings);
   connect(m_buffer_size_box, qOverload<int>(&QSpinBox::valueChanged), this,
           &NetPlayDialog::SaveSettings);
   connect(m_write_save_data_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
@@ -596,20 +580,6 @@ void NetPlayDialog::OnGameMode(std::string mode)
   DisplayMessage(tr("Game Mode: %1").arg(QString::fromStdString(mode)), "goldenrod");
 }
 
-void NetPlayDialog::OnRankedEnabled(bool is_ranked)
-{
-  if (is_ranked)
-  {
-    DisplayMessage(tr("Ranked Mode Enabled"), "mediumseagreen");
-    Core::setRankedStatus(is_ranked);
-  }
-  else
-  {
-    DisplayMessage(tr("Ranked Mode Disabled"), "crimson");
-    Core::setRankedStatus(is_ranked);
-  }
-}
-
 void NetPlayDialog::OnIndexAdded(bool success, const std::string error)
 {
   DisplayMessage(success ? tr("Success: Session can now be joined.") :
@@ -711,8 +681,6 @@ void NetPlayDialog::show(bool use_traversal)
   m_night_stadium->setEnabled(is_hosting);
   m_disable_replays->setHidden(!is_hosting);
   m_disable_replays->setEnabled(is_hosting);
-  //m_ranked_box->setHidden(!is_hosting);
-  //m_ranked_box->setEnabled(is_hosting);
 
   SetOptionsEnabled(true);
 
@@ -1027,7 +995,6 @@ void NetPlayDialog::SetOptionsEnabled(bool enabled)
     m_sync_all_wii_saves_action->setEnabled(enabled && m_sync_save_data_action->isChecked());
     m_golf_mode_action->setEnabled(enabled);
     m_fixed_delay_action->setEnabled(enabled);
-    // m_ranked_box->setCheckable(enabled);
     m_night_stadium->setCheckable(enabled);
     m_disable_replays->setCheckable(enabled);
     //m_night_stadium_action->setEnabled(enabled);
@@ -1039,16 +1006,14 @@ void NetPlayDialog::SetOptionsEnabled(bool enabled)
   m_record_input_action->setEnabled(enabled);
 }
 
-void NetPlayDialog::RankedStartingMsg(bool is_ranked) {
-  if (is_ranked)
+void NetPlayDialog::StartingMsg(bool is_tagset) {
+  if (is_tagset)
   {
-    DisplayMessage(tr("NOTE: Ranked is Enabled. All gecko codes & Training Mode are disabled. 10 second Pitch Clock is active. Superstar off games are hazardless."), "mediumseagreen");
-    Core::setRankedStatus(is_ranked);
+    DisplayMessage(tr("NOTE: a Game Mode is active. Training mode is disabled and gecko codes are enforced by the actice Game Mode."), "mediumseagreen");
   }
   else
   {
-    DisplayMessage(tr("NOTE: Ranked Mode is Disabled. Custom gecko codes & Training Mode may be enabled."), "crimson");
-    Core::setRankedStatus(is_ranked);
+    DisplayMessage(tr("NOTE: no Game Mode active. Custom gecko codes & Training Mode may be enabled."), "crimson");
   }
 }
 
@@ -1074,7 +1039,6 @@ void NetPlayDialog::OnMsgStartGame()
       if (auto game = FindGameFile(m_current_game_identifier))
       {
         client->StartGame(game->GetFilePath());
-        // m_ranked_box->setEnabled(false);
         m_night_stadium->setEnabled(false);
         m_disable_replays->setEnabled(false);
       }
@@ -1097,8 +1061,6 @@ void NetPlayDialog::OnMsgStopGame()
   const bool is_hosting = IsHosting();
   m_night_stadium->setEnabled(is_hosting);
   m_disable_replays->setEnabled(is_hosting);
-  // m_ranked_box->setEnabled(is_hosting);
-  //m_ranked_box->setChecked(client->m_ranked_client);
   m_spectator_toggle->setEnabled(true);
 }
 
@@ -1343,13 +1305,11 @@ void NetPlayDialog::LoadSettings()
   const bool sync_all_wii_saves = Config::Get(Config::NETPLAY_SYNC_ALL_WII_SAVES);
   const bool golf_mode_overlay = Config::Get(Config::NETPLAY_GOLF_MODE_OVERLAY);
   const bool hide_remote_gbas = Config::Get(Config::NETPLAY_HIDE_REMOTE_GBAS);
-  //const bool ranked_mode = Config::Get(Config::NETPLAY_RANKED);
   //const bool night_stadium = Config::Get(Config::NETPLAY_NIGHT_STADIUM);
   const bool disable_music = Config::Get(Config::NETPLAY_DISABLE_MUSIC);
   const bool highlight_ball_shadow = Config::Get(Config::NETPLAY_HIGHLIGHT_BALL_SHADOW);
   //const bool never_cull = Config::Get(Config::NETPLAY_NEVER_CULL);
 
-  //m_ranked_box->setChecked(ranked_mode);
   m_buffer_size_box->setValue(buffer_size);
   m_write_save_data_action->setChecked(write_save_data);
   m_load_wii_action->setChecked(load_wii_save);
@@ -1398,7 +1358,6 @@ void NetPlayDialog::SaveSettings()
   Config::SetBase(Config::NETPLAY_SYNC_ALL_WII_SAVES, m_sync_all_wii_saves_action->isChecked());
   Config::SetBase(Config::NETPLAY_GOLF_MODE_OVERLAY, m_golf_mode_overlay_action->isChecked());
   Config::SetBase(Config::NETPLAY_HIDE_REMOTE_GBAS, m_hide_remote_gbas_action->isChecked());
-  //Config::SetBase(Config::NETPLAY_RANKED, m_ranked_box->isChecked());
   //Config::SetBase(Config::NETPLAY_NIGHT_STADIUM, m_night_stadium_action->isChecked());
   Config::SetBase(Config::NETPLAY_DISABLE_MUSIC, m_disable_music_action->isChecked());
   Config::SetBase(Config::NETPLAY_HIGHLIGHT_BALL_SHADOW, m_highlight_ball_shadow_action->isChecked());

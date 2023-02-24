@@ -210,7 +210,6 @@ using namespace Tag;
 //void setRankedStatus(bool inNewStatus);
 void setRecordStatus(bool inNewStatus);
 void setSubmitStatus(bool inNewStatus);
-void setRankedStatus(bool inNewStatus);
 void SetGameID(u32 gameID);
 std::optional<TagSet> GetActiveTagSet(bool netplay);
 void SetTagSet(std::optional<TagSet> tagset, bool netplay);

@@ -753,7 +753,6 @@ public:
 
         LocalPlayers::LocalPlayers::Player team0_player;
         LocalPlayers::LocalPlayers::Player team1_player;
-        bool ranked;
         int avg_ping = 0;
         int lag_spikes = 0;
 
@@ -984,8 +983,6 @@ public:
     EVENT_STATE m_event_state_prev = EVENT_STATE::UNDEFINED;
 
     struct state_members{
-        //Holds the status of the ranked button check box. Sampled at beginning of game
-        bool m_ranked_status = false;
         bool m_netplay_session = false;
         bool m_is_host = false;
         std::optional<int> m_tag_set;
@@ -1000,7 +997,6 @@ public:
         float fnum;
     } float_converter;
 
-    void setRankedStatus(bool inBool);
     void setRecordStatus(bool inBool);
     void setTagSetId(Tag::TagSet tag_set, bool netplay);
     void clearTagSetId(bool netplay);

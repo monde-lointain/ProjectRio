@@ -73,9 +73,8 @@ public:
   void OnGameStartAborted() override;
   void OnGolferChanged(bool is_golfer, const std::string& golfer_name) override;
 
-  void RankedStartingMsg(bool is_ranked) override;
+  void StartingMsg(bool is_tagset) override;
   void OnGameMode(std::string mode) override;
-  void OnRankedEnabled(bool is_ranked) override;
   void OnCoinFlipResult(int coinNum);
   void OnRandomStadiumResult(int stadium);
   void OnNightResult(bool is_night);
@@ -175,7 +174,6 @@ private:
   //QAction* m_never_cull_action;
   QPushButton* m_quit_button;
   QSplitter* m_splitter;
-  // QCheckBox* m_ranked_box;
   QActionGroup* m_network_mode_group;
   QPushButton* m_coin_flipper;
   QPushButton* m_random_stadium;
@@ -199,7 +197,6 @@ private:
   int m_player_count = 0;
   int m_old_player_count = 0;
   bool m_host_input_authority = false;
-  bool m_current_ranked_value = false;
 
   StartGameCallback m_start_game_callback;
 };
