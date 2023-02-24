@@ -54,6 +54,19 @@ void LocalPlayersWidget::CreateLayout()
   m_player_list = new QListWidget;
   m_local_tagset = new QComboBox();
 
+  auto* tagset_description = new QLabel;
+  tagset_description->setText(tr(
+    "Game Modes are pre-made ways to play the game.<br/>"
+    "Any necessary mods and/or game changes<br/>"
+    "are automatically applied when selecting<br/>"
+    "a Game Mode.<br/><br/>"
+    "Head to the <a href=\"https://www.projectrio.online/\">Project Rio Website</a><br/>"
+    "to learn more about Game Modes!"
+  ));
+  tagset_description->setTextFormat(Qt::RichText);
+  tagset_description->setTextInteractionFlags(Qt::TextBrowserInteraction);
+  tagset_description->setOpenExternalLinks(true);
+
   auto* gc_label0 = new QLabel(tr("Online Account:"));
   auto* gc_box0 = m_player_list_0 = new QComboBox();
 
@@ -106,7 +119,8 @@ void LocalPlayersWidget::CreateLayout()
   auto* options_layout = new QGridLayout;
   options_layout->setAlignment(Qt::AlignTop);
   options_layout->addWidget(new QLabel(tr("Game Mode:")), 0, 0);
-  options_layout->addWidget(m_local_tagset, 0, 1, 1, -1);
+  options_layout->addWidget(m_local_tagset, 0, 1, 1, -1, Qt::AlignLeft);
+  options_layout->addWidget(tagset_description, 1, 0, 1, -1);
   m_options_box->setLayout(options_layout);
 
   auto* layout = new QHBoxLayout;
