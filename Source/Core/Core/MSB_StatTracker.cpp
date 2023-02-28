@@ -887,7 +887,11 @@ std::string StatTracker::getStatJsonPath(std::string prefix){
         home_player_name = m_game_info.team0_player.GetUsername();
     }
 
-    std::string file_name = prefix + away_player_name 
+    std::time_t unix_time = std::time(nullptr);
+    char datetime_c[15];
+    std::strftime(datetime_c, 16, "%Y%m%dT%H%M%S", std::localtime(&unix_time));
+    
+    std::string file_name = prefix + datetime_c + "_" + away_player_name 
                    + "-Vs-" + home_player_name
                    + "_" + std::to_string(m_game_info.game_id) + ".json";
 
