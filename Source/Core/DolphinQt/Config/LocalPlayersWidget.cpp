@@ -60,7 +60,7 @@ void LocalPlayersWidget::CreateLayout()
     "Any necessary mods and/or game changes<br/>"
     "are automatically applied when selecting<br/>"
     "a Game Mode.<br/><br/>"
-    "Head to the <a href=\"https://www.projectrio.online/\">Project Rio Website</a><br/>"
+    "Head to the <a href=\"https://www.projectrio.online/gamemode/\">Project Rio Website</a><br/>"
     "to learn more about Game Modes!"
   ));
   tagset_description->setTextFormat(Qt::RichText);

@@ -256,7 +256,7 @@ void NetPlaySetupDialog::CreateMainLayout()
     "Select the appropriate game (Mario Superstar Baseball) and choose a Game Mode (optional).<br/><br/>"
     "Game Modes are pre-made ways to play the game.<br/>"
     "Any necessary mods and/or game changes are automatically applied when selecting a Game Mode.<br/>"
-    "Head to the <a href=\"https://www.projectrio.online/\">Project Rio Website</a> to learn more about Game Modes!<br/><br/>"
+    "Head to the <a href=\"https://www.projectrio.online/gamemode/\">Project Rio Website</a> to learn more about Game Modes!<br/><br/>"
     "If you just want to play normal netplay, select \"No Game Mode\".<br/><br/>"
     "Public Matches will appear in the Lobby Browser and be viewable by anyone.<br/>"
     "Non-Public Matches will not appear in the browser and will require other players<br/>"
