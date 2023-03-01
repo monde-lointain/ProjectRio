@@ -525,7 +525,7 @@ void StatTracker::lookForTriggerEvents(){
                 File::WriteStringToFile(jsonPath, json);
 
                 //File::WriteStringToFile(jsonPath, json);
-                //http://127.0.0.1:5000/populate_db
+                //https://api.projectrio.app/populate_db
 
                 //Print server warning message
                 OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(
@@ -536,7 +536,7 @@ void StatTracker::lookForTriggerEvents(){
                 json = getStatJSON(false, false);
                 if (shouldSubmitGame()) {
                     const Common::HttpRequest::Response response =
-                    m_http.Post("http://127.0.0.1:5000/populate_db/", json,
+                    m_http.Post("https://api.projectrio.app/populate_db/", json,
                         {
                             {"Content-Type", "application/json"},
                         }
@@ -1812,7 +1812,7 @@ void StatTracker::onGameQuit(){
     // json = getStatJSON(false, false);
     // if (shouldSubmitGame()) {
     //     const Common::HttpRequest::Response response =
-    //     m_http.Post("http://127.0.0.1:5000/populate_db/", json,
+    //     m_http.Post("https://api.projectrio.app/populate_db/", json,
     //         {
     //             {"Content-Type", "application/json"},
     //         }
@@ -2065,7 +2065,7 @@ void StatTracker::postOngoingGame(Event& in_curr_event){
     json_stream << "}\n";
 
     const Common::HttpRequest::Response response =
-        m_http.Post("http://127.0.0.1:5000/populate_db/ongoing_game/", json_stream.str(),
+        m_http.Post("https://api.projectrio.app/populate_db/ongoing_game/", json_stream.str(),
             {
                 {"Content-Type", "application/json"},
             }
@@ -2100,7 +2100,7 @@ void StatTracker::updateOngoingGame(Event& in_curr_event){
     json_stream << "}\n";
 
     const Common::HttpRequest::Response response =
-        m_http.Post("http://127.0.0.1:5000/populate_db/ongoing_game/", json_stream.str(),
+        m_http.Post("https://api.projectrio.app/populate_db/ongoing_game/", json_stream.str(),
             {
                 {"Content-Type", "application/json"},
             }
