@@ -281,6 +281,12 @@ class DefaultGeckoCodes {
         0x9184001C}
     };
 
+    // Fix Random Captain Select [LittleCoaks]
+    const DefaultGeckoCode sFixRandomCaptain = {
+        0x8063F7C4, 0x90040000,
+        {0x90040000, 0x90040330}
+    };
+
     std::vector<DefaultGeckoCode> sRequiredCodes = {
       sGenerateGameID,
       sClearGameID_1,
@@ -294,6 +300,7 @@ class DefaultGeckoCodes {
       sRememberWhoQuit_2,
       sStoreRandBattingInts,
       sChecksum,
-      sDefaultCompetitiveRules
+      sDefaultCompetitiveRules,
+      sFixRandomCaptain
     };
 };
