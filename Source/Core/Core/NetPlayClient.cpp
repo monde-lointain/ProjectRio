@@ -966,7 +966,7 @@ void NetPlayClient::OnStartGame(sf::Packet& packet)
   }
 
   m_dialog->OnMsgStartGame();
-  m_dialog->StartingMsg(Core::isTagSetActive());
+  m_dialog->StartingMsg(Core::isTagSetActive(true));
 }
 
 void NetPlayClient::OnStopGame(sf::Packet& packet)

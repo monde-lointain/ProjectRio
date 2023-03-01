@@ -1708,9 +1708,12 @@ void SetTagSet(std::optional<TagSet> tagset, bool netplay)
   }
 }
 
-bool isTagSetActive()
+bool isTagSetActive(std::optional<bool> netplay)
 {
-  return NetPlay::IsNetPlayRunning() ? tagset_netplay.has_value() : tagset_local.has_value();
+  if (!netplay.has_value())
+    netplay = NetPlay::IsNetPlayRunning();
+
+  return netplay ? tagset_netplay.has_value() : tagset_local.has_value();
 }
 
 std::optional<std::vector<std::string>> GetTagSetGeckoString()
