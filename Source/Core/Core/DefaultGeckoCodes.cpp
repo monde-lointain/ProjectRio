@@ -72,9 +72,6 @@ void DefaultGeckoCodes::AddRequiredCodes()
 
 void DefaultGeckoCodes::AddTagSetCodes()
 {
-  if (ClientCodes.has_value() == false)
-    return;
-
   bool antiQuickPitch = true;
   bool manualFielderSelect = true;
   bool unlimitedExtraInnings = true;
@@ -84,24 +81,27 @@ void DefaultGeckoCodes::AddTagSetCodes()
   bool hazardless = false;
   bool gameModeration = false;
 
-  for (auto& code : ClientCodes.value())
+  if (ClientCodes.has_value())
   {
-    if (code == ClientCode::DisableAntiQuickPitch)
-      antiQuickPitch = false;
-    else if (code == ClientCode::DisableManualFielderSelect)
-      manualFielderSelect = false;
-    else if (code == ClientCode::DisableUnlimitedExtraInnings)
-      unlimitedExtraInnings = false;
-    else if (code == ClientCode::DisableSuperstars)
-      superstars = false;
-    else if (code == ClientCode::DisableStarSkills)
-      starSkills = false;
-    else if (code == ClientCode::DisableAntiDingusBunt)
-      antiDingusBunt = false;
-    else if (code == ClientCode::EnableHazardless)
-      hazardless = true;
-    else if (code == ClientCode::EnableGameModeration)
-      gameModeration = true;
+    for (auto& code : ClientCodes.value())
+    {
+      if (code == ClientCode::DisableAntiQuickPitch)
+        antiQuickPitch = false;
+      else if (code == ClientCode::DisableManualFielderSelect)
+        manualFielderSelect = false;
+      else if (code == ClientCode::DisableUnlimitedExtraInnings)
+        unlimitedExtraInnings = false;
+      else if (code == ClientCode::DisableSuperstars)
+        superstars = false;
+      else if (code == ClientCode::DisableStarSkills)
+        starSkills = false;
+      else if (code == ClientCode::DisableAntiDingusBunt)
+        antiDingusBunt = false;
+      else if (code == ClientCode::EnableHazardless)
+        hazardless = true;
+      else if (code == ClientCode::EnableGameModeration)
+        gameModeration = true;
+    }
   }
 
   if (antiQuickPitch)
