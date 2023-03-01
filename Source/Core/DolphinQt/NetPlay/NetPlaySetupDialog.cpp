@@ -82,8 +82,6 @@ NetPlaySetupDialog::NetPlaySetupDialog(const GameListModel& game_list_model, QWi
   m_host_server_name->setEnabled(use_index);
   m_host_server_name->setText(QString::fromStdString(index_name));
 
-  bool is_ranked = Config::Get(Config::NETPLAY_RANKED);
-  m_host_ranked->setChecked(is_ranked);
   m_host_game_mode->setEnabled(true);
 
   m_host_server_password->setEnabled(use_index);
@@ -215,12 +213,25 @@ void NetPlaySetupDialog::CreateMainLayout()
   filter_layout->addItem(new QSpacerItem(3, 1, QSizePolicy::Expanding), 3, 4);
   filter_box->setLayout(filter_layout);
 
+  auto* status = new QWidget;
+  auto* status_layout = new QVBoxLayout;
+  status_layout->addWidget(m_status_label);
+  status_layout->addWidget(m_b_button_box);
+  status->setLayout(status_layout);
+
+  auto* filter_status = new QWidget;
+  auto* filter_status_layout = new QHBoxLayout;
+  filter_status_layout->addWidget(status);
+  filter_status_layout->addWidget(filter_box);
+  filter_status->setLayout(filter_status_layout);
+
   layout->addWidget(connection_widget);
   layout->addWidget(m_online_count);
   layout->addWidget(m_table_widget);
-  layout->addWidget(filter_box);
-  layout->addWidget(m_status_label);
-  layout->addWidget(m_b_button_box);
+  layout->addWidget(filter_status);
+  //layout->addWidget(filter_box);
+  //layout->addWidget(m_status_label);
+  //layout->addWidget(m_b_button_box);
 
   m_b_button_box->addButton(m_button_refresh, QDialogButtonBox::ResetRole);
 
@@ -240,13 +251,23 @@ void NetPlaySetupDialog::CreateMainLayout()
   m_host_server_name = new QLineEdit;
   m_host_server_password = new QLineEdit;
   m_host_server_region = new QComboBox;
+  
+  auto* description_widget = new QLabel(tr(
+    "Select the appropriate game (Mario Superstar Baseball) and choose a Game Mode (optional).<br/><br/>"
+    "Game Modes are pre-made ways to play the game.<br/>"
+    "Any necessary mods and/or game changes are automatically applied when selecting a Game Mode.<br/>"
+    "Head to the <a href=\"https://www.projectrio.online/\">Project Rio Website</a> to learn more about Game Modes!<br/><br/>"
+    "If you just want to play normal netplay, select \"No Game Mode\".<br/><br/>"
+    "Public Matches will appear in the Lobby Browser and be viewable by anyone.<br/>"
+    "Non-Public Matches will not appear in the browser and will require other players<br/>"
+    "to use a netplay join code to enter the lobby.<br/>"
+    "Passwords allow Public Matches to be viewable but not joinable by<br/>"
+    "anyone without inputting the password.<br/>"
+    ));
+  description_widget->setTextFormat(Qt::RichText);
+  description_widget->setTextInteractionFlags(Qt::TextBrowserInteraction);
+  description_widget->setOpenExternalLinks(true);
 
-  m_host_ranked = new QCheckBox(tr("Ranked Mode"));
-  m_host_ranked->setToolTip(
-      tr("Enabling Ranked Mode will mark down your games as being ranked in the stats files\n and "
-         "disable any extra gecko codes as well as Training Mode. This should be toggled for\n"
-         "serious/competitive/ranked games ase accurate and organized. Toggling this box will\n"
-         " always record stats, ignoring user configurations."));
   m_host_game_mode = new QComboBox;
   m_host_game_mode->setToolTip(
       tr("Choose which game mode you would like to play with. This will appear and be visible to other players in the lobby browser."
@@ -287,6 +308,7 @@ void NetPlaySetupDialog::CreateMainLayout()
   game_config_layout->addWidget(m_host_games, 0, 1, 1, -1);
   game_config_layout->addWidget(new QLabel(tr("Game Mode: ")), 1, 0);
   game_config_layout->addWidget(m_host_game_mode, 1, 1, 1, -1);
+  game_config_layout->addWidget(m_host_server_browser, 2, 1, 1, -1);
   game_config_layout->setAlignment(Qt::AlignLeft);
   game_config->setLayout(game_config_layout);
 
@@ -295,7 +317,7 @@ void NetPlaySetupDialog::CreateMainLayout()
   match_config_layout->addWidget(m_host_server_name);
   match_config_layout->addWidget(m_host_server_password);
   match_config_layout->addWidget(m_host_server_region);
-  match_config_layout->addWidget(m_host_server_browser);
+  //match_config_layout->addWidget(m_host_server_browser);
   match_config->setLayout(match_config_layout);
 
   auto* lobby_config = new QGroupBox(tr("Advanced Lobby Options"));
@@ -314,11 +336,9 @@ void NetPlaySetupDialog::CreateMainLayout()
 
   host_layout->addWidget(game_config, 0, 0);
   host_layout->addWidget(match_config, 0, 1);
-  host_layout->addWidget(lobby_config, 1, 0, 1, -1);
-  // TODO: rules write up?
-  host_layout->addWidget(m_host_ranked, 2, 0, 0, 0);
-  host_layout->addWidget(m_host_button, 3, 0, 3, -1, Qt::AlignRight);
-  host_layout->setSpacing(20);
+  host_layout->addWidget(description_widget, 1, 0, 1, -1, Qt::AlignCenter);
+  host_layout->addWidget(lobby_config, 2, 0, 1, -1, Qt::AlignBottom);
+  host_layout->addWidget(m_host_button, 3, 0, 1, -1, Qt::AlignRight);
   host_widget->setLayout(host_layout);
 
   m_connection_type->addItem(tr("Traversal Server"));
@@ -419,7 +439,6 @@ void NetPlaySetupDialog::ConnectWidgets()
   // connect this to lobby data stuff
   connect(m_host_game_mode, qOverload<int>(&QComboBox::activated), this,
           &NetPlaySetupDialog::SetTagSet);
-  connect(m_host_ranked, &QCheckBox::toggled, this, &NetPlaySetupDialog::SaveLobbySettings);
 
   // Browser Stuff
   connect(m_region_combo, qOverload<int>(&QComboBox::currentIndexChanged), this,
@@ -441,12 +460,6 @@ void NetPlaySetupDialog::ConnectWidgets()
   connect(this, &NetPlaySetupDialog::UpdateListRequestedBrowser, this,
           &NetPlaySetupDialog::OnUpdateListRequestedBrowser,
           Qt::QueuedConnection);
-}
-
-void NetPlaySetupDialog::SaveLobbySettings()
-{
-  Config::SetBaseOrCurrent(Config::NETPLAY_RANKED, m_host_ranked->isChecked());
-  Config::Save();
 }
 
 void NetPlaySetupDialog::SaveSettings()

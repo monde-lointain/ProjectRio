@@ -491,7 +491,6 @@ void StatTracker::lookForTriggerEvents(){
             if ((PowerPC::HostRead_U32(aGameId) != 0) && (mTrackerInfo.mRecord) && (PowerPC::HostRead_U8(aGameControlStateCurr) == 0x5) ) {
                 m_game_info.game_id = PowerPC::HostRead_U32(aGameId);
                 //Sample settings
-                m_game_info.ranked  = m_state.m_ranked_status;
                 m_game_info.netplay = m_state.m_netplay_session;
                 m_game_info.host    = m_state.m_is_host;
                 m_game_info.netplay_opponent_alias = m_state.m_netplay_opponent_alias;
@@ -904,7 +903,11 @@ std::string StatTracker::getStatJsonPath(std::string prefix){
         home_player_name = m_game_info.team0_player.GetUsername();
     }
 
-    std::string file_name = prefix + away_player_name 
+    std::time_t unix_time = std::time(nullptr);
+    char datetime_c[15];
+    std::strftime(datetime_c, 16, "%Y%m%dT%H%M%S", std::localtime(&unix_time));
+    
+    std::string file_name = prefix + datetime_c + "_" + away_player_name 
                    + "-Vs-" + home_player_name
                    + "_" + std::to_string(m_game_info.game_id) + ".json";
 
@@ -1675,11 +1678,6 @@ void StatTracker::readPlayerNames(bool local_game) {
     m_game_info.team0_player = m_game_info.NetplayerUserInfo[team0_port + 1];
     m_game_info.team1_player = m_game_info.NetplayerUserInfo[team1_port + 1];
   }
-}
-
-void StatTracker::setRankedStatus(bool inBool) {
-    std::cout << "Ranked Status=" << inBool << "\n";
-    m_state.m_ranked_status = inBool;
 }
 
 void StatTracker::setRecordStatus(bool inBool) {

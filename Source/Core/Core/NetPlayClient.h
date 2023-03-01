@@ -72,9 +72,8 @@ public:
   virtual void OnTraversalStateChanged(TraversalClient::State state) = 0;
   virtual void OnGameStartAborted() = 0;
   virtual void OnGolferChanged(bool is_golfer, const std::string& golfer_name) = 0;
-  virtual void OnRankedEnabled(bool is_ranked) = 0;
   virtual void OnGameMode(std::string mode) = 0;
-  virtual void RankedStartingMsg(bool is_ranked) = 0;
+  virtual void StartingMsg(bool is_tagset) = 0;
   virtual void OnCoinFlipResult(int coinFlip) = 0;
   virtual void OnNightResult(bool is_night) = 0;
   virtual void OnDisableReplaysResult(bool disable) = 0;
@@ -183,13 +182,11 @@ public:
 
   static void AutoGolfMode(bool isField, int BatPort, int FieldPort);
   static void DisplayBatterFielder(u8 BatterPortInt, u8 FielderPortInt);
-  static bool isRanked();
   static bool isNight();
   static bool isDisableReplays();
   static u32 sGetPlayersMaxPing();
   static std::map<int, LocalPlayers::LocalPlayers::Player> getNetplayerUserInfo();
   static void SendGameID(u32 gameId);
-  bool m_ranked_client = false;
   bool m_night_stadium = false;
   bool m_disable_replays = false;
   u32 maxPing;
@@ -343,7 +340,6 @@ private:
   void OnMD5Error(sf::Packet& packet);
   void OnMD5Abort();
   void OnGameModeMsg(sf::Packet& packet);
-  void OnRankedBoxMsg(sf::Packet& packet);
   void OnSendCodesMsg(sf::Packet& packet);
   void OnCoinFlipMsg(sf::Packet& packet);
   void OnNightMsg(sf::Packet& packet);

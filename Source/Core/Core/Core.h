@@ -186,7 +186,6 @@ float u32ToFloat(u32 value);
 float ms_to_mph(float MetersPerSecond);
 float vectorMagnitude(float x, float y, float z);
 float RoundZ(float num);
-bool isRankedMode();
 bool isNight();
 bool isDisableReplays();
 
@@ -211,11 +210,11 @@ using namespace Tag;
 //void setRankedStatus(bool inNewStatus);
 void setRecordStatus(bool inNewStatus);
 void setSubmitStatus(bool inNewStatus);
-void setRankedStatus(bool inNewStatus);
 void SetGameID(u32 gameID);
 std::optional<TagSet> GetActiveTagSet(bool netplay);
 void SetTagSet(std::optional<TagSet> tagset, bool netplay);
 bool isTagSetActive();
+std::optional<std::vector<std::string>> GetTagSetGeckoString();
 
 union{
   u32 num;
@@ -245,7 +244,6 @@ static const u32 aPitchedBallVelocity_Z = 0x808909E0;
 static const u32 aBarrelBatterPort = 0x80890971; // port of character at bat in barrel batter & bom-omb derby
 static const u32 aWallBallPort = 0x80890AD9; // port of character pitching in wall ball
 static const u32 aMinigameID = 0x808980DE;  // 3 == Barrel Batter; 2 == Wall Ball; 1 == Bom-omb Derby; 4 == Chain Chomp Sprint; 5 == Piranha Panic; 6 == Star Dash; 7 == Grand Prix
-static const u32 aNetplayEventCode = 0x802EBF96;
 static const u32 aWhoPaused = 0x8039D7D3; // 2 == fielder, 1 == batter
 //static const u32 aMatchStarted = 0x8036F3B8;  // bool for if a game is in session
 static const u32 aSceneId = 0x800E877F;

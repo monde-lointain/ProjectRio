@@ -124,7 +124,6 @@ static std::atomic<double> s_last_actual_emulation_speed{1.0};
 static bool s_frame_step = false;
 static std::atomic<bool> s_stop_frame_step;
 
-static u32 GameMode = 0;
 static std::optional<TagSet> tagset_local = std::nullopt;
 static std::optional<TagSet> tagset_netplay = std::nullopt;
 static bool previousContactMade = false;
@@ -235,7 +234,7 @@ void RunRioFunctions()
 
   }
 
-  CodeWriter.RunCodeInject(PowerPC::HostRead_U8(aNetplayEventCode) == 1, isRankedMode(), isNight(), GameMode, isDisableReplays());
+  CodeWriter.RunCodeInject();
   AutoGolfMode();
   TrainingMode();
   DisplayBatterFielder();
@@ -297,7 +296,7 @@ void TrainingMode()
 {
   // if training mode config is on and not ranked netplay
   // using this feature on ranked can be considered an unfair advantage
-  if (!g_ActiveConfig.bTrainingModeOverlay || isRankedMode())
+  if (!g_ActiveConfig.bTrainingModeOverlay || isTagSetActive())
     return;
 
   //bool isPitchThrown = PowerPC::HostRead_U8(0x80895D6C) == 1 ? true : false;
@@ -569,13 +568,6 @@ float RoundZ(float num)
   return roundf(num);
 }
 
-bool isRankedMode()
-{
-  if (!NetPlay::IsNetPlayRunning())
-    return false;
-  return NetPlay::NetPlayClient::isRanked();
-}
-
 bool isNight()
 {
   if (!NetPlay::IsNetPlayRunning())
@@ -727,6 +719,13 @@ bool Init(std::unique_ptr<BootParameters> boot, const WindowSystemInfo& wsi)
   // Start the emu thread
   s_is_booting.Set();
   s_emu_thread = std::thread(EmuThread, std::move(boot), prepared_wsi);
+
+  std::optional<std::vector<ClientCode>> client_codes =
+      GetActiveTagSet(NetPlay::IsNetPlayRunning()).has_value() ?
+      GetActiveTagSet(NetPlay::IsNetPlayRunning()).value().client_codes_vector() :
+      std::nullopt;
+
+  CodeWriter.Init(client_codes, isTagSetActive(), isNight(), isDisableReplays());
 
   return true;
 }
@@ -1660,18 +1659,6 @@ void setSubmitStatus(bool inNewStatus)
   settings.SaveSettings();
 }
 
-void setRankedStatus(bool inNewStatus)
-{
-  if (s_stat_tracker) {
-    s_stat_tracker->setRankedStatus(inNewStatus);
-  }
-  else {
-    s_stat_tracker = std::make_unique<StatTracker>();
-    s_stat_tracker->init();
-    s_stat_tracker->setRankedStatus(inNewStatus);
-  }
-}
-
 void SetGameID(u32 gameID)
 {
   if (s_stat_tracker)
@@ -1724,6 +1711,16 @@ void SetTagSet(std::optional<TagSet> tagset, bool netplay)
 bool isTagSetActive()
 {
   return NetPlay::IsNetPlayRunning() ? tagset_netplay.has_value() : tagset_local.has_value();
+}
+
+std::optional<std::vector<std::string>> GetTagSetGeckoString()
+{
+  std::optional<TagSet> tagset_active = GetActiveTagSet(NetPlay::IsNetPlayRunning());
+
+  if (!tagset_active.has_value())
+    return std::nullopt;
+
+  return tagset_active.value().gecko_codes_string();
 }
 
 }  // namespace Core

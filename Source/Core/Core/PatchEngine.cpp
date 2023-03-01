@@ -210,15 +210,15 @@ void LoadPatches()
   LoadPatchSection("OnFrame", &s_on_frame, globalIni, localIni);
 
   // Check if I'm syncing Codes
-  if (Config::Get(Config::SESSION_CODE_SYNC_OVERRIDE))
+  if (Config::Get(Config::SESSION_CODE_SYNC_OVERRIDE) && !Core::isTagSetActive())
   {
     Gecko::SetSyncedCodesAsActive();
-    ActionReplay::SetSyncedCodesAsActive();
+    //ActionReplay::SetSyncedCodesAsActive();
   }
   else
   {
-    Gecko::SetActiveCodes(Gecko::LoadCodes(globalIni, localIni));
-    ActionReplay::LoadAndApplyCodes(globalIni, localIni);
+    Gecko::SetActiveCodes(Gecko::LoadCodes(globalIni, localIni), Core::GetTagSetGeckoString());
+    //ActionReplay::LoadAndApplyCodes(globalIni, localIni);
   }
 
   LoadSpeedhacks("Speedhacks", merged);
@@ -299,12 +299,10 @@ bool ApplyFramePatches()
 
   // we run the rio functions first, since we will want user's gecko codes to overwrite the built-in rio ones
   Core::RunRioFunctions();
+  Gecko::RunCodeHandler();
   if (!Core::isTagSetActive())
   {
     ApplyPatches(s_on_frame);
-
-    // Run the Gecko code handler
-    Gecko::RunCodeHandler();
     ActionReplay::RunAllActive();
   }
 

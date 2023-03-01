@@ -57,7 +57,6 @@ const Info<std::string> NETPLAY_NETWORK_MODE{{System::Main, "NetPlay", "NetworkM
 const Info<bool> NETPLAY_SYNC_ALL_WII_SAVES{{System::Main, "NetPlay", "SyncAllWiiSaves"}, false};
 const Info<bool> NETPLAY_GOLF_MODE_OVERLAY{{System::Main, "NetPlay", "GolfModeOverlay"}, true};
 const Info<bool> NETPLAY_HIDE_REMOTE_GBAS{{System::Main, "NetPlay", "HideRemoteGBAs"}, false};
-const Info<bool> NETPLAY_RANKED{{System::Main, "NetPlay", "Ranked"}, false};
 //const Info<bool> NETPLAY_NIGHT_STADIUM{{System::Main, "NetPlay", "Night Stadium"}, false};
 const Info<bool> NETPLAY_DISABLE_MUSIC{{System::Main, "NetPlay", "Disable Music"}, false};
 const Info<bool> NETPLAY_HIGHLIGHT_BALL_SHADOW{{System::Main, "NetPlay", "Highlight Ball Shadow"}, false};
