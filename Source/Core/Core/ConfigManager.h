@@ -37,8 +37,6 @@ struct SConfig
   // Settings
   bool bAutomaticStart = false;
   bool bBootToPause = false;
-  bool bRecordStats;
-  bool bSubmitStats;
 
   bool bJITNoBlockCache = false;
   bool bJITNoBlockLinking = false;

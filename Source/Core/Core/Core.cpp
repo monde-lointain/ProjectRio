@@ -1639,26 +1639,6 @@ void UpdateInputGate(bool require_focus, bool require_full_focus)
   ControlReference::SetInputGate(focus_passes && full_focus_passes);
 }
 
-void setRecordStatus(bool inNewStatus)
-{
-  //SConfig& settings = SConfig::GetInstance();
-  //settings.SaveSettings();
-  if (s_stat_tracker) {
-    s_stat_tracker->setRecordStatus(inNewStatus);
-  }
-  else {
-    s_stat_tracker = std::make_unique<StatTracker>();
-    s_stat_tracker->init();
-    s_stat_tracker->setRecordStatus(inNewStatus);
-  }
-}
-
-void setSubmitStatus(bool inNewStatus)
-{
-  SConfig& settings = SConfig::GetInstance();
-  settings.SaveSettings();
-}
-
 void SetGameID(u32 gameID)
 {
   if (s_stat_tracker)

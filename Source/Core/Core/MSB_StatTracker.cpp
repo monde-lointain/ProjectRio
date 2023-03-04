@@ -487,8 +487,8 @@ void StatTracker::lookForTriggerEvents(){
     switch (m_game_state){
         case (GAME_STATE::PREGAME):
             //Start recording when GameId is set AND record button is pressed AND game has started
-            //std::cout << std::hex << "GameId=" << PowerPC::HostRead_U32(aGameId) << " Record=" << (mTrackerInfo.mRecord) << "GameState=" <<  PowerPC::HostRead_U8(aGameControlStateCurr) << '\n';
-            if ((PowerPC::HostRead_U32(aGameId) != 0) && (mTrackerInfo.mRecord) && (PowerPC::HostRead_U8(aGameControlStateCurr) == 0x5) ) {
+            //std::cout << std::hex << "GameId=" << PowerPC::HostRead_U32(aGameId) << "GameState=" <<  PowerPC::HostRead_U8(aGameControlStateCurr) << '\n';
+            if ((PowerPC::HostRead_U32(aGameId) != 0) && (PowerPC::HostRead_U8(aGameControlStateCurr) == 0x5) ) {
                 m_game_info.game_id = PowerPC::HostRead_U32(aGameId);
                 //Sample settings
                 m_game_info.netplay = m_state.m_netplay_session;
@@ -1680,10 +1680,6 @@ void StatTracker::readPlayerNames(bool local_game) {
   }
 }
 
-void StatTracker::setRecordStatus(bool inBool) {
-    std::cout << "Record Status=" << inBool << "\n";
-    mTrackerInfo.mRecord = inBool;
-}
 
 void StatTracker::setTagSetId(Tag::TagSet tag_set, bool netplay) {
     std::cout << "TagSet Id=" << tag_set.id << "," << "TagSet Name=" << tag_set.name << "\n";

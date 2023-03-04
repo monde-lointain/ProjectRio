@@ -500,12 +500,6 @@ public:
     //StatTracker() { };
     Logger state_logger = Logger("state_log");;
 
-    struct TrackerInfo{
-        bool mRecord;
-        bool mSubmit = true;
-    };
-    TrackerInfo mTrackerInfo;
-
     struct EndGameRosterDefensiveStats{
         u8  batters_faced;
         u16 runs_allowed;
@@ -997,7 +991,6 @@ public:
         float fnum;
     } float_converter;
 
-    void setRecordStatus(bool inBool);
     void setTagSetId(Tag::TagSet tag_set, bool netplay);
     void clearTagSetId(bool netplay);
     void setNetplaySession(bool netplay_session, bool is_host=false, std::string opponent_name = "");

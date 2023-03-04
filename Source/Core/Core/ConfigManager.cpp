@@ -209,8 +209,6 @@ void SConfig::LoadDefaults()
 {
   bAutomaticStart = false;
   bBootToPause = false;
-  bRecordStats = true;
-  bSubmitStats = true;
 
   bWii = false;
 
