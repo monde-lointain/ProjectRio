@@ -1094,7 +1094,7 @@ public:
 
             //Remove current event, wasn't finished
             auto it = m_game_info.events.find(m_game_info.event_num);
-            if (&it != NULL)
+            if ((&it != NULL) && (it != m_game_info.events.end()))
             {
               m_game_info.events.erase(it);
             }
