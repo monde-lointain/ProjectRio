@@ -253,7 +253,7 @@ void NetPlaySetupDialog::CreateMainLayout()
   m_host_server_region = new QComboBox;
   
   auto* description_widget = new QLabel(tr(
-    "Select the appropriate game (Mario Superstar Baseball) and choose a Game Mode (optional).<br/><br/>"
+    "<br/>Select the appropriate game (Mario Superstar Baseball) and choose a Game Mode (optional).<br/><br/>"
     "Game Modes are pre-made ways to play the game.<br/>"
     "Any necessary mods and/or game changes are automatically applied when selecting a Game Mode.<br/>"
     "Head to the <a href=\"https://www.projectrio.online/gamemode/\">Project Rio Website</a> to learn more about Game Modes!<br/><br/>"
@@ -366,9 +366,7 @@ void NetPlaySetupDialog::CreateMainLayout()
 
 void NetPlaySetupDialog::SetTagSet()
 {
-  std::optional<Tag::TagSet> current_tagset = m_host_game_mode->currentIndex() == 0 ?
-                                                  std::nullopt :
-                                                  tagset_map[m_host_game_mode->currentIndex()];
+  std::optional<Tag::TagSet> current_tagset = tagset_map[m_host_game_mode->currentIndex()];
   Core::SetTagSet(current_tagset, true);
 }
 
@@ -437,7 +435,7 @@ void NetPlaySetupDialog::ConnectWidgets()
   });
 
   // connect this to lobby data stuff
-  connect(m_host_game_mode, qOverload<int>(&QComboBox::activated), this,
+  connect(m_host_game_mode, qOverload<int>(&QComboBox::currentIndexChanged), this,
           &NetPlaySetupDialog::SetTagSet);
 
   // Browser Stuff

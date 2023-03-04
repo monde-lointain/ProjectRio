@@ -1009,7 +1009,7 @@ void NetPlayDialog::SetOptionsEnabled(bool enabled)
 void NetPlayDialog::StartingMsg(bool is_tagset) {
   if (is_tagset)
   {
-    DisplayMessage(tr("NOTE: a Game Mode is active. Training mode is disabled and gecko codes are enforced by the actice Game Mode."), "mediumseagreen");
+    DisplayMessage(tr("NOTE: a Game Mode is active. Training mode is disabled and gecko codes are enforced by the active Game Mode."), "mediumseagreen");
   }
   else
   {

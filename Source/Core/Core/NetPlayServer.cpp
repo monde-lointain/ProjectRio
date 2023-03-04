@@ -466,10 +466,11 @@ ConnectionError NetPlayServer::OnConnect(ENetPeer* socket, sf::Packet& rpac)
   }
 
   // send Game Mode state
+  int tagset_id = m_tagset_id.has_value() ? m_tagset_id.value() : 0;
   spac.clear();
   spac << MessageID::GameMode;
   spac << m_tagset_id.has_value();
-  spac << m_tagset_id.value();
+  spac << tagset_id;
   Send(player.socket, spac);
 
   // send night stadium state
@@ -727,10 +728,11 @@ void NetPlayServer::SetTagSet(bool exists, int tagset_id)
   exists ? m_tagset_id = tagset_id : m_tagset_id = std::nullopt;
 
   // tell clients about the new value
+  int temp_tagset_id = m_tagset_id.has_value() ? m_tagset_id.value() : 0;
   sf::Packet spac;
   spac << MessageID::GameMode;
   spac << m_tagset_id.has_value();
-  spac << m_tagset_id.value();
+  spac << temp_tagset_id;
 
   SendAsyncToClients(std::move(spac));
 }
