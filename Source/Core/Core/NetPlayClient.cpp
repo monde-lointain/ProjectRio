@@ -807,17 +807,21 @@ void NetPlayClient::OnGolfSwitch(sf::Packet& packet)
   m_current_golfer = pid;
   m_dialog->OnGolferChanged(m_local_player->pid == pid, pid != 0 ? m_players[pid].name : "");
 
+  NOTICE_LOG_FMT(NETPLAY, "Running OnGolfSwitch. local pid: {} - current golfer pid: {} - previous golfer: {}", m_local_player->pid, pid, previous_golfer);
+
   if (m_local_player->pid == previous_golfer)
   {
     sf::Packet spac;
     spac << MessageID::GolfRelease;
     Send(spac);
+    NOTICE_LOG_FMT(NETPLAY, "Sent GolfRelease");
   }
   else if (m_local_player->pid == pid)
   {
     sf::Packet spac;
     spac << MessageID::GolfAcquire;
     Send(spac);
+    NOTICE_LOG_FMT(NETPLAY, "Sent GolfAquire");
 
     // Pads are already calibrated so we can just ignore this
     m_first_pad_status_received.fill(true);
@@ -831,6 +835,7 @@ void NetPlayClient::OnGolfPrepare(sf::Packet& packet)
 {
   m_wait_on_input_received = true;
   m_wait_on_input = true;
+  NOTICE_LOG_FMT(NETPLAY, "Ran function OnGolfPrepare");
 }
 
 void NetPlayClient::OnChangeGame(sf::Packet& packet)
@@ -871,6 +876,7 @@ void NetPlayClient::OnGameStatus(sf::Packet& packet)
 
 void NetPlayClient::OnStartGame(sf::Packet& packet)
 {
+  NOTICE_LOG_FMT(NETPLAY, "\n --- Start of game {} --- \npid: {}", m_selected_game.game_id, m_local_player->pid);
   {
     std::lock_guard lkg(m_crit.game);
 
@@ -972,6 +978,7 @@ void NetPlayClient::OnStartGame(sf::Packet& packet)
 void NetPlayClient::OnStopGame(sf::Packet& packet)
 {
   INFO_LOG_FMT(NETPLAY, "Game stopped");
+  NOTICE_LOG_FMT(NETPLAY, "\n --- Game stopped --- \n");
 
   StopGame();
   m_dialog->OnMsgStopGame();
@@ -2247,6 +2254,7 @@ bool NetPlayClient::GetNetPads(const int pad_nb, const bool batching, GCPadStatu
       sf::Packet spac;
       spac << MessageID::GolfPrepare;
       Send(spac);
+      NOTICE_LOG_FMT(NETPLAY, "Sent GolfPrepare to clients");
 
       m_wait_on_input_received = false;
     }
@@ -2619,6 +2627,7 @@ void NetPlayClient::RequestGolfControl(const PlayerId pid)
   packet << MessageID::GolfRequest;
   packet << pid;
   SendAsync(std::move(packet));
+  NOTICE_LOG_FMT(NETPLAY, "Sent GolfRequest for client {} to clients", pid);
 }
 
 void NetPlayClient::RequestGolfControl()
@@ -2646,16 +2655,7 @@ void NetPlayClient::AutoGolfMode(bool isField, int BatPort, int FieldPort)
 
 void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
 {
-  int clientID = m_local_player->pid; // refers to netplay client (the computer that's connected)
-
-  // Golf Port is the player who should be the golfer
-  int GolfPort = isField ? FieldPort - 1 : BatPort - 1;  // subtract 1 since m_pad_map uses 0->3 instead of 1->4
-  if (GolfPort >= 4 || GolfPort < 0)  // something's wrong. probably a CPU player                                         
-    return;   // return to avoid array out-of-range errors
-
-  // if the player who should be the gofler isn't in the lobby, return
-  if (!PortHasPlayerAssigned(GolfPort))
-    return;
+  PlayerId clientID = m_local_player->pid; // refers to netplay client (the computer that's connected)
 
   // don't run the rest of the code unless we're the golfer
   if (clientID != m_current_golfer) {
@@ -2663,25 +2663,34 @@ void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
     return;
   }
 
-  // this little block makes it so that the auto golf logic will only complete if the client's been
-  // the golfer for more than 60 frames. this is to ensure that under laggier conditions, a golfer
-  // who's game is too far behind doesn't swap the golfer status back and forth for a short while,
-  // which can be extra jarring to players
+  // auto golf logic will only complete if client's been the golfer for more than 60 frames
+  // this is to ensure that under laggier conditions, a golfer who's game is too far behind
+  // doesn't swap the golfer status back and forth for a short while, which can be jarring to players
   if (framesAsGolfer < 255) // don't want a memory overflow here
-    framesAsGolfer += 1;
+    framesAsGolfer++;
   if (framesAsGolfer <= 60) // delay this so that swapping bugs are way less likely; 1 second lockout window (60 frames)
     return;
 
+
+  int NextGolferPort = isField ? FieldPort - 1 : BatPort - 1;  // subtract 1 since m_pad_map uses 0->3 instead of 1->4
+  if (NextGolferPort >= 4 || NextGolferPort < 0)  // something's wrong. probably a CPU player                                         
+    return;   // return to avoid array out-of-range errors
+
+  // if the player who should be the gofler isn't in the lobby, return
+  if (!PortHasPlayerAssigned(NextGolferPort))
+    return;
+
   // if the current golfer is also the one who should be the golfer, return
-  // this prevents bugs due to requesting a swap every frame, which i think caused problems in the old code
+  // this prevents bugs due to requesting a swap every frame
   // m_pad_map is an array. the indices are the ports (0->3) and the values are the client ID's assigned to that port
-  if (m_pad_map[GolfPort] == clientID)
+  if (m_pad_map[NextGolferPort] == clientID)
     return;
 
   // find the player that should be the golfer and assign them as the golfer
-  RequestGolfControl(m_pad_map[GolfPort]);
+  NOTICE_LOG_FMT(NETPLAY, "Client {} will swap golfer to port {}", clientID, NextGolferPort + 1);
+  RequestGolfControl(m_pad_map[NextGolferPort]);
   framesAsGolfer = 0;
-  NOTICE_LOG_FMT(NETPLAY, "Client {} swaps golfer to port {}", clientID, GolfPort + 1);
+  NOTICE_LOG_FMT(NETPLAY, "Successfully swapped golfer");
 }
 
 

@@ -1067,6 +1067,7 @@ unsigned int NetPlayServer::OnData(sf::Packet& packet, Client& player)
 
   case MessageID::GolfRequest:
   {
+    NOTICE_LOG_FMT(NETPLAY, "Received GolfRequest");
     PlayerId pid;
     packet >> pid;
 
@@ -1082,12 +1083,14 @@ unsigned int NetPlayServer::OnData(sf::Packet& packet, Client& player)
       sf::Packet spac;
       spac << MessageID::GolfPrepare;
       Send(m_players[pid].socket, spac);
+      NOTICE_LOG_FMT(NETPLAY, "Sent GolfPrepare to Player {}", pid);
     }
   }
   break;
 
   case MessageID::GolfRelease:
   {
+    NOTICE_LOG_FMT(NETPLAY, "Received GolfRelease");
     if (m_pending_golfer == 0)
       break;
 
@@ -1095,11 +1098,13 @@ unsigned int NetPlayServer::OnData(sf::Packet& packet, Client& player)
     spac << MessageID::GolfSwitch;
     spac << m_pending_golfer;
     SendToClients(spac);
+    NOTICE_LOG_FMT(NETPLAY, "Sending GolfSwitch to clients. m_pending_golfer: {}", m_pending_golfer);
   }
   break;
 
   case MessageID::GolfAcquire:
   {
+    NOTICE_LOG_FMT(NETPLAY, "Received GolfRelease");
     if (m_pending_golfer == 0)
       break;
 
@@ -1110,6 +1115,7 @@ unsigned int NetPlayServer::OnData(sf::Packet& packet, Client& player)
 
   case MessageID::GolfPrepare:
   {
+    NOTICE_LOG_FMT(NETPLAY, "Received GolfPrepare");
     if (m_pending_golfer == 0)
       break;
 
@@ -1119,6 +1125,8 @@ unsigned int NetPlayServer::OnData(sf::Packet& packet, Client& player)
     spac << MessageID::GolfSwitch;
     spac << PlayerId{0};
     SendToClients(spac);
+    NOTICE_LOG_FMT(NETPLAY, "Sending GolfSwitch to all clients. m_pending_golfer: {}",
+                   m_pending_golfer);
   }
   break;
 
