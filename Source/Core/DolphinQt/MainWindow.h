@@ -11,14 +11,13 @@
 #include <optional>
 #include <string>
 
-//#include <Common/HttpRequest.h>
+#include "Core/Boot/Boot.h"
 #include "Core/LocalPlayersConfig.h"
 
 class QStackedWidget;
 class QString;
 
 class BreakpointWidget;
-class BootSessionData;
 struct BootParameters;
 class CheatsManager;
 class CodeWidget;
