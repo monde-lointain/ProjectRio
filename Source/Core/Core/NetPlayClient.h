@@ -72,7 +72,8 @@ public:
   virtual void OnTraversalStateChanged(TraversalClient::State state) = 0;
   virtual void OnGameStartAborted() = 0;
   virtual void OnGolferChanged(bool is_golfer, const std::string& golfer_name) = 0;
-  virtual void OnGameMode(std::string mode) = 0;
+  virtual void OnGameMode(std::string mode, /*std::string description,*/
+                          std::vector<std::string> tags) = 0;
   virtual void StartingMsg(bool is_tagset) = 0;
   virtual void OnCoinFlipResult(int coinFlip) = 0;
   virtual void OnNightResult(bool is_night) = 0;

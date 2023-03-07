@@ -74,7 +74,7 @@ public:
   void OnGolferChanged(bool is_golfer, const std::string& golfer_name) override;
 
   void StartingMsg(bool is_tagset) override;
-  void OnGameMode(std::string mode) override;
+  void OnGameMode(std::string mode, /*std::string description,*/ std::vector<std::string> tags) override;
   void OnCoinFlipResult(int coinNum);
   void OnRandomStadiumResult(int stadium);
   void OnNightResult(bool is_night);
