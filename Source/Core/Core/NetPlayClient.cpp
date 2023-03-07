@@ -1881,7 +1881,7 @@ void NetPlayClient::SendDisableReplays(bool disable)
 void NetPlayClient::GetActiveGeckoCodes()
 {
   // don't use any gecko codes if playing under a tagset
-  if (Core::isTagSetActive())
+  if (Core::isTagSetActive(true))
     return;
 
   // Find all INI files
