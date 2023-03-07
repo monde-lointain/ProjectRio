@@ -217,7 +217,7 @@ void LoadPatches()
   }
   else
   {
-    Gecko::SetActiveCodes(Gecko::LoadCodes(globalIni, localIni), Core::GetTagSetGeckoString());
+    Gecko::SetActiveCodes(Gecko::LoadCodes(globalIni, localIni));
     //ActionReplay::LoadAndApplyCodes(globalIni, localIni);
   }
 

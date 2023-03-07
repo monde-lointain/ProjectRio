@@ -20,6 +20,7 @@
 #include "Core/PowerPC/MMU.h"
 #include "Core/PowerPC/PowerPC.h"
 #include "Core/GeckoCodeConfig.h"
+#include "Core.h"
 
 namespace Gecko
 {
@@ -66,14 +67,21 @@ static std::vector<GeckoCode> s_active_codes;
 static std::vector<GeckoCode> s_synced_codes;
 static std::mutex s_active_codes_lock;
 
-void SetActiveCodes(const std::vector<GeckoCode>& gcodes,
-                    std::optional<std::vector<std::string>> tagset_gecko_string/* = std::nullopt*/)
+void SetActiveCodes(const std::vector<GeckoCode>& gcodes)
 {
   std::lock_guard lk(s_active_codes_lock);
 
   s_active_codes.clear();
 
-  if (tagset_gecko_string.has_value())
+  std::optional<std::vector<std::string>> tagset_gecko_string = Core::GetTagSetGeckoString();
+
+  if (Core::isTagSetActive() == false)
+  {
+    s_active_codes.reserve(gcodes.size());
+    std::copy_if(gcodes.begin(), gcodes.end(), std::back_inserter(s_active_codes),
+                 [](const GeckoCode& code) { return code.enabled; });
+  }
+  else if (tagset_gecko_string.has_value())
   {
     GeckoCode gcode;
     for (auto& line : tagset_gecko_string.value())
@@ -87,12 +95,6 @@ void SetActiveCodes(const std::vector<GeckoCode>& gcodes,
       gcode.codes.push_back(new_code);
     }
     s_active_codes.push_back(gcode);
-  }
-  else
-  {
-    s_active_codes.reserve(gcodes.size());
-    std::copy_if(gcodes.begin(), gcodes.end(), std::back_inserter(s_active_codes),
-                 [](const GeckoCode& code) { return code.enabled; });
   }
 
   s_active_codes.shrink_to_fit();

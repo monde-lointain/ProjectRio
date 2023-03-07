@@ -59,7 +59,7 @@ constexpr u32 HLE_TRAMPOLINE_ADDRESS = INSTALLER_END_ADDRESS - 4;
 // preserve the emulation performance.
 constexpr u32 MAGIC_GAMEID = 0xD01F1BAD;
 
-void SetActiveCodes(const std::vector<GeckoCode>& gcodes, std::optional<std::vector<std::string>> tagset_gecko_string = std::nullopt);
+void SetActiveCodes(const std::vector<GeckoCode>& gcodes);
 void SetSyncedCodesAsActive();
 void UpdateSyncedCodes(const std::vector<GeckoCode>& gcodes);
 std::vector<GeckoCode> SetAndReturnActiveCodes(const std::vector<GeckoCode>& gcodes);
