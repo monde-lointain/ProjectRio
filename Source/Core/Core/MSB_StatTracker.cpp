@@ -231,6 +231,8 @@ void StatTracker::lookForTriggerEvents(){
                 //3. Has game been paused, reinit 
                 if (PowerPC::HostRead_U8(aGameControlStateCurr) == 0xb){
                     std::cout << "Game paused, need to re-init event " << std::to_string(m_game_info.event_num) << "\n";
+                    logGameInfo();
+                    updateOngoingGame(m_game_info.getCurrentEvent());
                     m_event_state = EVENT_STATE::INIT_EVENT;
                 }
                 //Watch for Runners Stealing
@@ -970,7 +972,7 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
             CharacterSummary& char_summary = m_game_info.character_summaries[team][roster];
             
             // team integer home or away
-            std::string label = "\"Team " + team_string + " Roster " + std::to_string(roster) + "\": ";
+            std::string label = "\"" + team_string + " Roster " + std::to_string(roster) + "\": ";
             json_stream << "    " << label << "{\n";
             json_stream << "      \"Team\": \""        << std::to_string(team) << "\",\n";
             json_stream << "      \"RosterID\": "      << std::to_string(roster) << ",\n";
@@ -1303,8 +1305,10 @@ std::string StatTracker::getHUDJSON(std::string in_event_num, Event& in_curr_eve
                 captain_roster_loc = (m_game_info.away_port == m_game_info.team0_port) ? m_game_info.team0_captain_roster_loc : m_game_info.team1_captain_roster_loc;
             }
 
+            std::string team_string = (team == 0) ? "Away" : "Home";
+
             CharacterSummary& char_summary = m_game_info.character_summaries[team][roster];
-            std::string label = "\"Team " + std::to_string(team) + " Roster " + std::to_string(roster) + "\": ";
+            std::string label = "\"" + team_string + " Roster " + std::to_string(roster) + "\": ";
             json_stream << "  " << label << "{\n";
             json_stream << "    \"Team\": \""        << std::to_string(team) << "\",\n";
             json_stream << "    \"RosterID\": "      << std::to_string(roster) << ",\n";
