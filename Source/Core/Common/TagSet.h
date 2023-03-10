@@ -115,6 +115,15 @@ namespace Tag
             return ids;
         }
 
+        std::string description()
+        {
+            std::stringstream sstm;
+            for (Tag tag: tags) {
+                if (tag.type == "Competition") { sstm << tag.desc; }
+            }
+            return sstm.str();
+        }
+
         // Create vector of client code enums
         std::optional<std::vector<ClientCode>> client_codes_vector() 
         {
