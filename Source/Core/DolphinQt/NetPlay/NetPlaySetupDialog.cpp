@@ -536,13 +536,6 @@ void NetPlaySetupDialog::OnConnectionTypeChanged(int index)
 
 void NetPlaySetupDialog::show()
 {
-  // Here i'm setting the lobby name if it's empty to make
-  // NetPlay sessions start more easily for first time players
-  if (m_host_server_name->text().isEmpty())
-  {
-    std::string nickname = "New Lobby";
-    m_host_server_name->setText(QString::fromStdString(nickname));
-  }
   m_host_server_browser->setChecked(true);
   RefreshBrowser();
 
@@ -588,6 +581,15 @@ std::map<int, Tag::TagSet>& NetPlaySetupDialog::assignOnlineAccount(LocalPlayers
   m_active_account.SetUserInfo(online_player);
   std::string label = "<h1>" + m_active_account.GetUsername() + "</h1>";
   m_account_name->setText(QString::fromStdString(label));
+
+  // Here i'm setting the lobby name if it's empty to make
+  // NetPlay sessions start more easily for first time players
+  if (m_host_server_name->text().isEmpty())
+  {
+    std::string nickname = m_active_account.username;
+    nickname += "'s Lobby";
+    m_host_server_name->setText(QString::fromStdString(nickname));
+  }
 
   user_tagsets = Tag::getAvailableTagSets(m_http, m_active_account.userid);
 
