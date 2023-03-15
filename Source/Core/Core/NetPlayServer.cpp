@@ -725,7 +725,7 @@ void NetPlayServer::AdjustReplays(const bool disable)
 
 void NetPlayServer::SetTagSet(bool exists, int tagset_id)
 {
-  exists ? m_tagset_id = tagset_id : m_tagset_id = std::nullopt;
+  m_tagset_id = exists ? std::make_optional(tagset_id) : std::nullopt;
 
   // tell clients about the new value
   int temp_tagset_id = m_tagset_id.has_value() ? m_tagset_id.value() : 0;
