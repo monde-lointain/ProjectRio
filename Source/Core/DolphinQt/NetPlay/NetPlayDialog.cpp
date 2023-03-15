@@ -208,20 +208,20 @@ void NetPlayDialog::CreateMainLayout()
   m_hide_remote_gbas_action->setCheckable(true);
 
   // TODO gecko options: batter hold Z for easy batting?, custom music
-  m_gecko_menu = m_menu_bar->addMenu(tr("Gecko Code Options"));
-  m_gecko_menu->setToolTipsVisible(true);
+  //m_gecko_menu = m_menu_bar->addMenu(tr("Gecko Code Options"));
+  //m_gecko_menu->setToolTipsVisible(true);
   //m_night_stadium_action = m_gecko_menu->addAction(tr("Night Time Mario Stadium"));
   //m_night_stadium_action->setToolTip(
   //    tr("Changes Mario Stadium to under the lights, as in Bom-omb Derby."));
   //m_night_stadium_action->setCheckable(true);
-  m_disable_music_action = m_gecko_menu->addAction(tr("Disable Music"));
-  m_disable_music_action->setToolTip(tr("Turns off music."));
-  m_disable_music_action->setCheckable(true);
+  //m_disable_music_action = m_gecko_menu->addAction(tr("Disable Music"));
+  //m_disable_music_action->setToolTip(tr("Turns off music."));
+  //m_disable_music_action->setCheckable(true);
 
-  m_highlight_ball_shadow_action = m_gecko_menu->addAction(tr("Highlight Ball Shadow"));
-  m_highlight_ball_shadow_action->setToolTip(tr(
-      "If drop spots are turned off, a drop spot will appear around the ball's shadow instead."));
-  m_highlight_ball_shadow_action->setCheckable(true);
+  //m_highlight_ball_shadow_action = m_gecko_menu->addAction(tr("Highlight Ball Shadow"));
+  //m_highlight_ball_shadow_action->setToolTip(tr(
+  //    "If drop spots are turned off, a drop spot will appear around the ball's shadow instead."));
+  //m_highlight_ball_shadow_action->setCheckable(true);
 
   //m_never_cull_action = m_gecko_menu->addAction(tr("Never Cull"));
   //m_never_cull_action->setToolTip(
@@ -453,8 +453,8 @@ void NetPlayDialog::ConnectWidgets()
   connect(m_fixed_delay_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
   connect(m_hide_remote_gbas_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
   //connect(m_night_stadium_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
-  connect(m_disable_music_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
-  connect(m_highlight_ball_shadow_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
+  //connect(m_disable_music_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
+  //connect(m_highlight_ball_shadow_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
   //connect(m_never_cull_action, &QAction::toggled, this, &NetPlayDialog::SaveSettings);
 }
 
@@ -1006,8 +1006,8 @@ void NetPlayDialog::SetOptionsEnabled(bool enabled)
     m_night_stadium->setCheckable(enabled);
     m_disable_replays->setCheckable(enabled);
     //m_night_stadium_action->setEnabled(enabled);
-    m_disable_music_action->setEnabled(enabled);
-    m_highlight_ball_shadow_action->setEnabled(enabled);
+    //m_disable_music_action->setEnabled(enabled);
+    //m_highlight_ball_shadow_action->setEnabled(enabled);
     //m_never_cull_action->setEnabled(enabled);
   }
 
@@ -1314,8 +1314,8 @@ void NetPlayDialog::LoadSettings()
   const bool golf_mode_overlay = Config::Get(Config::NETPLAY_GOLF_MODE_OVERLAY);
   const bool hide_remote_gbas = Config::Get(Config::NETPLAY_HIDE_REMOTE_GBAS);
   //const bool night_stadium = Config::Get(Config::NETPLAY_NIGHT_STADIUM);
-  const bool disable_music = Config::Get(Config::NETPLAY_DISABLE_MUSIC);
-  const bool highlight_ball_shadow = Config::Get(Config::NETPLAY_HIGHLIGHT_BALL_SHADOW);
+  //const bool disable_music = Config::Get(Config::NETPLAY_DISABLE_MUSIC);
+  //const bool highlight_ball_shadow = Config::Get(Config::NETPLAY_HIGHLIGHT_BALL_SHADOW);
   //const bool never_cull = Config::Get(Config::NETPLAY_NEVER_CULL);
 
   m_buffer_size_box->setValue(buffer_size);
@@ -1328,8 +1328,8 @@ void NetPlayDialog::LoadSettings()
   m_golf_mode_overlay_action->setChecked(golf_mode_overlay);
   m_hide_remote_gbas_action->setChecked(hide_remote_gbas);
   //m_night_stadium_action->setChecked(night_stadium);
-  m_disable_music_action->setChecked(disable_music);
-  m_highlight_ball_shadow_action->setChecked(highlight_ball_shadow);
+  //m_disable_music_action->setChecked(disable_music);
+  //m_highlight_ball_shadow_action->setChecked(highlight_ball_shadow);
   //m_never_cull_action->setChecked(never_cull);
 
   const std::string network_mode = Config::Get(Config::NETPLAY_NETWORK_MODE);
@@ -1367,8 +1367,8 @@ void NetPlayDialog::SaveSettings()
   Config::SetBase(Config::NETPLAY_GOLF_MODE_OVERLAY, m_golf_mode_overlay_action->isChecked());
   Config::SetBase(Config::NETPLAY_HIDE_REMOTE_GBAS, m_hide_remote_gbas_action->isChecked());
   //Config::SetBase(Config::NETPLAY_NIGHT_STADIUM, m_night_stadium_action->isChecked());
-  Config::SetBase(Config::NETPLAY_DISABLE_MUSIC, m_disable_music_action->isChecked());
-  Config::SetBase(Config::NETPLAY_HIGHLIGHT_BALL_SHADOW, m_highlight_ball_shadow_action->isChecked());
+  //Config::SetBase(Config::NETPLAY_DISABLE_MUSIC, m_disable_music_action->isChecked());
+  //Config::SetBase(Config::NETPLAY_HIGHLIGHT_BALL_SHADOW, m_highlight_ball_shadow_action->isChecked());
   //Config::SetBase(Config::NETPLAY_NEVER_CULL, m_never_cull_action->isChecked());
 
   std::string network_mode;

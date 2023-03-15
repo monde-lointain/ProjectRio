@@ -164,16 +164,17 @@ void DefaultGeckoCodes::AddOptionalCodes()
       PowerPC::HostWrite_U32(0x38000000, aDisableReplays);
   }
 
-  if (Config::Get(Config::NETPLAY_DISABLE_MUSIC))
-  {
-    PowerPC::HostWrite_U32(0x38000000, aDisableMusic_1);
-    PowerPC::HostWrite_U32(0x38000000, aDisableMusic_2);
-  }
+  // TODO: uncomment these lines once rng syncing is added in a future update
+  //if (Config::Get(Config::NETPLAY_DISABLE_MUSIC))
+  //{
+  //  PowerPC::HostWrite_U32(0x38000000, aDisableMusic_1);
+  //  PowerPC::HostWrite_U32(0x38000000, aDisableMusic_2);
+  //}
 
-  if (Config::Get(Config::NETPLAY_HIGHLIGHT_BALL_SHADOW))
-  {
-    WriteAsm(sHighlightBallShadow);
-  }
+  //if (Config::Get(Config::NETPLAY_HIGHLIGHT_BALL_SHADOW))
+  //{
+  //  WriteAsm(sHighlightBallShadow);
+  //}
 
   // if (Config::Get(Config::NETPLAY_NEVER_CULL))
   //{
