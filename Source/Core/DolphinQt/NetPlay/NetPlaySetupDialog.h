@@ -43,6 +43,7 @@ public:
   void accept() override;
   void show();
   std::map<int, Tag::TagSet>& assignOnlineAccount(LocalPlayers::LocalPlayers::Player online_player);
+  std::optional<Tag::TagSet> GetTagSet();
 
 signals:
   bool Join();
@@ -70,7 +71,6 @@ private:
 
   void SaveSettings();
   //void SaveLobbySettings();
-  void SetTagSet();
 
   void OnConnectionTypeChanged(int index);
 

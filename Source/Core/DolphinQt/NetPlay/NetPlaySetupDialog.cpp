@@ -118,7 +118,6 @@ NetPlaySetupDialog::NetPlaySetupDialog(const GameListModel& game_list_model, QWi
   OnConnectionTypeChanged(m_connection_type->currentIndex());
 
   ConnectWidgets();
-  SetTagSet();
 
   m_refresh_run.Set(true);
   m_refresh_thread = std::thread([this] { RefreshLoopBrowser(); });
@@ -365,12 +364,6 @@ void NetPlaySetupDialog::CreateMainLayout()
   setLayout(m_main_layout);
 }
 
-void NetPlaySetupDialog::SetTagSet()
-{
-  std::optional<Tag::TagSet> current_tagset = tagset_map[m_host_game_mode->currentIndex()];
-  Core::SetTagSet(current_tagset, true);
-}
-
 NetPlaySetupDialog::~NetPlaySetupDialog()
 {
   m_refresh_run.Set(false);
@@ -435,9 +428,6 @@ void NetPlaySetupDialog::ConnectWidgets()
     m_host_server_password->setEnabled(value);
   });
 
-  // connect this to lobby data stuff
-  connect(m_host_game_mode, qOverload<int>(&QComboBox::currentIndexChanged), this,
-          &NetPlaySetupDialog::SetTagSet);
 
   // Browser Stuff
   connect(m_region_combo, qOverload<int>(&QComboBox::currentIndexChanged), this,
@@ -605,6 +595,11 @@ std::map<int, Tag::TagSet>& NetPlaySetupDialog::assignOnlineAccount(LocalPlayers
     tagset_map.insert(std::pair<int, std::optional<Tag::TagSet>>(combobox_index++, tagset.second));
   }
   return user_tagsets;
+}
+
+std::optional<Tag::TagSet> NetPlaySetupDialog::GetTagSet()
+{
+  return tagset_map[m_host_game_mode->currentIndex()];
 }
 
 void NetPlaySetupDialog::PopulateGameList()
