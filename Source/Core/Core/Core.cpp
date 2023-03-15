@@ -1641,16 +1641,13 @@ void UpdateInputGate(bool require_focus, bool require_full_focus)
 
 void SetGameID(u32 gameID)
 {
-  if (s_stat_tracker)
-  {
-    s_stat_tracker->setGameID(gameID);
-  }
-  else
+  if (!s_stat_tracker)
   {
     s_stat_tracker = std::make_unique<StatTracker>();
     s_stat_tracker->init();
-    s_stat_tracker->setGameID(gameID);
   }
+
+  s_stat_tracker->setGameID(gameID);
 }
 
 std::optional<TagSet> GetActiveTagSet(bool netplay)
@@ -1660,31 +1657,24 @@ std::optional<TagSet> GetActiveTagSet(bool netplay)
 
 void SetTagSet(std::optional<TagSet> tagset, bool netplay)
 {
-  netplay ? tagset_netplay = tagset : tagset_local = tagset;
-  
-  if (s_stat_tracker)
-  {
-    if (tagset.has_value())
-    {
-      s_stat_tracker->setTagSetId(tagset.value(), netplay);
-    }
-    else
-    {
-      s_stat_tracker->clearTagSetId(netplay);
-    }
-  }
+  if (netplay)
+    tagset_netplay = tagset;
   else
+    tagset_local = tagset;
+
+  if (!s_stat_tracker)
   {
     s_stat_tracker = std::make_unique<StatTracker>();
     s_stat_tracker->init();
-    if (tagset.has_value())
-    {
-      s_stat_tracker->setTagSetId(tagset.value(), netplay);
-    }
-    else
-    {
-      s_stat_tracker->clearTagSetId(netplay);
-    }
+  }
+
+  if (tagset.has_value())
+  {
+    s_stat_tracker->setTagSetId(std::move(tagset.value()), netplay);
+  }
+  else
+  {
+    s_stat_tracker->clearTagSetId(netplay);
   }
 }
 
