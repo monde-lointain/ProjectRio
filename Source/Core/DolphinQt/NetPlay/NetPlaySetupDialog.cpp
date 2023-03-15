@@ -251,6 +251,7 @@ void NetPlaySetupDialog::CreateMainLayout()
   m_host_server_name = new QLineEdit;
   m_host_server_password = new QLineEdit;
   m_host_server_region = new QComboBox;
+  m_host_server_region->setPlaceholderText(tr("Select a Region (required)"));
   
   auto* description_widget = new QLabel(tr(
     "<br/>Select the appropriate game (Mario Superstar Baseball) and choose a Game Mode (optional).<br/><br/>"
