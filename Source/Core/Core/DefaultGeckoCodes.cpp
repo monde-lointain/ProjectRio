@@ -122,8 +122,7 @@ void DefaultGeckoCodes::AddTagSetCodes()
   if (!starSkills)
   {
     PowerPC::HostWrite_U32(0x98c7003d, aDisableStarSkills);
-    PowerPC::HostWrite_U32(0x60000000, aDisableStarSkills_1);
-    PowerPC::HostWrite_U32(0x60000000, aDisableStarSkills_2);
+    PowerPC::HostWrite_U32(0x38a00000, aDisableStarSkills_1);
   }
 
   if (antiDingusBunt)

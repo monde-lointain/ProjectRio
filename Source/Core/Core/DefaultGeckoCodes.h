@@ -82,8 +82,7 @@ class DefaultGeckoCodes {
 
     // Force Star Skills Off [LittleCoaks]
     static const u32 aDisableStarSkills = 0x800498d4; // write to 0x98c7003d
-    static const u32 aDisableStarSkills_1 = 0x80049e64;  // write to 0x60000000
-    static const u32 aDisableStarSkills_2 = 0x80049fa8;  // write to 0x60000000
+    static const u32 aDisableStarSkills_1 = 0x80049030;  // write to 0x38a00000
 
 
     // Generate the Game ID at 0x802EBF8C when Start Game is pressed [LittleCoaks]
