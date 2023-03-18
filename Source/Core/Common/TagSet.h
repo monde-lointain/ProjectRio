@@ -21,7 +21,9 @@ enum ClientCode {
     DisableStarSkills,
     DisableAntiDingusBunt,
     EnableHazardless,
-    EnableGameModeration
+    EnableGameModeration,
+    DefaultNineInnings,
+    DefaultDropSpotsOff
 };
 
 namespace Tag
@@ -220,6 +222,10 @@ namespace Tag
             return ClientCode::DisableSuperstars;
         } else if (tag_name == "Disable Star Skills") {
             return ClientCode::DisableStarSkills;
+        } else if (tag_name == "Default Nine Innings") {
+            return ClientCode::DefaultNineInnings;
+        } else if (tag_name == "Default Drop Spots Off") {
+            return ClientCode::DefaultDropSpotsOff;
         } else {                                
             return std::nullopt;
         }

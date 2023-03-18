@@ -56,6 +56,8 @@ void DefaultGeckoCodes::AddRequiredCodes()
 
   PowerPC::HostWrite_U16(0x0101, aUnlockEverything_8);
 
+  PowerPC::HostWrite_U32(0x9867003F, aDefaultMercyOn);
+
   // Cool bat sound on Start Game
   PowerPC::HostWrite_U32(0x386001bb, aBatSound);
 
@@ -80,6 +82,8 @@ void DefaultGeckoCodes::AddTagSetCodes()
   bool antiDingusBunt = true;
   bool hazardless = false;
   bool gameModeration = false;
+  bool defaultNineInnings = false;
+  bool defaultDropSpotsOff = false;
 
   if (ClientCodes.has_value())
   {
@@ -101,6 +105,10 @@ void DefaultGeckoCodes::AddTagSetCodes()
         hazardless = true;
       else if (code == ClientCode::EnableGameModeration)
         gameModeration = true;
+      else if (code == ClientCode::DefaultNineInnings)
+        defaultNineInnings = true;
+      else if (code == ClientCode::DefaultDropSpotsOff)
+        defaultDropSpotsOff = true;
     }
   }
 
@@ -139,6 +147,15 @@ void DefaultGeckoCodes::AddTagSetCodes()
     WriteAsm(sPitchClock);
 
     WriteAsm(sRestrictBatterPausing);
+  }
+
+  if (defaultNineInnings)
+    PowerPC::Write_U32(0x38000004, aDefaultNineInnings);
+
+  if (defaultDropSpotsOff)
+  {
+    PowerPC::Write_U32(0x98C70048, aDefaultDropSpotsOff);
+    PowerPC::Write_U32(0x98C7004C, aDefaultDropSpotsOff_1);
   }
 }
 

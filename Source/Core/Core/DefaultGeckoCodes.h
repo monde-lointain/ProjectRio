@@ -84,6 +84,11 @@ class DefaultGeckoCodes {
     static const u32 aDisableStarSkills = 0x800498d4; // write to 0x98c7003d
     static const u32 aDisableStarSkills_1 = 0x80049030;  // write to 0x38a00000
 
+    // Default Rules [LittleCoaks]
+    static const u32 aDefaultMercyOn = 0x800498DC;  // write to 0x9867003F
+    static const u32 aDefaultNineInnings = 0x800498C4;  // write to 0x38000004
+    static const u32 aDefaultDropSpotsOff = 0x800498FC;   // write to 0x98C70048
+    static const u32 aDefaultDropSpotsOff_1 = 0x8004991C;  // write to 0x98C7004C
 
     // Generate the Game ID at 0x802EBF8C when Start Game is pressed [LittleCoaks]
     const DefaultGeckoCode sGenerateGameID = {
@@ -155,15 +160,6 @@ class DefaultGeckoCodes {
         0x806B406C, 0xa01e0006,
         {0x3DC08089, 0x61CE80DE, 0x89CE0000, 0x2C0E0000, 0x4082001C, 0x38000000,
         0x3DC08089, 0x61CE099D, 0x89CE0000, 0x2C0E0001, 0x41820008, 0xA01E0006}
-    };
-
-    // Default Competitive Rules [LittleCoaks]
-    const DefaultGeckoCode sDefaultCompetitiveRules = {
-        0x80049D08, 0,
-        {0x3DC08035, 0x61CE323B, 0x3A000000, 0x7DEE80AE, 0x2C0F0001, 0x4182001C,
-        0x3A100001, 0x2C100012, 0x4082FFEC, 0x39C00004, 0x39E00001, 0x4800000C,
-        0x39C00002, 0x39E00000, 0x99C3003E, 0x99E30048, 0x99E3004C, 0x3A000001,
-        0x9A03003F, 0x3C60803C}
     };
 
     // Manual Fielder Select 4.0 [PeacockSlayer, LittleCoaks]
@@ -297,7 +293,6 @@ class DefaultGeckoCodes {
       sRememberWhoQuit_2,
       sStoreRandBattingInts,
       sChecksum,
-      sDefaultCompetitiveRules,
       sFixRandomCaptain
     };
 };
