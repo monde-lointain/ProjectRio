@@ -23,6 +23,8 @@
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QUrl>
+#include <QTextEdit>
+#include <QScrollBar>
 
 #include "Core/Config/NetplaySettings.h"
 #include "Core/NetPlayProto.h"
@@ -251,18 +253,20 @@ void NetPlaySetupDialog::CreateMainLayout()
   m_host_server_password = new QLineEdit;
   m_host_server_region = new QComboBox;
   m_host_server_region->setPlaceholderText(tr("Select a Region (required)"));
+  m_game_mode_description = new QTextEdit;
+
+  const auto line_height = QFontMetrics(font()).lineSpacing();
+  m_game_mode_description = new QTextEdit;
+  m_game_mode_description->setReadOnly(true);
+  m_game_mode_description->setFixedHeight(line_height * 10);
+  m_game_mode_description->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   
   auto* description_widget = new QLabel(tr(
-    "<br/>Select the appropriate game (Mario Superstar Baseball) and choose a Game Mode (optional).<br/><br/>"
-    "Game Modes are pre-made ways to play the game.<br/>"
-    "Any necessary mods and/or game changes are automatically applied when selecting a Game Mode.<br/>"
-    "Head to the <a href=\"https://www.projectrio.online/gamemode/\">Project Rio Website</a> to learn more about Game Modes!<br/><br/>"
-    "If you just want to play normal netplay, select \"No Game Mode\".<br/><br/>"
-    "Public Matches will appear in the Lobby Browser and be viewable by anyone.<br/>"
-    "Non-Public Matches will not appear in the browser and will require other players<br/>"
-    "to use a netplay join code to enter the lobby.<br/>"
-    "Passwords allow Public Matches to be viewable but not joinable by<br/>"
-    "anyone without inputting the password.<br/>"
+    "Select the appropriate game (Mario Superstar Baseball) and choose a Game Mode (optional).<br/>"
+    "Game Modes are pre-made ways to play the game. Any necessary mods and/or game changes are<br/>"
+    "automatically applied with a Game Mode. To play normal netplay, select \"No Game Mode\".<br/><br/>"
+    "Head to the <a href=\"https://www.projectrio.online/gamemode/\">Project Rio Website</a>"
+    "to learn more about Game Modes!<br/><br/>"
     ));
   description_widget->setTextFormat(Qt::RichText);
   description_widget->setTextInteractionFlags(Qt::TextBrowserInteraction);
@@ -336,9 +340,10 @@ void NetPlaySetupDialog::CreateMainLayout()
 
   host_layout->addWidget(game_config, 0, 0);
   host_layout->addWidget(match_config, 0, 1);
-  host_layout->addWidget(description_widget, 1, 0, 1, -1, Qt::AlignCenter);
-  host_layout->addWidget(lobby_config, 2, 0, 1, -1, Qt::AlignBottom);
-  host_layout->addWidget(m_host_button, 3, 0, 1, -1, Qt::AlignRight);
+  host_layout->addWidget(m_game_mode_description, 1, 0, 1, -1);
+  host_layout->addWidget(description_widget, 2, 0, 1, -1);
+  host_layout->addWidget(lobby_config, 3, 0, 1, -1, Qt::AlignBottom);
+  host_layout->addWidget(m_host_button, 4, 0, 1, -1, Qt::AlignRight);
   host_widget->setLayout(host_layout);
 
   m_connection_type->addItem(tr("Traversal Server"));
@@ -390,6 +395,8 @@ void NetPlaySetupDialog::ConnectWidgets()
     Settings::GetQSettings().setValue(QStringLiteral("netplay/hostgame"),
                                       m_host_games->currentText());
   });
+  connect(m_host_game_mode, qOverload<int>(&QComboBox::currentIndexChanged), this,
+          &NetPlaySetupDialog::UpdateGameModeDescription);
 
   // refresh browser on tab changed
   connect(m_tab_widget, &QTabWidget::currentChanged, this, &NetPlaySetupDialog::RefreshBrowser);
@@ -522,6 +529,33 @@ void NetPlaySetupDialog::OnConnectionTypeChanged(int index)
 
   Config::SetBaseOrCurrent(Config::NETPLAY_TRAVERSAL_CHOICE,
                            std::string(index == 1 ? "direct" : "traversal"));
+}
+
+void NetPlaySetupDialog::UpdateGameModeDescription()
+{
+  std::optional<Tag::TagSet> selected_tagset = GetTagSet();
+
+  m_game_mode_description->clear();
+  if (!selected_tagset.has_value())
+  {
+    m_game_mode_description->append(tr("No Game Mode Selected."));
+    return;
+  }
+
+  std::vector<std::string> tags = selected_tagset.value().tag_names_vector();
+  std::string tags_string = "\nTags:\n";
+  for (auto& tag : tags)
+  {
+    if (tag != selected_tagset.value().name)
+      tags_string.append("- " + tag + "\n");
+  }
+  tags_string.pop_back();  // remove final delimiter
+
+  m_game_mode_description->append(QString::fromStdString(selected_tagset.value().description()));
+  m_game_mode_description->append(QString::fromStdString(tags_string));
+
+  QScrollBar* scrollBar = m_game_mode_description->verticalScrollBar();
+  scrollBar->setValue(scrollBar->minimum());  // set scroll bar to the top
 }
 
 void NetPlaySetupDialog::show()

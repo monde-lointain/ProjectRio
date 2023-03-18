@@ -16,6 +16,7 @@ class QGridLayout;
 class QGroupBox;
 class QPushButton;
 class QListWidget;
+class QTextEdit;
 
 class LocalPlayersWidget final : public QWidget
 {
@@ -52,6 +53,7 @@ private:
   std::array<QComboBox*, 5> m_port_array;
 
   QComboBox* m_local_tagset;
+  QTextEdit* m_game_mode_description;
   Common::HttpRequest m_http{std::chrono::minutes{3}};
 
   QPushButton* m_add_button;

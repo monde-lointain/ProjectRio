@@ -1552,13 +1552,13 @@ void NetPlayClient::OnGameModeMsg(sf::Packet& packet)
       exists ? std::optional<Tag::TagSet>{TagSetMap->at(tagset_id)} : std::nullopt;
 
   std::string mode = exists ? current_tagset.value().name : "none";
-  //std::string description = exists ? current_tagset.value().description : "No Description";
+  std::string description = exists ? current_tagset.value().description() : "No Description";
   std::vector<std::string> tags =
       exists ? current_tagset.value().tag_names_vector() :
           std::vector<std::string>{"none"};
 
   Core::SetTagSet(std::move(current_tagset), true);
-  m_dialog->OnGameMode(mode, tags);
+  m_dialog->OnGameMode(mode, description, tags);
 }
 
 void NetPlayClient::OnSendCodesMsg(sf::Packet& packet)

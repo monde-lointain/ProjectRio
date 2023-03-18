@@ -11,6 +11,8 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QListWidget>
+#include <QTextEdit>
+#include <QScrollBar>
 
 #include <utility>
 #include <vector>
@@ -53,6 +55,13 @@ void LocalPlayersWidget::CreateLayout()
   m_player_layout = new QGridLayout();
   m_player_list = new QListWidget;
   m_local_tagset = new QComboBox();
+
+  const auto line_height = QFontMetrics(font()).lineSpacing();
+  m_game_mode_description = new QTextEdit;
+  m_game_mode_description->setReadOnly(true);
+  m_game_mode_description->setFixedHeight(line_height * 10);
+  m_game_mode_description->setVerticalScrollBarPolicy(
+      Qt::ScrollBarAlwaysOn);
 
   auto* tagset_description = new QLabel;
   tagset_description->setText(tr(
@@ -121,6 +130,7 @@ void LocalPlayersWidget::CreateLayout()
   options_layout->addWidget(new QLabel(tr("Game Mode:")), 0, 0);
   options_layout->addWidget(m_local_tagset, 0, 1, 1, -1, Qt::AlignLeft);
   options_layout->addWidget(tagset_description, 1, 0, 1, -1);
+  options_layout->addWidget(m_game_mode_description, 2, 0, 1, -1);
   m_options_box->setLayout(options_layout);
 
   auto* layout = new QHBoxLayout;
@@ -326,7 +336,27 @@ void LocalPlayersWidget::PopulateTagsetCombobox()
 
 void LocalPlayersWidget::SetTagSet()
 {
-  Core::SetTagSet(m_tagset_combobox_map[m_local_tagset->currentIndex()], false);
+  std::optional<Tag::TagSet> selected_tagset = m_tagset_combobox_map[m_local_tagset->currentIndex()];
+  Core::SetTagSet(selected_tagset, false);
+
+  m_game_mode_description->clear();
+  if (!selected_tagset.has_value())
+    return;
+
+  std::vector<std::string> tags = selected_tagset.value().tag_names_vector();
+  std::string tags_string = "\nTags:\n";
+  for (auto& tag : tags)
+  {
+    if (tag != selected_tagset.value().name)
+      tags_string.append("- " + tag + "\n");
+  }
+  tags_string.pop_back();  // remove final delimiter
+
+  m_game_mode_description->append(QString::fromStdString(selected_tagset.value().description()));
+  m_game_mode_description->append(QString::fromStdString(tags_string));
+
+  QScrollBar* scrollBar = m_game_mode_description->verticalScrollBar();
+  scrollBar->setValue(scrollBar->minimum());  // set scroll bar to the top
 }
 
 bool LocalPlayersWidget::IsValidUser(LocalPlayers::LocalPlayers::Player player)

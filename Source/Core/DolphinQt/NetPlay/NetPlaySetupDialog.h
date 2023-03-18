@@ -23,6 +23,7 @@ class QTabWidget;
 class QGroupBox;
 class QTableWidget;
 class QRadioButton;
+class QTextEdit;
 
 namespace UICommon
 {
@@ -59,6 +60,7 @@ private:
   void ResetTraversalHost();
   void OpenInternetTest();
   std::string LobbyNameString();
+  void UpdateGameModeDescription();
 
   // Browser Stuff
   void RefreshBrowser();
@@ -106,6 +108,7 @@ private:
   QLineEdit* m_host_server_password;
   QComboBox* m_host_server_region;
   QComboBox* m_host_game_mode;
+  QTextEdit* m_game_mode_description;
 
   // Browser Tab
   QTableWidget* m_table_widget;

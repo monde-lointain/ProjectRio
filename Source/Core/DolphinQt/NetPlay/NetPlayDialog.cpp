@@ -575,17 +575,20 @@ void NetPlayDialog::OnActiveGeckoCodes(std::string codeStr)
   DisplayMessage(QString::fromStdString(codeStr), "cornflowerblue");
 }
 
-void NetPlayDialog::OnGameMode(std::string mode, /*std::string description,*/
+void NetPlayDialog::OnGameMode(std::string mode, std::string description,
                                std::vector<std::string> tags)
 {
   std::string tags_string = "";
   for (auto& tag : tags)
   {
-    tags_string.append(" " + tag + " |");
+    if (tag != mode)
+      tags_string.append(" " + tag + ",");
   }
-  tags_string.pop_back();
-  DisplayMessage(tr("Game Mode: %1").arg(QString::fromStdString(mode)), "goldenrod");
-  DisplayMessage(tr("Tags:%1").arg(QString::fromStdString(tags_string)), "darkgoldenrod");
+  tags_string.pop_back(); // remove final delimiter
+
+  DisplayMessage(tr("Game Mode: %1").arg(QString::fromStdString(mode)),"darkgoldenrod");
+  DisplayMessage(tr("%1").arg(QString::fromStdString(description)), "goldenrod");
+  DisplayMessage(tr("Tags:%1").arg(QString::fromStdString(tags_string)), "goldenrod");
 }
 
 void NetPlayDialog::OnIndexAdded(bool success, const std::string error)
