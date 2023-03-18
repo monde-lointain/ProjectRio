@@ -45,6 +45,7 @@ LocalPlayersWidget::LocalPlayersWidget(QWidget* parent) : QWidget(parent)
   UpdatePlayers();
   PopulateTagsetCombobox();
   ConnectWidgets();
+  SetTagSet();
 }
 
 // create the basic UI elements for the local players widget
@@ -341,7 +342,10 @@ void LocalPlayersWidget::SetTagSet()
 
   m_game_mode_description->clear();
   if (!selected_tagset.has_value())
+  {
+    m_game_mode_description->append(tr("No Game Mode Selected."));
     return;
+  }
 
   std::vector<std::string> tags = selected_tagset.value().tag_names_vector();
   std::string tags_string = "\nTags:\n";
