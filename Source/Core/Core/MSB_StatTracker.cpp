@@ -905,8 +905,8 @@ std::string StatTracker::getStatJsonPath(std::string prefix){
     }
 
     std::time_t unix_time = std::time(nullptr);
-    char datetime_c[15];
-    std::strftime(datetime_c, 16, "%Y%m%dT%H%M%S", std::localtime(&unix_time));
+    char datetime_c[256];
+    std::strftime(datetime_c, sizeof(datetime_c), "%Y%m%dT%H%M%S", std::localtime(&unix_time));
     
     std::string file_name = prefix + datetime_c + "_" + away_player_name 
                    + "-Vs-" + home_player_name
