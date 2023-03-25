@@ -348,7 +348,7 @@ void LocalPlayersWidget::SetTagSet()
   }
 
   std::vector<std::string> tags = selected_tagset.value().tag_names_vector();
-  std::string tags_string = "\nTags:\n";
+  std::string tags_string = "\nRules:\n";
   for (auto& tag : tags)
   {
     if (tag != selected_tagset.value().name)

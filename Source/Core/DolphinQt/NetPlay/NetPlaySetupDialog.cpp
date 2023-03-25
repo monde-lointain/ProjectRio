@@ -265,7 +265,7 @@ void NetPlaySetupDialog::CreateMainLayout()
     "Select the appropriate game (Mario Superstar Baseball) and choose a Game Mode (optional).<br/>"
     "Game Modes are pre-made ways to play the game. Any necessary mods and/or game changes are<br/>"
     "automatically applied with a Game Mode. To play normal netplay, select \"No Game Mode\".<br/><br/>"
-    "Head to the <a href=\"https://www.projectrio.online/gamemode/\">Project Rio Website</a>"
+    "Head to the <a href=\"https://www.projectrio.online/gamemode/\">Project Rio Website</a> "
     "to learn more about Game Modes!<br/><br/>"
     ));
   description_widget->setTextFormat(Qt::RichText);
@@ -543,7 +543,7 @@ void NetPlaySetupDialog::UpdateGameModeDescription()
   }
 
   std::vector<std::string> tags = selected_tagset.value().tag_names_vector();
-  std::string tags_string = "\nTags:\n";
+  std::string tags_string = "\nRules:\n";
   for (auto& tag : tags)
   {
     if (tag != selected_tagset.value().name)
