@@ -542,13 +542,12 @@ void StatTracker::lookForTriggerEvents(){
                             {"Content-Type", "application/json"},
                         }
                     );
-                }
 
-                //Print server warning message
-                OSD::AddTypedMessage(OSD::MessageType::GameStateInfo, fmt::format(
-                    "Done submitting game \n",
-                    "SAFE TO QUIT"
-                ), 5000, OSD::Color::GREEN);
+                    // Print server warning message
+                    OSD::AddTypedMessage(OSD::MessageType::GameStateInfo,
+                                         fmt::format("Done submitting game \n", "SAFE TO QUIT"),
+                                         5000, OSD::Color::GREEN);
+                }
 
                 std::cout << "Logging to " << jsonPath << "\n";
                 std::cout << "INGAME->ENDGAME\n";
