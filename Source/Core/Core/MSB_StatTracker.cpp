@@ -502,7 +502,7 @@ void StatTracker::lookForTriggerEvents(){
 
                 m_game_state = GAME_STATE::INGAME;
 
-                std::string tag_set_id_str = "";
+                std::string tag_set_id_str = "\"\"";
                 if (m_game_info.tag_set_id.has_value()){
                     tag_set_id_str = std::to_string(m_game_info.tag_set_id.value());
                 }
@@ -932,7 +932,7 @@ std::string StatTracker::getStatJSON(bool inDecode, bool hide_riokey){
     json_stream << "  \"Date - Start\": \"" << start_date_time << "\",\n";
     json_stream << "  \"Date - End\": \"" << end_date_time << "\",\n";
     
-    std::string tag_set_id_str = "";
+    std::string tag_set_id_str = "\"\"";
     if (m_game_info.tag_set_id.has_value()){
         tag_set_id_str = std::to_string(m_game_info.tag_set_id.value());
     }
@@ -2022,7 +2022,7 @@ void StatTracker::postOngoingGame(Event& in_curr_event){
     json_stream << "  \"GameID\": \"" << m_game_info.game_id << "\",\n";
     json_stream << "  \"Date - Start\": \"" << start_date_time << "\",\n";
     
-    std::string tag_set_id_str = "";
+    std::string tag_set_id_str = "\"\"";
     if (m_game_info.tag_set_id.has_value()){
         tag_set_id_str = std::to_string(m_game_info.tag_set_id.value());
     }
