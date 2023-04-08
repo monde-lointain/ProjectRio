@@ -84,6 +84,8 @@ void DefaultGeckoCodes::AddTagSetCodes()
   bool gameModeration = false;
   bool defaultNineInnings = false;
   bool defaultDropSpotsOff = false;
+  bool duplicateCharacters = false;
+  bool duplicateChem = false;
 
   if (ClientCodes.has_value())
   {
@@ -109,6 +111,10 @@ void DefaultGeckoCodes::AddTagSetCodes()
         defaultNineInnings = true;
       else if (code == ClientCode::DefaultDropSpotsOff)
         defaultDropSpotsOff = true;
+      else if (code == ClientCode::DuplicateCharacters)
+        duplicateCharacters = true;
+      else if (code == ClientCode::DuplicateChem)
+        duplicateChem = true;
     }
   }
 
@@ -156,6 +162,37 @@ void DefaultGeckoCodes::AddTagSetCodes()
   {
     PowerPC::Write_U32(0x98C70048, aDefaultDropSpotsOff);
     PowerPC::Write_U32(0x98C7004C, aDefaultDropSpotsOff_1);
+  }
+
+  if (duplicateCharacters)
+  {
+    WriteAsm(sDuplicateCharacters);
+
+    for (int i = 0; i <= 0x35; i++)
+      PowerPC::HostWrite_U8(0x0, aDuplicate_1 + i);
+
+    for (int i = 0; i <= 0x23; i++)
+      PowerPC::HostWrite_U8(0xff, aDuplicate_1 + i);
+
+    PowerPC::HostWrite_U32(0x6000000, aDuplicate_3);
+    PowerPC::HostWrite_U32(0x6000000, aDuplicate_4);
+    PowerPC::HostWrite_U32(0x6000000, aDuplicate_5);
+    PowerPC::HostWrite_U32(0x6000000, aDuplicate_6);
+    PowerPC::HostWrite_U32(0x6000000, aDuplicate_7);
+    PowerPC::HostWrite_U32(0x6000000, aDuplicate_8);
+    PowerPC::HostWrite_U32(0x6000000, aDuplicate_9);
+    PowerPC::HostWrite_U32(0x6000000, aDuplicate_10);
+    PowerPC::HostWrite_U32(0x6000000, aDuplicate_11);
+    PowerPC::HostWrite_U32(0x6000000, aDuplicate_12);
+
+    PowerPC::HostWrite_U32(0x2C0000FF, aDuplicate_13);
+    PowerPC::HostWrite_U32(0x2C0000FF, aDuplicate_14);
+  }
+
+  if (duplicateChem)
+  {
+    for (int i = 0; i < sizeof(aDuplicateChem); i++)
+      PowerPC::HostWrite_U8(0x63, aDuplicateChem[i]);
   }
 }
 

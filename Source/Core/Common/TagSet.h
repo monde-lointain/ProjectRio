@@ -23,7 +23,9 @@ enum ClientCode {
     EnableHazardless,
     EnableGameModeration,
     DefaultNineInnings,
-    DefaultDropSpotsOff
+    DefaultDropSpotsOff,
+    DuplicateCharacters,
+    DuplicateChem
 };
 
 namespace Tag
@@ -226,6 +228,10 @@ namespace Tag
             return ClientCode::DefaultNineInnings;
         } else if (tag_name == "Default Drop Spots Off") {
             return ClientCode::DefaultDropSpotsOff;
+        } else if (tag_name == "Duplicate Characters") {
+            return ClientCode::DuplicateCharacters;
+        } else if (tag_name == "Duplicates and Variants Have Chem") {
+            return ClientCode::DuplicateChem;
         } else {                                
             return std::nullopt;
         }
