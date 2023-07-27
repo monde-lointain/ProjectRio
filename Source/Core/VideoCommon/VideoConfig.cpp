@@ -87,6 +87,9 @@ void VideoConfig::Refresh()
   bShowSpeed = Config::Get(Config::GFX_SHOW_SPEED);
   bShowSpeedColors = Config::Get(Config::GFX_SHOW_SPEED_COLORS);
   iPerfSampleUSec = Config::Get(Config::GFX_PERF_SAMP_WINDOW) * 1000;
+  bShowBatterFielder = Config::Get(Config::GFX_SHOW_BATTER_FIELDER);
+  bTrainingModeOverlay = Config::Get(Config::GFX_TRAINING_MODE);
+  bDraftTimer = Config::Get(Config::GFX_DRAFT_TIMER);
   bShowNetPlayPing = Config::Get(Config::GFX_SHOW_NETPLAY_PING);
   bShowNetPlayMessages = Config::Get(Config::GFX_SHOW_NETPLAY_MESSAGES);
   bLogRenderTimeToFile = Config::Get(Config::GFX_LOG_RENDER_TIME_TO_FILE);

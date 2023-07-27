@@ -139,6 +139,9 @@ struct VideoConfig final
   bool bShowSpeed = false;
   bool bShowSpeedColors = false;
   int iPerfSampleUSec = 0;
+  bool bShowBatterFielder = false;
+  bool bTrainingModeOverlay = false;
+  bool bDraftTimer = false;
   bool bShowNetPlayPing = false;
   bool bShowNetPlayMessages = false;
   bool bOverlayStats = false;

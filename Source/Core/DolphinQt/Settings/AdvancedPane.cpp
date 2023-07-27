@@ -39,6 +39,9 @@ AdvancedPane::AdvancedPane(QWidget* parent) : QWidget(parent)
   ConnectLayout();
 
   connect(&Settings::Instance(), &Settings::EmulationStateChanged, this, &AdvancedPane::Update);
+
+  // i'm incredibly lazy and don't want to go through the trouble of doing this the right way so deal with it
+  Config::SetBaseOrCurrent(Config::MAIN_MMU, false);
 }
 
 void AdvancedPane::CreateLayout()
@@ -63,10 +66,10 @@ void AdvancedPane::CreateLayout()
     m_cpu_emulation_engine_combobox->addItem(tr(CPU_CORE_NAMES.at(cpu_core)));
   }
 
-  m_enable_mmu_checkbox = new QCheckBox(tr("Enable MMU"));
-  m_enable_mmu_checkbox->setToolTip(tr(
-      "Enables the Memory Management Unit, needed for some games. (ON = Compatible, OFF = Fast)"));
-  cpu_options_group_layout->addWidget(m_enable_mmu_checkbox);
+  //m_enable_mmu_checkbox = new QCheckBox(tr("Enable MMU"));
+  //m_enable_mmu_checkbox->setToolTip(tr(
+  //    "Enables the Memory Management Unit, needed for some games. (ON = Compatible, OFF = Fast)"));
+  //cpu_options_group_layout->addWidget(m_enable_mmu_checkbox);
 
   m_pause_on_panic_checkbox = new QCheckBox(tr("Pause on Panic"));
   m_pause_on_panic_checkbox->setToolTip(
@@ -189,8 +192,8 @@ void AdvancedPane::ConnectLayout()
             Config::SetBaseOrCurrent(Config::MAIN_CPU_CORE, PowerPC::AvailableCPUCores()[index]);
           });
 
-  connect(m_enable_mmu_checkbox, &QCheckBox::toggled, this,
-          [](bool checked) { Config::SetBaseOrCurrent(Config::MAIN_MMU, checked); });
+  //connect(m_enable_mmu_checkbox, &QCheckBox::toggled, this,
+  //        [](bool checked) { Config::SetBaseOrCurrent(Config::MAIN_MMU, checked); });
 
   connect(m_pause_on_panic_checkbox, &QCheckBox::toggled, this,
           [](bool checked) { Config::SetBaseOrCurrent(Config::MAIN_PAUSE_ON_PANIC, checked); });
@@ -261,8 +264,8 @@ void AdvancedPane::Update()
   }
   m_cpu_emulation_engine_combobox->setEnabled(!running);
 
-  m_enable_mmu_checkbox->setChecked(Config::Get(Config::MAIN_MMU));
-  m_enable_mmu_checkbox->setEnabled(!running);
+  //m_enable_mmu_checkbox->setChecked(Config::Get(Config::MAIN_MMU));
+  //m_enable_mmu_checkbox->setEnabled(!running);
 
   m_pause_on_panic_checkbox->setChecked(Config::Get(Config::MAIN_PAUSE_ON_PANIC));
   m_pause_on_panic_checkbox->setEnabled(!running);

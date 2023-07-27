@@ -22,6 +22,7 @@ public:
   void run() override;
   void OnUpdateAvailable(const NewVersionInformation& info) override;
   void CheckForUpdate();
+  void MarkDownToRichText(std::string& str);
 
 private:
   QWidget* m_parent;

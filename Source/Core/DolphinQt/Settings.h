@@ -55,6 +55,9 @@ public:
   void SetCurrentUserStyle(const QString& stylesheet_name);
   QString GetCurrentUserStyle() const;
 
+  void SetDarkMode(bool enabled);
+  bool IsDarkMode();
+
   void SetUserStylesEnabled(bool enabled);
   bool AreUserStylesEnabled() const;
 
@@ -160,6 +163,7 @@ public:
   // Analytics
   bool IsAnalyticsEnabled() const;
   void SetAnalyticsEnabled(bool enabled);
+
 
 signals:
   void ConfigChanged();

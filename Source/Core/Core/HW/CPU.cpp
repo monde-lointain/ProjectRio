@@ -361,4 +361,9 @@ void CPUManager::AddCPUThreadJob(std::function<void()> function)
   m_pending_jobs.push(std::move(function));
 }
 
+bool IsCPUActive()
+{
+  return s_state_cpu_thread_active;
+}
+
 }  // namespace CPU
