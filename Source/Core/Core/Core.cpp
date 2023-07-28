@@ -69,6 +69,7 @@
 #include "Core/PatchEngine.h"
 #include "Core/PowerPC/GDBStub.h"
 #include "Core/PowerPC/JitInterface.h"
+#include "Core/PowerPC/MMU.h"
 #include "Core/PowerPC/PowerPC.h"
 #include "Core/State.h"
 #include "Core/System.h"
@@ -193,7 +194,7 @@ void FrameUpdateOnCPUThread()
     if (s_stat_tracker)
     {
       // Figure out if client is hosting via netplay settings. Could use local player as well
-      bool is_hosting = NetPlay::GetNetSettings().m_IsHosting;
+      //bool is_hosting = NetPlay::GetNetSettings().m_IsHosting;
       std::string opponent_name = "";
       /*
       for (auto player : NetPlay::NetPlayClient::GetPlayers()){
@@ -202,7 +203,7 @@ void FrameUpdateOnCPUThread()
           break;
         }
       }*/
-      s_stat_tracker->setNetplaySession(true, is_hosting, opponent_name);
+      s_stat_tracker->setNetplaySession(true, opponent_name);
     }
   }
   else
@@ -217,14 +218,19 @@ void FrameUpdateOnCPUThread()
 // this function is called from PatchEngine.cpp (ApplyFramePatches()) safely
 // we can do memory reads/writes without worrying
 // anything that needs to read or write to memory should be getting run from here
-void RunRioFunctions()
+void RunRioFunctions(const Core::CPUThreadGuard& guard)
 {
-  if (s_stat_tracker)
-  {
-    s_stat_tracker->Run();
+  if (s_stat_tracker) {
+    s_stat_tracker->Run(guard);
+  }
+  if (GetState() == State::Stopping || GetState() == State::Uninitialized) {
+    s_stat_tracker->dumpGame(guard);
+    std::cout << "Emulation stopped. Dumping game." << std::endl;
+    s_stat_tracker->init();
   }
 
-  if (PowerPC::HostRead_U32(aGameId) == 0)
+  
+  if (PowerPC::MMU::HostRead_U32(guard, aGameId) == 0)
   {
     runNetplayGameFunctions = true;
   }
@@ -236,23 +242,24 @@ void RunRioFunctions()
     if (frame % 60)
     {
       u8 checksumId = (frame / 60) & 0xF;
-      NetPlay::NetPlayClient::SendChecksum(checksumId, frame);
+      u32 checksum = PowerPC::MMU::HostRead_U32(guard, 0x802EBFB8);
+      NetPlay::NetPlayClient::SendChecksum(checksumId, frame, checksum);
     }
     if (runNetplayGameFunctions)
     {
       SetNetplayerUserInfo();
-      NetPlay::NetPlayClient::SendGameID(PowerPC::HostRead_U32(aGameId));
+      NetPlay::NetPlayClient::SendGameID(PowerPC::MMU::HostRead_U32(guard, aGameId));
       runNetplayGameFunctions = false;
     }
 
   }
 
-  CodeWriter.RunCodeInject();
-  AutoGolfMode();
-  TrainingMode();
-  DisplayBatterFielder();
-  SetAvgPing();
-  RunDraftTimer();
+  CodeWriter.RunCodeInject(guard);
+  AutoGolfMode(guard);
+  TrainingMode(guard);
+  DisplayBatterFielder(guard);
+  SetAvgPing(guard);
+  RunDraftTimer(guard);
 }
 
 void OnFrameEnd()
@@ -268,31 +275,31 @@ void OnFrameEnd()
 #endif
 }
 
-void AutoGolfMode()
+void AutoGolfMode(const Core::CPUThreadGuard& guard)
 {
   if (IsGolfMode())
   {
-    u8 BatterPort = PowerPC::HostRead_U8(aBatterPort);      
-    u8 FielderPort = PowerPC::HostRead_U8(aFielderPort);
-    bool isField = PowerPC::HostRead_U8(aIsField) == 1;
+    u8 BatterPort = PowerPC::MMU::HostRead_U8(guard, aBatterPort);      
+    u8 FielderPort = PowerPC::MMU::HostRead_U8(guard, aFielderPort);
+    bool isField = PowerPC::MMU::HostRead_U8(guard, aIsField) == 1;
 
     if (BatterPort == 0)
       return;  // means game hasn't started yet
 
     // makes the player who paused the golfer
-    if (PowerPC::HostRead_U8(aWhoPaused) == 2)
+    if (PowerPC::MMU::HostRead_U8(guard, aWhoPaused) == 2)
       isField = true;
 
     // add minigame functionality
-    int minigameId = PowerPC::HostRead_U8(aMinigameID);
+    int minigameId = PowerPC::MMU::HostRead_U8(guard, aMinigameID);
     if (minigameId == 3 || minigameId == 1)
     {
-      BatterPort = PowerPC::HostRead_U8(aBarrelBatterPort) + 1;
+      BatterPort = PowerPC::MMU::HostRead_U8(guard, aBarrelBatterPort) + 1;
       isField = false;
     }
     else if (minigameId == 2)
     {
-      FielderPort = PowerPC::HostRead_U8(aWallBallPort) + 1;
+      FielderPort = PowerPC::MMU::HostRead_U8(guard, aWallBallPort) + 1;
       isField = true;
     }
 
@@ -304,44 +311,44 @@ bool IsGolfMode()
 {
   bool out = false;
   if (NetPlay::IsNetPlayRunning())
-    out = NetPlay::GetNetSettings().m_HostInputAuthority;
+    out = NetPlay::NetPlayClient::isGolfMode();
 
   return out;
 }
 
 // TODO: add stats for the following: base runner coordinates; ball coords frame before being caught, character coords after diving/jumping/wall jumping
-void TrainingMode()
+void TrainingMode(const Core::CPUThreadGuard& guard)
 {
   // if training mode config is on and not ranked netplay
   // using this feature on ranked can be considered an unfair advantage
   if (!g_ActiveConfig.bTrainingModeOverlay || isTagSetActive())
     return;
 
-  //bool isPitchThrown = PowerPC::HostRead_U8(0x80895D6C) == 1 ? true : false;
-  bool isField = PowerPC::HostRead_U8(aIsField) == 1 ? true : false;
-  bool isInGame = PowerPC::HostRead_U8(aIsInGame) == 1 ? true : false;
-  bool ContactMade = PowerPC::HostRead_U8(aContactMade) == 1 ? true : false;
+  //bool isPitchThrown = PowerPC::MMU::HostRead_U8(0x80895D6C) == 1 ? true : false;
+  bool isField = PowerPC::MMU::HostRead_U8(guard, aIsField) == 1 ? true : false;
+  bool isInGame = PowerPC::MMU::HostRead_U8(guard, aIsInGame) == 1 ? true : false;
+  bool ContactMade = PowerPC::MMU::HostRead_U8(guard, aContactMade) == 1 ? true : false;
 
   // Batting Training Mode stats
   if (ContactMade && !previousContactMade)
   {
-    u8 BatterPort = PowerPC::HostRead_U8(aBatterPort);
+    u8 BatterPort = PowerPC::MMU::HostRead_U8(guard, aBatterPort);
     if (BatterPort > 0)
       BatterPort--;
     u32 stickDirectionAddr = 0x8089392D + (0x10 * BatterPort);
 
-    u16 contactFrame = PowerPC::HostRead_U16(aContactFrame);
-    u8 typeOfContact_Value = PowerPC::HostRead_U8(aTypeOfContact);
+    u16 contactFrame = PowerPC::MMU::HostRead_U16(guard, aContactFrame);
+    u8 typeOfContact_Value = PowerPC::MMU::HostRead_U8(guard, aTypeOfContact);
     std::string typeOfContact;
-    u8 inputDirection_Value = PowerPC::HostRead_U8(stickDirectionAddr) & 0xF;
+    u8 inputDirection_Value = PowerPC::MMU::HostRead_U8(guard, stickDirectionAddr) & 0xF;
     std::string inputDirection;
-    int chargeUp = static_cast<int>(roundf(u32ToFloat(PowerPC::HostRead_U32(aChargeUp)) * 100)); 
-    int chargeDown = static_cast<int>(roundf(u32ToFloat(PowerPC::HostRead_U32(aChargeDown)) * 100));
+    int chargeUp = static_cast<int>(roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, aChargeUp)) * 100)); 
+    int chargeDown = static_cast<int>(roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, aChargeDown)) * 100));
 
-    float angle = roundf((float)PowerPC::HostRead_U16(aBallAngle) * 36000 / 4096) / 100; // 0x400 == 90°, 0x800 == 180°, 0x1000 == 360°
-    float xVelocity = roundf(u32ToFloat(PowerPC::HostRead_U32(aBallVelocity_X)) * 6000) / 100;  // * 60 cause default units are meters per frame
-    float yVelocity = roundf(u32ToFloat(PowerPC::HostRead_U32(aBallVelocity_Y)) * 6000) / 100;
-    float zVelocity = roundf(u32ToFloat(PowerPC::HostRead_U32(aBallVelocity_Z)) * 6000) / 100;
+    float angle = roundf((float)PowerPC::MMU::HostRead_U16(guard, aBallAngle) * 36000 / 4096) / 100; // 0x400 == 90°, 0x800 == 180°, 0x1000 == 360°
+    float xVelocity = roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, aBallVelocity_X)) * 6000) / 100;  // * 60 cause default units are meters per frame
+    float yVelocity = roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, aBallVelocity_Y)) * 6000) / 100;
+    float zVelocity = roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, aBallVelocity_Z)) * 6000) / 100;
     float netVelocity = vectorMagnitude(xVelocity, yVelocity, zVelocity);
 
     // convert type of contact to string
@@ -413,26 +420,26 @@ void TrainingMode()
   // Coordinate data
   if (isInGame)
   {
-    float BallPos_X = roundf(u32ToFloat(PowerPC::HostRead_U32(aBallPosition_X)) * 100) / 100;
-    float BallPos_Y = roundf(u32ToFloat(PowerPC::HostRead_U32(aBallPosition_Y)) * 100) / 100;
-    float BallPos_Z = roundf(u32ToFloat(PowerPC::HostRead_U32(aBallPosition_Z)) * 100) / 100;
-    float BallVel_X = isField ? roundf(u32ToFloat(PowerPC::HostRead_U32(aBallVelocity_X)) * 6000) / 100 :
-                                roundf(u32ToFloat(PowerPC::HostRead_U32(aPitchedBallVelocity_X)) * 6000) / 100;
-    float BallVel_Y = isField ? RoundZ(u32ToFloat(PowerPC::HostRead_U32(aBallVelocity_Y)) * 6000) / 100 :// floor small decimal to prevent weirdness
-                                RoundZ(u32ToFloat(PowerPC::HostRead_U32(aPitchedBallVelocity_Y)) * 6000) / 100;
-    float BallVel_Z = isField ? roundf(u32ToFloat(PowerPC::HostRead_U32(aBallVelocity_Z)) * 6000) / 100 :
-                                roundf(u32ToFloat(PowerPC::HostRead_U32(aPitchedBallVelocity_Z)) * 6000) / 100;
+    float BallPos_X = roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, aBallPosition_X)) * 100) / 100;
+    float BallPos_Y = roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, aBallPosition_Y)) * 100) / 100;
+    float BallPos_Z = roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, aBallPosition_Z)) * 100) / 100;
+    float BallVel_X = isField ? roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, aBallVelocity_X)) * 6000) / 100 :
+                                roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, aPitchedBallVelocity_X)) * 6000) / 100;
+    float BallVel_Y = isField ? RoundZ(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, aBallVelocity_Y)) * 6000) / 100 :// floor small decimal to prevent weirdness
+                                RoundZ(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, aPitchedBallVelocity_Y)) * 6000) / 100;
+    float BallVel_Z = isField ? roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, aBallVelocity_Z)) * 6000) / 100 :
+                                roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, aPitchedBallVelocity_Z)) * 6000) / 100;
     float BallVel_Net = roundf(vectorMagnitude(BallVel_X, BallVel_Y, BallVel_Z) * 100) / 100;
 
-    int baseOffset= 0x268 * PowerPC::HostRead_U8(0x80892801);  // used to get offsed for baseFielderAddr
+    int baseOffset= 0x268 * PowerPC::MMU::HostRead_U8(guard, 0x80892801);  // used to get offsed for baseFielderAddr
     u32 baseFielderAddr = 0x8088F368 + baseOffset;        // 0x0 == x; 0x8 == y; 0xc == z
 
-    float FielderPos_X = roundf(u32ToFloat(PowerPC::HostRead_U32(baseFielderAddr)) * 100) / 100;
-    float FielderPos_Y = roundf(u32ToFloat(PowerPC::HostRead_U32(baseFielderAddr + 0xc)) * 100) / 100;
-    float FielderPos_Z = roundf(u32ToFloat(PowerPC::HostRead_U32(baseFielderAddr + 0x8)) * 100) / 100;
-    float FielderVel_X = roundf(u32ToFloat(PowerPC::HostRead_U32(baseFielderAddr + 0x30)) * 6000) / 100;
-    //float FielderVel_Y = roundf(u32ToFloat(PowerPC::HostRead_U32(baseFielderAddr + 0x15C)) * 6000) / 100; // this addr is wrong
-    float FielderVel_Z = roundf(u32ToFloat(PowerPC::HostRead_U32(baseFielderAddr + 0x34)) * 6000) / 100;
+    float FielderPos_X = roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, baseFielderAddr)) * 100) / 100;
+    float FielderPos_Y = roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, baseFielderAddr + 0xc)) * 100) / 100;
+    float FielderPos_Z = roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, baseFielderAddr + 0x8)) * 100) / 100;
+    float FielderVel_X = roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, baseFielderAddr + 0x30)) * 6000) / 100;
+    //float FielderVel_Y = roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(baseFielderAddr + 0x15C)) * 6000) / 100; // this addr is wrong
+    float FielderVel_Z = roundf(u32ToFloat(PowerPC::MMU::HostRead_U32(guard, baseFielderAddr + 0x34)) * 6000) / 100;
     float FielderVel_Net = roundf(vectorMagnitude(FielderVel_X, 0 /*FielderVel_Y*/, FielderVel_Z) * 100) / 100;
 
     OSD::AddTypedMessage(OSD::MessageType::TrainingModeBallCoordinates, fmt::format(
@@ -477,13 +484,13 @@ void TrainingMode()
   previousContactMade = ContactMade;
 }
 
-void DisplayBatterFielder()
+void DisplayBatterFielder(const Core::CPUThreadGuard& guard)
 {
   if (!g_ActiveConfig.bShowBatterFielder)
     return;
 
-  u8 BatterPort = PowerPC::HostRead_U8(aBatterPort);
-  u8 FielderPort = PowerPC::HostRead_U8(aFielderPort); 
+  u8 BatterPort = PowerPC::MMU::HostRead_U8(guard, aBatterPort);
+  u8 FielderPort = PowerPC::MMU::HostRead_U8(guard, aFielderPort); 
   if (BatterPort == 0 || FielderPort == 0) // game hasn't started yet; do not continue func
     return;
 
@@ -529,13 +536,13 @@ void DisplayBatterFielder()
   }
 }
 
-void RunDraftTimer()
+void RunDraftTimer(const Core::CPUThreadGuard& guard)
 {
   // if they have the config off or if it's not 1st frame of second
   if (Movie::GetCurrentFrame() % 60 != 0)
     return;
 
-  u8 scene = PowerPC::HostRead_U8(aSceneId);
+  u8 scene = PowerPC::MMU::HostRead_U8(guard, aSceneId);
 
   if (scene < 0x9)
     draftTimer = 0;
@@ -600,13 +607,13 @@ bool isDisableReplays()
   return NetPlay::NetPlayClient::isDisableReplays();
 }
 
-void SetAvgPing()
+void SetAvgPing(const Core::CPUThreadGuard& guard)
 {
   if (!NetPlay::IsNetPlayRunning())
     return;
 
   // checks if GameID is set and that the end game flag hasn't been hit yet
-  bool inGame = PowerPC::HostRead_U32(aGameId) != 0 /*&& PowerPC::HostRead_U8(aEndOfGameFlag) == 0*/ ?
+  bool inGame = PowerPC::MMU::HostRead_U32(guard, aGameId) != 0 /*&& PowerPC::MMU::HostRead_U8(aEndOfGameFlag) == 0*/ ?
                     true :
                     false;
   if (!inGame) {
@@ -801,12 +808,6 @@ void Stop()  // - Hammertime!
   }
 
   s_last_actual_emulation_speed = 1.0;
-
-  if (s_stat_tracker) {
-    s_stat_tracker->dumpGame();
-    std::cout << "Emulation stopped. Dumping game." << std::endl;
-    s_stat_tracker->init();
-  }
 }
 
 void DeclareAsCPUThread()

@@ -343,7 +343,7 @@ bool ApplyFramePatches()
   }
 
   // we run the rio functions first, since we will want user's gecko codes to overwrite the built-in rio ones
-  Core::RunRioFunctions();
+  Core::RunRioFunctions(guard);
   Gecko::RunCodeHandler(guard);
   if (!Core::isTagSetActive())
   {

@@ -163,13 +163,13 @@ bool AutoUpdateChecker::SystemSupportsAutoUpdates()
 //#endif
 //}
 
-static std::string GetUpdateServerUrl()
-{
-  auto server_url = std::getenv("DOLPHIN_UPDATE_SERVER_URL");
-  if (server_url)
-    return server_url;
-  return "https://dolphin-emu.org";
-}
+//static std::string GetUpdateServerUrl()
+//{
+//  auto server_url = std::getenv("DOLPHIN_UPDATE_SERVER_URL");
+//  if (server_url)
+//    return server_url;
+//  return "https://dolphin-emu.org";
+//}
 
 static u32 GetOwnProcessId()
 {
@@ -249,8 +249,11 @@ void AutoUpdateChecker::CheckForUpdate(std::string_view update_track,
   // {
   //   OnUpdateAvailable(nvi);
   // }
-  
-  OnUpdateAvailable(obj["tag_name"].get<std::string>(), obj["body"].get<std::string>());
+
+  NewVersionInformation nvi;
+  nvi.new_shortrev = obj["tag_name"].get<std::string>();
+  nvi.changelog_html = obj["body"].get<std::string>();
+  OnUpdateAvailable(nvi);
 }
 
 void AutoUpdateChecker::TriggerUpdate(const AutoUpdateChecker::NewVersionInformation& info,

@@ -404,7 +404,7 @@ bool SConfig::GameIsAllowed() const
 {
   std::vector<std::string> games_list = {"GYQE01"};
   bool can_play = false;
-  std::string current_game = GetGameID_Wrapper();
+  std::string current_game = GetGameID();
   for (std::string game : games_list)
   {
     if (current_game == game)
@@ -413,11 +413,6 @@ bool SConfig::GameIsAllowed() const
     }
   }
   return can_play;
-}
-
-bool SConfig::GameHasDefaultGameIni() const
-{
-  return GameHasDefaultGameIni(GetGameID_Wrapper(), m_revision);
 }
 
 Common::IniFile SConfig::LoadDefaultGameIni() const

@@ -194,7 +194,7 @@ public:
   bool PortHasPlayerAssigned(int port);
 
   static void SendTimeBase();
-  static void SendChecksum(u8 checksumId, u64 frame);
+  static void SendChecksum(u8 checksumId, u64 frame, u32 checksum);
   bool DoAllPlayersHaveGame();
 
   static void AutoGolfMode(bool isField, int BatPort, int FieldPort);
@@ -204,6 +204,7 @@ public:
   static u32 sGetPlayersMaxPing();
   static std::map<int, LocalPlayers::LocalPlayers::Player> getNetplayerUserInfo();
   static void SendGameID(u32 gameId);
+  static bool isGolfMode();
   bool m_night_stadium = false;
   bool m_disable_replays = false;
   u32 maxPing;

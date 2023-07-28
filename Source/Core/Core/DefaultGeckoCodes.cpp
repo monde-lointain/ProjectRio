@@ -13,66 +13,74 @@ void DefaultGeckoCodes::Init(std::optional<std::vector<ClientCode>> client_codes
   initiated = true;
 }
 
-void DefaultGeckoCodes::RunCodeInject()
+void DefaultGeckoCodes::RunCodeInject(const Core::CPUThreadGuard& guard)
 {
   if (!initiated)
     return;
 
   aWriteAddr = 0x802ED200;  // starting asm write addr
 
-  AddRequiredCodes();
-  AddTagSetCodes();
-  AddOptionalCodes();
+  AddRequiredCodes(guard);
+  AddTagSetCodes(guard);
+  AddOptionalCodes(guard);
 }
 
-void DefaultGeckoCodes::AddRequiredCodes()
+void DefaultGeckoCodes::AddRequiredCodes(const Core::CPUThreadGuard& guard)
 {
   // enable rumble
-  PowerPC::HostWrite_U8(0x1, aControllerRumble);
+  PowerPC::MMU::HostWrite_U8(guard, 0x1, aControllerRumble);
 
   // Boot to Main Menu
-  if (PowerPC::HostRead_U32(aBootToMainMenu) == 0x38600001)
-    PowerPC::HostWrite_U32(0x38600005, aBootToMainMenu);
+  if (PowerPC::MMU::HostRead_U32(guard, aBootToMainMenu) == 0x38600001)
+    PowerPC::MMU::HostWrite_U32(guard, 0x38600005, aBootToMainMenu);
 
   // Skip Mem Card Check
-  PowerPC::HostWrite_U8(0x1, aSkipMemCardCheck);
+  PowerPC::MMU::HostWrite_U8(guard, 0x1, aSkipMemCardCheck);
 
   // Unlock Everything
-  PowerPC::HostWrite_U8(0x2, aUnlockEverything_1);
+  PowerPC::MMU::HostWrite_U8(guard, 0x2, aUnlockEverything_1);
 
   for (int i = 0; i <= 0x5; i++)
-    PowerPC::HostWrite_U8(0x3, aUnlockEverything_2 + i);
+    PowerPC::MMU::HostWrite_U8(guard, 0x3, aUnlockEverything_2 + i);
 
   for (int i = 0; i <= 0x5; i++)
-    PowerPC::HostWrite_U8(0x1, aUnlockEverything_3 + i);
+    PowerPC::MMU::HostWrite_U8(guard, 0x1, aUnlockEverything_3 + i);
 
   for (int i = 0; i <= 0x29; i++)
-    PowerPC::HostWrite_U8(0x1, aUnlockEverything_4 + i);
+    PowerPC::MMU::HostWrite_U8(guard, 0x1, aUnlockEverything_4 + i);
 
-  PowerPC::HostWrite_U8(0x1, aUnlockEverything_5);
+  PowerPC::MMU::HostWrite_U8(guard, 0x1, aUnlockEverything_5);
 
   for (int i = 0; i <= 0x3; i++)
-    PowerPC::HostWrite_U8(0x1, aUnlockEverything_7 + i);
+    PowerPC::MMU::HostWrite_U8(guard, 0x1, aUnlockEverything_7 + i);
 
-  PowerPC::HostWrite_U16(0x0101, aUnlockEverything_8);
+  PowerPC::MMU::HostWrite_U16(guard, 0x0101, aUnlockEverything_8);
 
-  PowerPC::HostWrite_U32(0x9867003F, aDefaultMercyOn);
+  PowerPC::MMU::HostWrite_U32(guard, 0x9867003F, aDefaultMercyOn);
 
   // Cool bat sound on Start Game
-  PowerPC::HostWrite_U32(0x386001bb, aBatSound);
+  PowerPC::MMU::HostWrite_U32(guard, 0x386001bb, aBatSound);
 
   // this is a very bad and last-minute "fix" to the pitcher stamina bug. i can't find the true
   // source of the bug so i'm manually fixing it with this line here. will remove soon once bug is
   // truly squashed
-  if (PowerPC::HostRead_U8(0x8069BBDD) == 0xC5)
-    PowerPC::HostWrite_U8(05, 0x8069BBDD);
+  if (PowerPC::MMU::HostRead_U8(guard, 0x8069BBDD) == 0xC5)
+    PowerPC::MMU::HostWrite_U8(guard, 05, 0x8069BBDD);
 
   // handle asm writes for required code
   for (DefaultGeckoCode geckocode : sRequiredCodes)
-    WriteAsm(geckocode);
+    WriteAsm(guard, geckocode);
+
+  PowerPC::MMU::HostWrite_U32(guard, 0x60000000, aCaptainSwap_1);
+  PowerPC::MMU::HostWrite_U32(guard, 0x60000000, aCaptainSwap_2);
+  WriteAsm(guard, sCaptainSwap);
+  for (int i = 0; i < aCaptainSwap_3.size(); i++)
+    PowerPC::MMU::HostWrite_U32(guard, aCaptainSwap_3[i], 0x80515E52 + (i*4));
+
+  WriteAsm(guard, sControlStickOverridesDpad);
 }
 
-void DefaultGeckoCodes::AddTagSetCodes()
+void DefaultGeckoCodes::AddTagSetCodes(const Core::CPUThreadGuard& guard)
 {
   bool antiQuickPitch = true;
   bool manualFielderSelect = true;
@@ -119,87 +127,87 @@ void DefaultGeckoCodes::AddTagSetCodes()
   }
 
   if (antiQuickPitch)
-    WriteAsm(sAntiQuickPitch);
+    WriteAsm(guard, sAntiQuickPitch);
 
   if (manualFielderSelect)
-    WriteAsm(sManualSelect);
+    WriteAsm(guard, sManualSelect);
 
   if (unlimitedExtraInnings)
-    PowerPC::HostWrite_U32(0x380400f6, aUnlimitedExtraInnings);
+    PowerPC::MMU::HostWrite_U32(guard, 0x380400f6, aUnlimitedExtraInnings);
 
   if (superstars)
   {
     for (int i = 0; i <= 0x35; i++)
-      PowerPC::HostWrite_U8(0x1, aUnlockEverything_6 + i);
+      PowerPC::MMU::HostWrite_U8(guard, 0x1, aUnlockEverything_6 + i);
   }
 
   if (!starSkills)
   {
-    PowerPC::HostWrite_U32(0x98c7003d, aDisableStarSkills);
-    PowerPC::HostWrite_U32(0x38a00000, aDisableStarSkills_1);
+    PowerPC::MMU::HostWrite_U32(guard, 0x98c7003d, aDisableStarSkills);
+    PowerPC::MMU::HostWrite_U32(guard, 0x38a00000, aDisableStarSkills_1);
   }
 
   if (antiDingusBunt)
-    WriteAsm(sRemoveDingus);
+    WriteAsm(guard, sRemoveDingus);
 
   if (hazardless)
-    WriteAsm(sHazardless);
+    WriteAsm(guard, sHazardless);
 
   if (gameModeration)
   {
-    PowerPC::HostWrite_U32(0x60000000, aPitchClock_1);
-    PowerPC::HostWrite_U32(0x60000000, aPitchClock_2);
-    PowerPC::HostWrite_U32(0x60000000, aPitchClock_3);
-    WriteAsm(sPitchClock);
+    PowerPC::MMU::HostWrite_U32(guard, 0x60000000, aPitchClock_1);
+    PowerPC::MMU::HostWrite_U32(guard, 0x60000000, aPitchClock_2);
+    PowerPC::MMU::HostWrite_U32(guard, 0x60000000, aPitchClock_3);
+    WriteAsm(guard, sPitchClock);
 
-    WriteAsm(sRestrictBatterPausing);
+    WriteAsm(guard, sRestrictBatterPausing);
   }
 
   if (defaultNineInnings)
-    PowerPC::Write_U32(0x38000004, aDefaultNineInnings);
+    PowerPC::MMU::HostWrite_U32(guard, 0x38000004, aDefaultNineInnings);
 
   if (defaultDropSpotsOff)
   {
-    PowerPC::Write_U32(0x98C70048, aDefaultDropSpotsOff);
-    PowerPC::Write_U32(0x98C7004C, aDefaultDropSpotsOff_1);
+    PowerPC::MMU::HostWrite_U32(guard, 0x98C70048, aDefaultDropSpotsOff);
+    PowerPC::MMU::HostWrite_U32(guard, 0x98C7004C, aDefaultDropSpotsOff_1);
   }
 
   if (duplicateCharacters)
   {
-    WriteAsm(sDuplicateCharacters);
+    WriteAsm(guard, sDuplicateCharacters);
 
     for (int i = 0; i <= 0x35; i++)
-      PowerPC::HostWrite_U8(0x0, aDuplicate_1 + i);
+      PowerPC::MMU::HostWrite_U8(guard, 0x0, aDuplicate_1 + i);
 
     for (int i = 0; i <= 0x23; i++)
-      PowerPC::HostWrite_U8(0xff, aDuplicate_1 + i);
+      PowerPC::MMU::HostWrite_U8(guard, 0xff, aDuplicate_1 + i);
 
-    PowerPC::HostWrite_U32(0x6000000, aDuplicate_3);
-    PowerPC::HostWrite_U32(0x6000000, aDuplicate_4);
-    PowerPC::HostWrite_U32(0x6000000, aDuplicate_5);
-    PowerPC::HostWrite_U32(0x6000000, aDuplicate_6);
-    PowerPC::HostWrite_U32(0x6000000, aDuplicate_7);
-    PowerPC::HostWrite_U32(0x6000000, aDuplicate_8);
-    PowerPC::HostWrite_U32(0x6000000, aDuplicate_9);
-    PowerPC::HostWrite_U32(0x6000000, aDuplicate_10);
-    PowerPC::HostWrite_U32(0x6000000, aDuplicate_11);
-    PowerPC::HostWrite_U32(0x6000000, aDuplicate_12);
+    PowerPC::MMU::HostWrite_U32(guard, 0x6000000, aDuplicate_3);
+    PowerPC::MMU::HostWrite_U32(guard, 0x6000000, aDuplicate_4);
+    PowerPC::MMU::HostWrite_U32(guard, 0x6000000, aDuplicate_5);
+    PowerPC::MMU::HostWrite_U32(guard, 0x6000000, aDuplicate_6);
+    PowerPC::MMU::HostWrite_U32(guard, 0x6000000, aDuplicate_7);
+    PowerPC::MMU::HostWrite_U32(guard, 0x6000000, aDuplicate_8);
+    PowerPC::MMU::HostWrite_U32(guard, 0x6000000, aDuplicate_9);
+    PowerPC::MMU::HostWrite_U32(guard, 0x6000000, aDuplicate_10);
+    PowerPC::MMU::HostWrite_U32(guard, 0x6000000, aDuplicate_11);
+    PowerPC::MMU::HostWrite_U32(guard, 0x6000000, aDuplicate_12);
 
-    PowerPC::HostWrite_U32(0x2C0000FF, aDuplicate_13);
-    PowerPC::HostWrite_U32(0x2C0000FF, aDuplicate_14);
+    PowerPC::MMU::HostWrite_U32(guard, 0x2C0000FF, aDuplicate_13);
+    PowerPC::MMU::HostWrite_U32(guard, 0x2C0000FF, aDuplicate_14);
   }
 
   if (duplicateChem)
   {
     for (int i = 0; i < sizeof(aDuplicateChem); i++)
-      PowerPC::HostWrite_U8(0x63, aDuplicateChem[i]);
+      PowerPC::MMU::HostWrite_U8(guard, 0x63, aDuplicateChem[i]);
   }
 }
 
-void DefaultGeckoCodes::AddOptionalCodes()
+void DefaultGeckoCodes::AddOptionalCodes(const Core::CPUThreadGuard& guard)
 {
   if (g_ActiveConfig.bTrainingModeOverlay && !TagSetActive)
-    WriteAsm(sEasyBattingZ);
+    WriteAsm(guard, sEasyBattingZ);
 
 
   // Rest of this is netplay-only codes
@@ -208,20 +216,20 @@ void DefaultGeckoCodes::AddOptionalCodes()
   
   if (IsNight)
   {
-    WriteAsm(sNightStadium);
+    WriteAsm(guard, sNightStadium);
   }
 
   if (DisableReplays)
   {
-    if (PowerPC::HostRead_U32(aDisableReplays) == 0x38000001)
-      PowerPC::HostWrite_U32(0x38000000, aDisableReplays);
+    if (PowerPC::MMU::HostRead_U32(guard, aDisableReplays) == 0x38000001)
+      PowerPC::MMU::HostWrite_U32(guard, 0x38000000, aDisableReplays);
   }
 
   // TODO: uncomment these lines once rng syncing is added in a future update
   //if (Config::Get(Config::NETPLAY_DISABLE_MUSIC))
   //{
-  //  PowerPC::HostWrite_U32(0x38000000, aDisableMusic_1);
-  //  PowerPC::HostWrite_U32(0x38000000, aDisableMusic_2);
+  //  PowerPC::MMU::HostWrite_U32(0x38000000, aDisableMusic_1);
+  //  PowerPC::MMU::HostWrite_U32(0x38000000, aDisableMusic_2);
   //}
 
   //if (Config::Get(Config::NETPLAY_HIGHLIGHT_BALL_SHADOW))
@@ -231,17 +239,17 @@ void DefaultGeckoCodes::AddOptionalCodes()
 
   // if (Config::Get(Config::NETPLAY_NEVER_CULL))
   //{
-  //   PowerPC::HostWrite_U32(0x38000007, aNeverCull_1);
-  //   PowerPC::HostWrite_U32(0x38000001, aNeverCull_2);
-  //   PowerPC::HostWrite_U32(0x38000001, aNeverCull_3);
-  //   if (PowerPC::HostRead_U32(aNeverCull_4) == 0x881a0093)
-  //     PowerPC::HostWrite_U32(0x38000003, aNeverCull_4);
+  //   PowerPC::MMU::HostWrite_U32(0x38000007, aNeverCull_1);
+  //   PowerPC::MMU::HostWrite_U32(0x38000001, aNeverCull_2);
+  //   PowerPC::MMU::HostWrite_U32(0x38000001, aNeverCull_3);
+  //   if (PowerPC::MMU::HostRead_U32(aNeverCull_4) == 0x881a0093)
+  //     PowerPC::MMU::HostWrite_U32(0x38000003, aNeverCull_4);
   // }
 }
 
 
 // calls this each time you want to write a code
-void DefaultGeckoCodes::WriteAsm(DefaultGeckoCode CodeBlock)
+void DefaultGeckoCodes::WriteAsm(const Core::CPUThreadGuard& guard, DefaultGeckoCode CodeBlock)
 {
   // METHODOLOGY:
   // use aWriteAddr as starting asm write addr
@@ -260,7 +268,7 @@ void DefaultGeckoCodes::WriteAsm(DefaultGeckoCode CodeBlock)
   // write asm to free memory
   for (int i = 0; i < CodeBlock.codeLines.size(); i++)
   {
-    PowerPC::HostWrite_U32(CodeBlock.codeLines[i], aWriteAddr);
+    PowerPC::MMU::HostWrite_U32(guard, CodeBlock.codeLines[i], aWriteAddr);
     aWriteAddr += 4;
   }
 
@@ -272,13 +280,13 @@ void DefaultGeckoCodes::WriteAsm(DefaultGeckoCode CodeBlock)
 
   // branch at the end of the gecko code
   branchFromCode += branchAmount + 4;
-  PowerPC::HostWrite_U32(branchFromCode, aWriteAddr);
+  PowerPC::MMU::HostWrite_U32(guard, branchFromCode, aWriteAddr);
   aWriteAddr += 4;
 
-  if (CodeBlock.conditionalVal != 0 && PowerPC::HostRead_U32(CodeBlock.addr) != CodeBlock.conditionalVal)
+  if (CodeBlock.conditionalVal != 0 && PowerPC::MMU::HostRead_U32(guard, CodeBlock.addr) != CodeBlock.conditionalVal)
     return;
   // branch at injection location
-  PowerPC::HostWrite_U32(branchToCode, CodeBlock.addr);
+  PowerPC::MMU::HostWrite_U32(guard, branchToCode, CodeBlock.addr);
 }
 
 // end

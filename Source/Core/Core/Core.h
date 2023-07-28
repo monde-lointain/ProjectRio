@@ -164,7 +164,7 @@ void SaveScreenShot(std::string_view name);
 // This displays messages in a user-visible way.
 void DisplayMessage(std::string message, int time_in_ms);
 
-void RunRioFunctions();
+void RunRioFunctions(const Core::CPUThreadGuard& guard);
 void FrameUpdateOnCPUThread();
 void OnFrameEnd();
 bool IsGolfMode();
@@ -220,12 +220,12 @@ float RoundZ(float num);
 bool isNight();
 bool isDisableReplays();
 
-void AutoGolfMode();
-void TrainingMode();
-void DisplayBatterFielder();
-void SetAvgPing();
+void AutoGolfMode(const Core::CPUThreadGuard& guard);
+void TrainingMode(const Core::CPUThreadGuard& guard);
+void DisplayBatterFielder(const Core::CPUThreadGuard& guard);
+void SetAvgPing(const Core::CPUThreadGuard& guard);
 void SetNetplayerUserInfo();
-void RunDraftTimer();
+void RunDraftTimer(const Core::CPUThreadGuard& guard);
 
 //enum class GameMode
 //{

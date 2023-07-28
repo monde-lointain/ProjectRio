@@ -1706,6 +1706,11 @@ bool NetPlayClient::isNight()
   return netplay_client->m_night_stadium;
 }
 
+bool NetPlayClient::isGolfMode()
+{
+  return netplay_client->m_host_input_authority;
+}
+
 bool NetPlayClient::isDisableReplays()
 {
   return netplay_client->m_disable_replays;
@@ -1971,10 +1976,10 @@ void NetPlayClient::GetActiveGeckoCodes()
   // Find all INI files
   const auto game_id = "GYQE01";
   const auto revision = 0;
-  IniFile globalIni;
+  Common::IniFile globalIni;
   for (const std::string& filename : ConfigLoaders::GetGameIniFilenames(game_id, revision))
     globalIni.Load(File::GetSysDirectory() + GAMESETTINGS_DIR DIR_SEP + filename, true);
-  IniFile localIni;
+  Common::IniFile localIni;
   for (const std::string& filename : ConfigLoaders::GetGameIniFilenames(game_id, revision))
     localIni.Load(File::GetUserPath(D_GAMESETTINGS_IDX) + filename, true);
 
@@ -2911,9 +2916,8 @@ void NetPlayClient::SendGameStatus()
   Send(packet);
 }
 
-void NetPlayClient::SendChecksum(u8 checksumId, u64 frame)
+void NetPlayClient::SendChecksum(u8 checksumId, u64 frame, u32 checksum)
 {
-  u32 checksum = PowerPC::HostRead_U32(0x802EBFB8);
   netplay_client->ourChecksum[checksumId] = checksum;
 
   if (frame < 1000) // dont send the initial ones since they're whack

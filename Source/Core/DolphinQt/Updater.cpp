@@ -41,7 +41,7 @@ void Updater::CheckForUpdate()
                                     AutoUpdateChecker::CheckType::Manual);
 }
 
-void Updater::MarkDownToRichText(std::string &str)
+std::string Updater::MarkDownToRichText(std::string str)
 {
   std::string markdownNewLine = "\r\n";
   std::string RichTextNewLine = "<br/>";
@@ -58,15 +58,12 @@ void Updater::MarkDownToRichText(std::string &str)
   {
     str.erase(start_pos, 1);
   }
+  return str;
 }
 
-void Updater::OnUpdateAvailable(std::string version, std::string info)
+void Updater::OnUpdateAvailable(const NewVersionInformation& info)
 {
-  // bool later = false;
-  m_update_available = true;
-
-  MarkDownToRichText(info);
-
+  std::string changes = MarkDownToRichText(info.changelog_html);
   std::optional<int> choice = RunOnObject(m_parent, [&] {
     QDialog* dialog = new QDialog(m_parent);
     dialog->setWindowTitle(tr("Update available"));
@@ -76,9 +73,9 @@ void Updater::OnUpdateAvailable(std::string version, std::string info)
                                 "<u>New Version:</u><strong> %1</strong><br/>"
                                 "<u>Your Version:</u><strong> %2</strong><br/>"
                                 "<h3>Changelog</h3>%3")
-                                .arg(QString::fromStdString(version))
+                                .arg(QString::fromStdString(info.new_shortrev))
                                 .arg(QString::fromStdString(Common::GetRioRevStr()))
-                                .arg(QString::fromStdString(info)));
+                                .arg(QString::fromStdString(changes)));
     label->setTextFormat(Qt::RichText);
 
     auto* buttons = new QDialogButtonBox;
