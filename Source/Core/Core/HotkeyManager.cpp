@@ -35,6 +35,7 @@ constexpr std::array<const char*, NUM_HOTKEYS> s_hotkey_labels{{
     _trans("Take Screenshot"),
     _trans("Exit"),
     _trans("Unlock Cursor"),
+    _trans("Center Mouse"),
     _trans("Activate NetPlay Chat"),
     _trans("Control NetPlay Golf Mode"),
     _trans("Drain Buffer Golf Mode"),
@@ -179,6 +180,8 @@ constexpr std::array<const char*, NUM_HOTKEYS> s_hotkey_labels{{
     _trans("Undo Save State"),
     _trans("Save State"),
     _trans("Load State"),
+    _trans("Increase Selected State Slot"),
+    _trans("Decrease Selected State Slot"),
 
     _trans("Load ROM"),
     _trans("Unload ROM"),
@@ -192,6 +195,9 @@ constexpr std::array<const char*, NUM_HOTKEYS> s_hotkey_labels{{
     _trans("2x"),
     _trans("3x"),
     _trans("4x"),
+
+    _trans("Show Skylanders Portal"),
+    _trans("Show Infinity Base")
 }};
 // clang-format on
 static_assert(NUM_HOTKEYS == s_hotkey_labels.size(), "Wrong count of hotkey_labels");
@@ -249,7 +255,7 @@ bool IsPressed(int id, bool held)
 // TODO: Remove this at a future date when we're confident most configs are migrated.
 static void LoadLegacyConfig(ControllerEmu::EmulatedController* controller)
 {
-  IniFile inifile;
+  Common::IniFile inifile;
   if (inifile.Load(File::GetUserPath(D_CONFIG_IDX) + "Hotkeys.ini"))
   {
     if (!inifile.Exists("Hotkeys") && inifile.Exists("Hotkeys1"))
@@ -349,10 +355,11 @@ constexpr std::array<HotkeyGroupInfo, NUM_HOTKEY_GROUPS> s_groups_info = {
      {_trans("Save State"), HK_SAVE_STATE_SLOT_1, HK_SAVE_STATE_SLOT_SELECTED},
      {_trans("Select State"), HK_SELECT_STATE_SLOT_1, HK_SELECT_STATE_SLOT_10},
      {_trans("Load Last State"), HK_LOAD_LAST_STATE_1, HK_LOAD_LAST_STATE_10},
-     {_trans("Other State Hotkeys"), HK_SAVE_FIRST_STATE, HK_LOAD_STATE_FILE},
+     {_trans("Other State Hotkeys"), HK_SAVE_FIRST_STATE, HK_DECREMENT_SELECTED_STATE_SLOT},
      {_trans("GBA Core"), HK_GBA_LOAD, HK_GBA_RESET, true},
      {_trans("GBA Volume"), HK_GBA_VOLUME_DOWN, HK_GBA_TOGGLE_MUTE, true},
-     {_trans("GBA Window Size"), HK_GBA_1X, HK_GBA_4X, true}}};
+     {_trans("GBA Window Size"), HK_GBA_1X, HK_GBA_4X, true},
+     {_trans("USB Emulation Devices"), HK_SKYLANDERS_PORTAL, HK_INFINITY_BASE}}};
 
 HotkeyManager::HotkeyManager()
 {
@@ -363,7 +370,7 @@ HotkeyManager::HotkeyManager()
     groups.emplace_back(m_hotkey_groups[group]);
     for (int key = s_groups_info[group].first; key <= s_groups_info[group].last; key++)
     {
-      m_keys[group]->AddInput(ControllerEmu::Translate, s_hotkey_labels[key]);
+      m_keys[group]->AddInput(ControllerEmu::Translatability::Translate, s_hotkey_labels[key]);
     }
   }
 }
@@ -490,4 +497,7 @@ void HotkeyManager::LoadDefaults(const ControllerInterface& ciface)
   set_key_expression(HK_GBA_3X, "`KP_3`");
   set_key_expression(HK_GBA_4X, "`KP_4`");
 #endif
+
+  set_key_expression(HK_SKYLANDERS_PORTAL, hotkey_string({"Ctrl", "P"}));
+  set_key_expression(HK_INFINITY_BASE, hotkey_string({"Ctrl", "I"}));
 }

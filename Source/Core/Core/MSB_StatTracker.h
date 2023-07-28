@@ -761,7 +761,6 @@ public:
 
         //Netplay info
         bool netplay;
-        bool host;
         std::string netplay_opponent_alias;
 
         //TagSet info
@@ -846,13 +845,13 @@ public:
         u8 prev_batter_roster_loc = 0xFF; //Used to check each pitch if the batter has changed.
                                           //Mark current positions when changed
 
-        void initTracker(u8 inTeamId){
+        void initTracker(const Core::CPUThreadGuard& guard, u8 inTeamId){
             team_id = inTeamId;
             initialized = true;
             for (u8 pos=0; pos < cRosterSize; ++pos){
                 u32 aFielderRosterLoc_calc = aFielder_RosterLoc + (pos * cFielder_Offset);
 
-                u8 roster_loc = PowerPC::HostRead_U8(aFielderRosterLoc_calc);
+                u8 roster_loc = PowerPC::MMU::HostRead_U8(guard, aFielderRosterLoc_calc);
 
                 std::cout << "RosterLoc:" << std::to_string(roster_loc) 
                           << " Init Pos=" << cPosition.at(pos) << std::endl;
@@ -869,11 +868,11 @@ public:
         }
         
         //Scans field to see who is playing which position and increments counts for positions
-        void evaluateFielders() {
+        void evaluateFielders(const Core::CPUThreadGuard& guard) {
             for (u8 pos=0; pos < cRosterSize; ++pos){
                 u32 aFielderRosterLoc_calc = aFielder_RosterLoc + (pos * cFielder_Offset);
 
-                u8 roster_loc = PowerPC::HostRead_U8(aFielderRosterLoc_calc);
+                u8 roster_loc = PowerPC::MMU::HostRead_U8(guard, aFielderRosterLoc_calc);
 
                 //If new position, mark changed (unless this is the first pitch of the AB (pos==0xFF))
                 //Then set new position
@@ -978,7 +977,6 @@ public:
 
     struct state_members{
         bool m_netplay_session = false;
-        bool m_is_host = false;
         std::optional<int> m_tag_set;
         std::string m_netplay_opponent_alias = "";
         std::optional<int> tag_set_id_local = std::nullopt;
@@ -993,7 +991,7 @@ public:
 
     void setTagSetId(Tag::TagSet tag_set, bool netplay);
     void clearTagSetId(bool netplay);
-    void setNetplaySession(bool netplay_session, bool is_host=false, std::string opponent_name = "");
+    void setNetplaySession(bool netplay_session, std::string opponent_name = "");
     void setAvgPing(int avgPing);
     void setLagSpikes(int nLagSpikes);
     void setNetplayerUserInfo(std::map<int, LocalPlayers::LocalPlayers::Player> userInfo);
@@ -1001,36 +999,36 @@ public:
     // void setTags(std::vector tags);
     // void setTagSet(int tagset);
 
-    void Run();
-    void lookForTriggerEvents();
+    void Run(const Core::CPUThreadGuard& guard);
+    void lookForTriggerEvents(const Core::CPUThreadGuard& guard);
 
-    void logGameInfo();
-    void logDefensiveStats(int team_id, int roster_id);
-    void logOffensiveStats(int team_id, int roster_id);
+    void logGameInfo(const Core::CPUThreadGuard& guard);
+    void logDefensiveStats(const Core::CPUThreadGuard& guard, int team_id, int roster_id);
+    void logOffensiveStats(const Core::CPUThreadGuard& guard, int team_id, int roster_id);
     
-    void logEventState(Event& in_event);
-    void logContact(Event& in_event);
-    void logPitch(Event& in_event);
-    void logContactResult(Contact* in_contact);
-    void logFinalResults(Event& in_event);
-    void logManualSelectLocks(Event& in_event);
+    void logEventState(const Core::CPUThreadGuard& guard, Event& in_event);
+    void logContact(const Core::CPUThreadGuard& guard, Event& in_event);
+    void logPitch(const Core::CPUThreadGuard& guard, Event& in_event);
+    void logContactResult(const Core::CPUThreadGuard& guard, Contact* in_contact);
+    void logFinalResults(const Core::CPUThreadGuard& guard, Event& in_event);
+    //void logManualSelectLocks(Event& in_event);
 
     //Quit function
-    void onGameQuit();
+    void onGameQuit(const Core::CPUThreadGuard& guard);
     bool shouldSubmitGame();
 
     //RunnerInfo
-    std::optional<Runner> logRunnerInfo(u8 base);
-    bool anyRunnerStealing(Event& in_event);
-    void logRunnerEvents(Runner* in_runner);
+    std::optional<Runner> logRunnerInfo(const Core::CPUThreadGuard& guard, u8 base);
+    bool anyRunnerStealing(const Core::CPUThreadGuard& guard, Event& in_event);
+    void logRunnerEvents(const Core::CPUThreadGuard& guard, Runner* in_runner);
 
     //TODO Redo these tuple functions
-    std::optional<Fielder> logFielderWithBall();
+    std::optional<Fielder> logFielderWithBall(const Core::CPUThreadGuard& guard);
 
-    std::optional<Fielder> logFielderBobble();
+    std::optional<Fielder> logFielderBobble(const Core::CPUThreadGuard& guard);
     //Read players from ini file and assign to team
     void readPlayerNames(bool local_game);
-    void setDefaultNames(bool local_game);
+    //void setDefaultNames(bool local_game);
 
     float floatConverter(u32 in_value) {
         float out_float;
@@ -1054,15 +1052,15 @@ public:
     void postOngoingGame(Event& in_event);
     void updateOngoingGame(Event& in_event);
 
-    std::pair<u8,u8> getBatterFielderPorts(){
+    std::pair<u8,u8> getBatterFielderPorts(const Core::CPUThreadGuard& guard){
         // These values are the actual port numbers
         // and are indexed into using the below u8s
-        std::array<u8, 2> ports = {PowerPC::HostRead_U8(0x800e874c), PowerPC::HostRead_U8(0x800e874d)};
+        std::array<u8, 2> ports = {PowerPC::MMU::HostRead_U8(guard, 0x800e874c), PowerPC::MMU::HostRead_U8(guard, 0x800e874d)};
 
         // These registers will always be 0 or 1
         // and swap values each half inning
-        u32 BattingTeam = PowerPC::HostRead_U32(0x80892990);
-        u32 PitchingTeam = PowerPC::HostRead_U32(0x80892994);
+        u32 BattingTeam = PowerPC::MMU::HostRead_U32(guard, 0x80892990);
+        u32 PitchingTeam = PowerPC::MMU::HostRead_U32(guard, 0x80892994);
         
         u8 BattingPort = ports[BattingTeam];
         u8 FieldingPort = ports[PitchingTeam];
@@ -1074,7 +1072,7 @@ public:
     std::pair<u8,u8> getHomeAwayPort(){
         // These values are the actual port numbers
         // and are indexed into using the below u8s
-        std::array<u8, 2> ports = {PowerPC::HostRead_U8(0x800e874c), PowerPC::HostRead_U8(0x800e874d)};
+        std::array<u8, 2> ports = {PowerPC::MMU::HostRead_U8(0x800e874c), PowerPC::MMU::HostRead_U8(0x800e874d)};
         
         m_game_info.home_port = ports[0];
         m_game_info.away_port = ports[1];
@@ -1083,14 +1081,14 @@ public:
     }
     */
 
-    void initPlayerInfo();
-    void initCaptains();
+    void initPlayerInfo(const Core::CPUThreadGuard& guard);
+    void initCaptains(const Core::CPUThreadGuard& guard);
 
     //If mid-game, dump game
-    void dumpGame(){
+    void dumpGame(const Core::CPUThreadGuard& guard){
         if (m_game_state == GAME_STATE::INGAME){
             m_game_info.quitter_team = 2;
-            logGameInfo();
+            logGameInfo(guard);
 
             //Remove current event, wasn't finished
             auto it = m_game_info.events.find(m_game_info.event_num);

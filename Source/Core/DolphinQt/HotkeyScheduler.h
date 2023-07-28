@@ -36,6 +36,8 @@ signals:
   void ScreenShotHotkey();
   void RefreshGameListHotkey();
   void SetStateSlotHotkey(int slot);
+  void IncrementSelectedStateSlotHotkey();
+  void DecrementSelectedStateSlotHotkey();
   void StateLoadSlotHotkey();
   void StateSaveSlotHotkey();
   void StateLoadSlot(int state);
@@ -62,6 +64,9 @@ signals:
 
   void ToggleBreakpoint();
   void AddBreakpoint();
+
+  void SkylandersPortalHotkey();
+  void InfinityBaseHotkey();
 
 private:
   void Run();

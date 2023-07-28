@@ -30,6 +30,7 @@
 #include "Common/Logging/Log.h"
 #include "Common/MsgHandler.h"
 
+#include "Core/AchievementManager.h"
 #include "Core/Boot/Boot.h"
 #include "Core/Config/MainSettings.h"
 #include "Core/Config/SYSCONFSettings.h"
@@ -97,13 +98,12 @@ bool BootCore(std::unique_ptr<BootParameters> boot, const WindowSystemInfo& wsi)
 
   if (NetPlay::IsNetPlayRunning())
   {
-    const NetPlay::NetSettings& netplay_settings = NetPlay::GetNetSettings();
-    Config::AddLayer(ConfigLoaders::GenerateNetPlayConfigLoader(netplay_settings));
-    StartUp.bCopyWiiSaveNetplay = netplay_settings.m_CopyWiiSave;
-  }
-  else
-  {
-    g_SRAM_netplay_initialized = false;
+    const NetPlay::NetSettings* netplay_settings = boot->boot_session_data.GetNetplaySettings();
+    if (!netplay_settings)
+      return false;
+
+    Config::AddLayer(ConfigLoaders::GenerateNetPlayConfigLoader(*netplay_settings));
+    StartUp.bCopyWiiSaveNetplay = netplay_settings->savedata_load;
   }
 
   // Override out-of-region languages/countries to prevent games from crashing or behaving oddly
@@ -174,6 +174,16 @@ bool BootCore(std::unique_ptr<BootParameters> boot, const WindowSystemInfo& wsi)
       });
     }
   }
+
+#ifdef USE_RETRO_ACHIEVEMENTS
+  std::string path = "";
+  if (std::holds_alternative<BootParameters::Disc>(boot->parameters))
+  {
+    path = std::get<BootParameters::Disc>(boot->parameters).path;
+  }
+  AchievementManager::GetInstance()->LoadGameByFilenameAsync(
+      path, [](AchievementManager::ResponseType r_type) {});
+#endif  // USE_RETRO_ACHIEVEMENTS
 
   const bool load_ipl = !StartUp.bWii && !Config::Get(Config::MAIN_SKIP_IPL) &&
                         std::holds_alternative<BootParameters::Disc>(boot->parameters);

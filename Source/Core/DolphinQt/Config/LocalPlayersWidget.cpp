@@ -230,7 +230,7 @@ void LocalPlayersWidget::SavePlayers()
 {
   const auto ini_path = std::string(File::GetUserPath(F_LOCALPLAYERSCONFIG_IDX));
 
-  IniFile local_players_path;
+  Common::IniFile local_players_path;
   local_players_path.Load(ini_path);
   LocalPlayers::SavePlayers(local_players_path, m_local_players);
   local_players_path.Save(ini_path);

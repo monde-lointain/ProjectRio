@@ -6,10 +6,14 @@
 #include "Common/Common.h"
 #include "Common/CommonTypes.h"
 #include "Common/Config/Config.h"
+#include "Common/ScopeGuard.h"
 
+#include "Core/Config/FreeLookSettings.h"
 #include "Core/ConfigManager.h"
+#include "Core/Core.h"
 #include "Core/FreeLookConfig.h"
 
+#include "InputCommon/ControlReference/ControlReference.h"
 #include "InputCommon/ControllerEmu/ControlGroup/Buttons.h"
 #include "InputCommon/ControllerEmu/ControlGroup/IMUGyroscope.h"
 #include "InputCommon/InputConfig.h"
@@ -77,31 +81,33 @@ enum GyroButtons
 
 FreeLookController::FreeLookController(const unsigned int index) : m_index(index)
 {
+  using Translatability = ControllerEmu::Translatability;
+
   groups.emplace_back(m_move_buttons = new ControllerEmu::Buttons(_trans("Move")));
 
-  m_move_buttons->AddInput(ControllerEmu::Translate, _trans("Up"));
-  m_move_buttons->AddInput(ControllerEmu::Translate, _trans("Down"));
-  m_move_buttons->AddInput(ControllerEmu::Translate, _trans("Left"));
-  m_move_buttons->AddInput(ControllerEmu::Translate, _trans("Right"));
-  m_move_buttons->AddInput(ControllerEmu::Translate, _trans("Forward"));
-  m_move_buttons->AddInput(ControllerEmu::Translate, _trans("Backward"));
+  m_move_buttons->AddInput(Translatability::Translate, _trans("Up"));
+  m_move_buttons->AddInput(Translatability::Translate, _trans("Down"));
+  m_move_buttons->AddInput(Translatability::Translate, _trans("Left"));
+  m_move_buttons->AddInput(Translatability::Translate, _trans("Right"));
+  m_move_buttons->AddInput(Translatability::Translate, _trans("Forward"));
+  m_move_buttons->AddInput(Translatability::Translate, _trans("Backward"));
 
   groups.emplace_back(m_speed_buttons = new ControllerEmu::Buttons(_trans("Speed")));
 
-  m_speed_buttons->AddInput(ControllerEmu::Translate, _trans("Decrease"));
-  m_speed_buttons->AddInput(ControllerEmu::Translate, _trans("Increase"));
-  m_speed_buttons->AddInput(ControllerEmu::Translate, _trans("Reset"));
+  m_speed_buttons->AddInput(Translatability::Translate, _trans("Decrease"));
+  m_speed_buttons->AddInput(Translatability::Translate, _trans("Increase"));
+  m_speed_buttons->AddInput(Translatability::Translate, _trans("Reset"));
 
   groups.emplace_back(m_other_buttons = new ControllerEmu::Buttons(_trans("Other")));
 
-  m_other_buttons->AddInput(ControllerEmu::Translate, _trans("Reset View"));
+  m_other_buttons->AddInput(Translatability::Translate, _trans("Reset View"));
 
   groups.emplace_back(m_fov_buttons = new ControllerEmu::Buttons(_trans("Field of View")));
 
-  m_fov_buttons->AddInput(ControllerEmu::Translate, _trans("Increase X"));
-  m_fov_buttons->AddInput(ControllerEmu::Translate, _trans("Decrease X"));
-  m_fov_buttons->AddInput(ControllerEmu::Translate, _trans("Increase Y"));
-  m_fov_buttons->AddInput(ControllerEmu::Translate, _trans("Decrease Y"));
+  m_fov_buttons->AddInput(Translatability::Translate, _trans("Increase X"));
+  m_fov_buttons->AddInput(Translatability::Translate, _trans("Decrease X"));
+  m_fov_buttons->AddInput(Translatability::Translate, _trans("Increase Y"));
+  m_fov_buttons->AddInput(Translatability::Translate, _trans("Decrease Y"));
 
   groups.emplace_back(m_rotation_gyro = new ControllerEmu::IMUGyroscope(
                           _trans("Incremental Rotation"), _trans("Incremental Rotation")));
@@ -116,6 +122,7 @@ void FreeLookController::LoadDefaults(const ControllerInterface& ciface)
 {
   EmulatedController::LoadDefaults(ciface);
 
+#ifndef ANDROID
   auto hotkey_string = [](std::vector<std::string> inputs) {
     return "@(" + JoinStrings(inputs, "+") + ')';
   };
@@ -190,6 +197,7 @@ void FreeLookController::LoadDefaults(const ControllerInterface& ciface)
   m_rotation_gyro->SetControlExpression(GyroButtons::YawRight,
                                         "if(`Click 1`,`RelativeMouse X+` * 0.10, 0)");
 #endif
+#endif
 }
 
 ControllerEmu::ControlGroup* FreeLookController::GetGroup(FreeLookGroup group) const
@@ -226,6 +234,11 @@ void FreeLookController::Update()
 void FreeLookController::UpdateInput(CameraControllerInput* camera_controller)
 {
   const auto lock = GetStateLock();
+  // Preserve the old controller gate state
+  const auto old_gate = ControlReference::GetInputGate();
+  Common::ScopeGuard gate_guard{[old_gate] { ControlReference::SetInputGate(old_gate); }};
+  // Switch to the free look focus gate
+  Core::UpdateInputGate(!Config::Get(Config::FREE_LOOK_BACKGROUND_INPUT));
 
   float dt = 1.0;
   if (m_last_free_look_rotate_time)

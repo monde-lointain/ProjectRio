@@ -15,6 +15,8 @@
 #include "Common/FileUtil.h"
 #include "Common/StringUtil.h"
 
+namespace Common
+{
 void IniFile::ParseLine(std::string_view line, std::string* keyOut, std::string* valueOut)
 {
   if (line.empty() || line.front() == '#')
@@ -25,11 +27,11 @@ void IniFile::ParseLine(std::string_view line, std::string* keyOut, std::string*
   if (firstEquals != std::string::npos)
   {
     // Yes, a valid line!
-    *keyOut = StripSpaces(line.substr(0, firstEquals));
+    *keyOut = StripWhitespace(line.substr(0, firstEquals));
 
     if (valueOut)
     {
-      *valueOut = StripQuotes(StripSpaces(line.substr(firstEquals + 1, std::string::npos)));
+      *valueOut = StripQuotes(StripWhitespace(line.substr(firstEquals + 1, std::string::npos)));
     }
   }
 }
@@ -96,7 +98,7 @@ bool IniFile::Section::GetLines(std::vector<std::string>* lines, const bool remo
 {
   for (const std::string& line : m_lines)
   {
-    std::string_view stripped_line = StripSpaces(line);
+    std::string_view stripped_line = StripWhitespace(line);
 
     if (remove_comments)
     {
@@ -108,7 +110,7 @@ bool IniFile::Section::GetLines(std::vector<std::string>* lines, const bool remo
 
       if (commentPos != std::string::npos)
       {
-        stripped_line = StripSpaces(stripped_line.substr(0, commentPos));
+        stripped_line = StripWhitespace(stripped_line.substr(0, commentPos));
       }
     }
 
@@ -369,3 +371,4 @@ bool IniFile::Save(const std::string& filename)
     return 0;
    }
  */
+}  // namespace Common

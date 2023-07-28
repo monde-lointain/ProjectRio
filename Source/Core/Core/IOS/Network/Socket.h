@@ -15,7 +15,7 @@ typedef pollfd pollfd_t;
 #define FREE(x) HeapFree(GetProcessHeap(), 0, (x))
 
 #elif defined(__linux__) or defined(__APPLE__) or defined(__FreeBSD__) or defined(__NetBSD__) or   \
-    defined(__HAIKU__)
+    defined(__OpenBSD__) or defined(__HAIKU__)
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/ioctl.h>
@@ -52,6 +52,7 @@ typedef struct pollfd pollfd_t;
 #include <utility>
 
 #include "Common/CommonTypes.h"
+#include "Common/EnumUtils.h"
 #include "Common/Logging/Log.h"
 #include "Core/HW/Memmap.h"
 #include "Core/IOS/IOS.h"
@@ -174,10 +175,12 @@ struct WiiSockAddrIn
 };
 #pragma pack(pop)
 
+class WiiSockMan;
+
 class WiiSocket
 {
 public:
-  WiiSocket() = default;
+  explicit WiiSocket(WiiSockMan& socket_manager) : m_socket_manager(socket_manager) {}
   WiiSocket(const WiiSocket&) = delete;
   WiiSocket(WiiSocket&&) = default;
   ~WiiSocket();
@@ -199,6 +202,14 @@ private:
     void Abort(s32 value);
   };
 
+  enum class ConnectingState
+  {
+    None,
+    Connecting,
+    Connected,
+    Error
+  };
+
   friend class WiiSockMan;
   void SetFd(s32 s);
   void SetWiiFd(s32 s);
@@ -212,11 +223,17 @@ private:
   void DoSock(Request request, NET_IOCTL type);
   void DoSock(Request request, SSL_IOCTL type);
   void Update(bool read, bool write, bool except);
+  void UpdateConnectingState(s32 connect_rv);
+  ConnectingState GetConnectingState() const;
   bool IsValid() const { return fd >= 0; }
+  bool IsTCP() const;
+
+  WiiSockMan& m_socket_manager;
 
   s32 fd = -1;
   s32 wii_fd = -1;
   bool nonBlock = false;
+  ConnectingState connecting_state = ConnectingState::None;
   std::list<sockop> pending_sockops;
 
   std::optional<Timeout> timeout;
@@ -239,17 +256,19 @@ public:
     s64 timeout = 0;
   };
 
-  static s32 GetNetErrorCode(s32 ret, std::string_view caller, bool is_rw);
-  static char* DecodeError(s32 ErrorCode);
+  WiiSockMan();
+  WiiSockMan(const WiiSockMan&) = delete;
+  WiiSockMan& operator=(const WiiSockMan&) = delete;
+  WiiSockMan(WiiSockMan&&) = delete;
+  WiiSockMan& operator=(WiiSockMan&&) = delete;
+  ~WiiSockMan();
 
-  static WiiSockMan& GetInstance()
-  {
-    static WiiSockMan instance;  // Guaranteed to be destroyed.
-    return instance;             // Instantiated on first use.
-  }
+  s32 GetNetErrorCode(s32 ret, std::string_view caller, bool is_rw);
+
   void Update();
-  static void Convert(WiiSockAddrIn const& from, sockaddr_in& to);
-  static void Convert(sockaddr_in const& from, WiiSockAddrIn& to, s32 addrlen = -1);
+  static void ToNativeAddrIn(const u8* from, sockaddr_in* to);
+  static void ToWiiAddrIn(const sockaddr_in& from, u8* to,
+                          socklen_t addrlen = sizeof(WiiSockAddrIn));
   static s32 ConvertEvents(s32 events, ConvertDirection dir);
 
   void DoState(PointerWrap& p);
@@ -271,7 +290,7 @@ public:
     if (socket_entry == WiiSockets.end())
     {
       ERROR_LOG_FMT(IOS_NET, "DoSock: Error, fd not found ({:08x}, {:08X}, {:08X})", sock,
-                    request.address, type);
+                    request.address, Common::ToUnderlying(type));
       GetIOS()->EnqueueIPCReply(request, -SO_EBADF);
     }
     else
@@ -283,12 +302,6 @@ public:
   void UpdateWantDeterminism(bool want);
 
 private:
-  WiiSockMan() = default;
-  WiiSockMan(const WiiSockMan&) = delete;
-  WiiSockMan& operator=(const WiiSockMan&) = delete;
-  WiiSockMan(WiiSockMan&&) = delete;
-  WiiSockMan& operator=(WiiSockMan&&) = delete;
-
   void UpdatePollCommands();
 
   std::unordered_map<s32, WiiSocket> WiiSockets;

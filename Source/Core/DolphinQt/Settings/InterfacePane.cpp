@@ -53,6 +53,7 @@ static QComboBox* MakeLanguageComboBox()
       {QStringLiteral(u"Portugu\u00EAs (Brasil)"), "pt_BR"},  // Portuguese (Brazil)
       {QStringLiteral(u"Rom\u00E2n\u0103"), "ro"},            // Romanian
       {QStringLiteral(u"Srpski"), "sr"},                      // Serbian
+      {QStringLiteral(u"Suomi"), "fi"},                       // Finnish
       {QStringLiteral(u"Svenska"), "sv"},                     // Swedish
       {QStringLiteral(u"T\u00FCrk\u00E7e"), "tr"},            // Turkish
       {QStringLiteral(u"\u0395\u03BB\u03BB\u03B7\u03BD\u03B9\u03BA\u03AC"), "el"},  // Greek
@@ -147,7 +148,7 @@ void InterfacePane::CreateUI()
                                         "Make sure to set the styles option to \"(None)\" for dark mode to work."));
   m_checkbox_use_covers =
       new QCheckBox(tr("Download Game Covers from GameTDB.com for Use in Grid Mode"));
-  m_checkbox_show_debugging_ui = new QCheckBox(tr("Show Debugging UI"));
+  m_checkbox_show_debugging_ui = new QCheckBox(tr("Enable Debugging UI"));
   m_checkbox_focused_hotkeys = new QCheckBox(tr("Hotkeys Require Window Focus"));
   m_checkbox_disable_screensaver = new QCheckBox(tr("Inhibit Screensaver During Emulation"));
 
@@ -190,7 +191,8 @@ void InterfacePane::CreateInGame()
   m_vboxlayout_hide_mouse->addWidget(m_radio_cursor_visible_never);
   m_vboxlayout_hide_mouse->addWidget(m_radio_cursor_visible_always);
 
-  m_checkbox_lock_mouse = new QCheckBox(tr("Lock Mouse Cursor"));
+  // this ends up not being managed unless _WIN32, so lets not leak
+  m_checkbox_lock_mouse = new QCheckBox(tr("Lock Mouse Cursor"), this);
   m_checkbox_lock_mouse->setToolTip(tr("Will lock the Mouse Cursor to the Render Widget as long as "
                                        "it has focus. You can set a hotkey to unlock it."));
 
@@ -204,6 +206,8 @@ void InterfacePane::CreateInGame()
   groupbox_layout->addWidget(mouse_groupbox);
 #ifdef _WIN32
   groupbox_layout->addWidget(m_checkbox_lock_mouse);
+#else
+  m_checkbox_lock_mouse->hide();
 #endif
 }
 
@@ -215,8 +219,9 @@ void InterfacePane::ConnectLayout()
   connect(m_checkbox_disable_screensaver, &QCheckBox::toggled, this, &InterfacePane::OnSaveConfig);
   connect(m_checkbox_show_debugging_ui, &QCheckBox::toggled, this, &InterfacePane::OnSaveConfig);
   connect(m_checkbox_focused_hotkeys, &QCheckBox::toggled, this, &InterfacePane::OnSaveConfig);
-  connect(m_combobox_theme, qOverload<int>(&QComboBox::currentIndexChanged), this,
-          [=](int index) { Settings::Instance().SetThemeName(m_combobox_theme->itemText(index)); });
+  connect(
+      m_combobox_theme, qOverload<int>(&QComboBox::currentIndexChanged), this,
+      [this](int index) { Settings::Instance().SetThemeName(m_combobox_theme->itemText(index)); });
   connect(m_combobox_userstyle, qOverload<int>(&QComboBox::currentIndexChanged), this,
           &InterfacePane::OnSaveConfig);
   connect(m_combobox_language, qOverload<int>(&QComboBox::currentIndexChanged), this,
@@ -310,8 +315,6 @@ void InterfacePane::OnSaveConfig()
   Config::SetBase(Config::MAIN_OSD_MESSAGES, m_checkbox_enable_osd->isChecked());
   Config::SetBase(Config::MAIN_SHOW_ACTIVE_TITLE, m_checkbox_show_active_title->isChecked());
   Config::SetBase(Config::MAIN_PAUSE_ON_FOCUS_LOST, m_checkbox_pause_on_focus_lost->isChecked());
-
-  Common::SetEnableAlert(Config::Get(Config::MAIN_USE_PANIC_HANDLERS));
 
   auto new_language = m_combobox_language->currentData().toString().toStdString();
   if (new_language != Config::Get(Config::MAIN_INTERFACE_LANGUAGE))

@@ -13,9 +13,15 @@
 class AutoUpdateChecker
 {
 public:
+  enum class CheckType
+  {
+    Automatic,
+    Manual,
+  };
   // Initiates a check for updates in the background. Calls the OnUpdateAvailable callback if an
   // update is available, does "nothing" otherwise.
-  void CheckForUpdate(std::string_view update_track, std::string_view hash_override);
+  void CheckForUpdate(std::string_view update_track, std::string_view hash_override,
+                      CheckType check_type);
 
   static bool SystemSupportsAutoUpdates();
 
@@ -43,5 +49,5 @@ public:
   void TriggerUpdate(const NewVersionInformation& info, RestartMode restart_mode);
 
 protected:
-  virtual void OnUpdateAvailable(std::string version, std::string info) = 0;
+  virtual void OnUpdateAvailable(const NewVersionInformation& info) = 0;
 };

@@ -14,7 +14,15 @@
 #include "Common/Common.h"
 #include "Common/CommonTypes.h"
 
+namespace Common
+{
 class IniFile;
+}
+
+namespace Core
+{
+class CPUThreadGuard;
+}
 
 namespace DiscIO
 {
@@ -68,26 +76,23 @@ struct SConfig
   void SetRunningGameMetadata(const std::string& game_id);
   // Reloads title-specific map files, patches, custom textures, etc.
   // This should only be called after the new title has been loaded into memory.
-  static void OnNewTitleLoad();
+  static void OnNewTitleLoad(const Core::CPUThreadGuard& guard);
 
   void LoadDefaults();
   static std::string MakeGameID(std::string_view file_name);
   bool SetPathsAndGameMetadata(const BootParameters& boot);
   DiscIO::Language GetCurrentLanguage(bool wii) const;
   DiscIO::Language GetLanguageAdjustedForRegion(bool wii, DiscIO::Region region) const;
-
-	u16 GetGameRevision() const;
-  std::string GetGameID_Wrapper() const;
+  std::string GetGameTDBImageRegionCode(bool wii, DiscIO::Region region) const;
   bool GameIsAllowed() const;
-  bool GameHasDefaultGameIni() const;
-  IniFile LoadDefaultGameIni() const;
-  IniFile LoadLocalGameIni() const;
-  IniFile LoadGameIni() const;
 
-  static bool GameHasDefaultGameIni(const std::string& id, u16 revision);
-  static IniFile LoadDefaultGameIni(const std::string& id, std::optional<u16> revision);
-  static IniFile LoadLocalGameIni(const std::string& id, std::optional<u16> revision);
-  static IniFile LoadGameIni(const std::string& id, std::optional<u16> revision);
+  Common::IniFile LoadDefaultGameIni() const;
+  Common::IniFile LoadLocalGameIni() const;
+  Common::IniFile LoadGameIni() const;
+
+  static Common::IniFile LoadDefaultGameIni(const std::string& id, std::optional<u16> revision);
+  static Common::IniFile LoadLocalGameIni(const std::string& id, std::optional<u16> revision);
+  static Common::IniFile LoadGameIni(const std::string& id, std::optional<u16> revision);
 
   SConfig(const SConfig&) = delete;
   SConfig& operator=(const SConfig&) = delete;
