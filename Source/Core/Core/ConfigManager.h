@@ -85,7 +85,7 @@ struct SConfig
   DiscIO::Language GetLanguageAdjustedForRegion(bool wii, DiscIO::Region region) const;
   std::string GetGameTDBImageRegionCode(bool wii, DiscIO::Region region) const;
   bool GameIsAllowed() const;
-
+  bool checkGame() const;
   Common::IniFile LoadDefaultGameIni() const;
   Common::IniFile LoadLocalGameIni() const;
   Common::IniFile LoadGameIni() const;

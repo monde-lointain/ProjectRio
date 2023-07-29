@@ -273,7 +273,8 @@ bool GameListModel::ShouldDisplayGameListItem(int index) const
   }
 
   std::string RioGameID = "GYQE01";
-  if (game.GetGameID() != RioGameID)
+  std::string RioGolfGameID = "GFTE01";
+  if (game.GetGameID() != RioGameID && game.GetGameID() != RioGolfGameID)
     return false;
 
   const bool show_platform = [&game] {

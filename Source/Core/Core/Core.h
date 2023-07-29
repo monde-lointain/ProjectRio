@@ -27,6 +27,15 @@ namespace Tag {
   class TagSet;
 };
 
+enum class GameName
+{
+  MarioBaseball,
+  MarioGolf,
+  Unknown
+};
+
+GameName GetGameIDEnum(const std::string& gameName);
+
 namespace Core
 {
 class System;
@@ -220,7 +229,7 @@ float RoundZ(float num);
 bool isNight();
 bool isDisableReplays();
 
-void AutoGolfMode(const Core::CPUThreadGuard& guard);
+void AutoGolfMode(const Core::CPUThreadGuard& guard, GameName currentGame);
 void TrainingMode(const Core::CPUThreadGuard& guard);
 void DisplayBatterFielder(const Core::CPUThreadGuard& guard);
 void SetAvgPing(const Core::CPUThreadGuard& guard);
@@ -276,4 +285,7 @@ static const u32 aWhoPaused = 0x8039D7D3; // 2 == fielder, 1 == batter
 //static const u32 aMatchStarted = 0x8036F3B8;  // bool for if a game is in session
 static const u32 aSceneId = 0x800E877F;
 
+
+static const u32 aCurrentGolfer = 0x804E68FB; // 0-3, indicates current golfing player
+static const u32 aPlayerCount = 0x804E68FA; // indicates total player count
 }  // namespace Core
