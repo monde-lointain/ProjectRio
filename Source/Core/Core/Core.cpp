@@ -109,25 +109,6 @@
 #endif
 
 
-GameName GetGameIDEnum(const std::string& gameName)
-{
-  // Assuming you have a valid implementation of SConfig::GetInstance().GetGameID()
-  const std::string& gameID = SConfig::GetInstance().GetGameID();
-
-  if (gameID == "GYQE01")
-  {
-    return GameName::MarioBaseball;
-  }
-  else if (gameID == "GFTE01")
-  {
-    return GameName::MarioGolf;
-  }
-  else
-  {
-    return GameName::Unknown;
-  }
-}
-
 
 namespace Core
 {
@@ -192,6 +173,9 @@ static Common::EventHook s_frame_presented = AfterPresentEvent::Register(
     "Core Frame Presented");
 
 DefaultGeckoCodes CodeWriter;
+static GameName mGameBeingPlayed = GameName::UnknownGame;
+const std::map<std::string, GameName> mGameMap = {{"GYQE01", GameName::MarioBaseball},
+                                                  {"GFTE01", GameName::ToadstoolTour}};
 
 bool GetIsThrottlerTempDisabled()
 {
@@ -236,15 +220,33 @@ void FrameUpdateOnCPUThread()
   }
 }
 
+
+ void CheckCurrentGame(const std::string& gameID)
+{
+  auto it = mGameMap.find(gameID);
+  if (it != mGameMap.end())
+  {
+    // Game is found in the map
+    mGameBeingPlayed = it->second;
+  }
+  else
+  {
+    // Game is not found in the map
+    mGameBeingPlayed = GameName::UnknownGame;
+  }
+}
 // this function is called from PatchEngine.cpp (ApplyFramePatches()) safely
 // we can do memory reads/writes without worrying
 // anything that needs to read or write to memory should be getting run from here
 void RunRioFunctions(const Core::CPUThreadGuard& guard)
 {
-  std::string currentGameID = SConfig::GetInstance().GetGameID();
-  GameName currentGameEnum = GetGameIDEnum(currentGameID);
+  SConfig& config = SConfig::GetInstance();
 
-  if (currentGameEnum == GameName::MarioBaseball)
+  // Access the game ID
+  const std::string& gameID = config.GetGameID();
+  CheckCurrentGame(gameID);
+  
+  if (mGameBeingPlayed == GameName::MarioBaseball)
   {
     if (s_stat_tracker)
     {
@@ -287,7 +289,7 @@ void RunRioFunctions(const Core::CPUThreadGuard& guard)
     SetAvgPing(guard);
     RunDraftTimer(guard);
   }
-  else if (currentGameEnum == GameName::MarioGolf)
+  else if (mGameBeingPlayed == GameName::ToadstoolTour)
   {
     // add check for being in game
     if (NetPlay::IsNetPlayRunning())
@@ -299,9 +301,9 @@ void RunRioFunctions(const Core::CPUThreadGuard& guard)
         runNetplayGameFunctions = false;
       }
     }
-    AutoGolfMode(guard, GameName::MarioGolf);
+    AutoGolfMode(guard, GameName::ToadstoolTour);
   }
-  else if (currentGameEnum == GameName::Unknown)
+  else if (mGameBeingPlayed == GameName::UnknownGame)
   {
     return;
   }
@@ -357,7 +359,7 @@ void AutoGolfMode(const Core::CPUThreadGuard& guard, GameName currentGame)
       NetPlay::NetPlayClient::MSSBAutoGolfMode(isField, BatterPort, FielderPort);
     }
   }
-  else if (currentGame == GameName::MarioGolf)
+  else if (currentGame == GameName::ToadstoolTour)
   {
     if (IsGolfMode())
     {

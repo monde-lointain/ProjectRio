@@ -315,6 +315,7 @@ private:
   void ComputeGameDigest(const SyncIdentifier& sync_identifier);
   void DisplayPlayersPing();
 
+
   void MSSBAutoGolfModeLogic(bool isField, int BatPort, int FieldPort);
   void MGTTAutoGolfModeLogic(int currentGolfer, int playerCount);
 

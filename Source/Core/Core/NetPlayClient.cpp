@@ -2727,7 +2727,6 @@ void NetPlayClient::SendGameID(u32 gameId)
   netplay_client->SendAsync(std::move(packet));
 }
 
-// Auto Golf Mode functions
 void NetPlayClient::MSSBAutoGolfMode(bool isField, int BatPort, int FieldPort)
 {
   netplay_client->MSSBAutoGolfModeLogic(isField, BatPort, FieldPort);
