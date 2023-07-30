@@ -102,20 +102,23 @@ PropertiesDialog::PropertiesDialog(QWidget* parent, const UICommon::GameFile& ga
 GeckoDialog::GeckoDialog(QWidget* parent)
     : QDialog(parent)
 {
-  setWindowTitle(QStringLiteral("%1 - %2")
-                     .arg(QString::fromStdString("Gecko Codes"), QString::fromStdString("(Game ID: GYQE01)")));
+  setWindowTitle(QStringLiteral("%1")
+                     .arg(QString::fromStdString("Gecko Codes")));
   setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
   QVBoxLayout* layout = new QVBoxLayout();
   QTabWidget* tab_widget = new QTabWidget(this);
-  GeckoCodeWidget* gecko = new GeckoCodeWidget("GYQE01", "GYQE01", 0);
+  GeckoCodeWidget* mssb_gecko = new GeckoCodeWidget("GYQE01", "GYQE01", 0);
+  GeckoCodeWidget* mgtt_gecko = new GeckoCodeWidget("GFTE01", "GFTE01", 0);
 
-  connect(gecko, &GeckoCodeWidget::OpenGeneralSettings, this, &GeckoDialog::OpenGeneralSettings);
+  connect(mssb_gecko, &GeckoCodeWidget::OpenGeneralSettings, this, &GeckoDialog::OpenGeneralSettings);
+  connect(mgtt_gecko, &GeckoCodeWidget::OpenGeneralSettings, this, &GeckoDialog::OpenGeneralSettings);
 
   const int padding_width = 120;
   const int padding_height = 200;
   
-  tab_widget->addTab(GetWrappedWidget(gecko, this, padding_width, padding_height),tr("Mario Superstar Baseball"));
+  tab_widget->addTab(GetWrappedWidget(mssb_gecko, this, padding_width, padding_height),tr("Mario Superstar Baseball"));
+  tab_widget->addTab(GetWrappedWidget(mgtt_gecko, this, padding_width, padding_height),tr("Mario Golf Toadstool Tour"));
 
   layout->addWidget(tab_widget);
   
