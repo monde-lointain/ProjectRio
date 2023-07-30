@@ -65,6 +65,12 @@ enum class State
   Starting,
 };
 
+enum class GameName : u8 {
+  UnknownGame = 0,
+  MarioBaseball = 1,
+  ToadstoolTour = 2,
+};
+
 // Console type values based on:
 //  - YAGCD 4.2.1.1.2
 //  - OSInit (GameCube ELF from Finding Nemo)
