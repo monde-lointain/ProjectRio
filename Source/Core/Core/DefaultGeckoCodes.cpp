@@ -2,9 +2,8 @@
 #include "NetPlayProto.h"
 #include "Config/NetplaySettings.h"
 #include <VideoCommon/VideoConfig.h>
-#include "ConfigManager.h"
 
-void DefaultGeckoCodes::Init(std::optional<std::vector<ClientCode>> client_codes, bool tagset_active, bool is_night,
+void DefaultGeckoCodes::Init(Core::GameName current_game, std::optional<std::vector<ClientCode>> client_codes, bool tagset_active, bool is_night,
                              bool disable_replays)
 {
   TagSetActive = tagset_active;
@@ -12,11 +11,16 @@ void DefaultGeckoCodes::Init(std::optional<std::vector<ClientCode>> client_codes
   IsNight = is_night;
   DisableReplays = disable_replays;
   initiated = true;
+
+  currentGame = current_game;
 }
 
 void DefaultGeckoCodes::RunCodeInject(const Core::CPUThreadGuard& guard)
 {
   if (!initiated)
+    return;
+
+  if (currentGame != Core::GameName::MarioBaseball)
     return;
 
   aWriteAddr = 0x802ED200;  // starting asm write addr

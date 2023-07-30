@@ -27,20 +27,6 @@ namespace Tag {
   class TagSet;
 };
 
-//enum class GameName
-//{
-//  MarioBaseball,
-//  MarioGolf,
-//  Unknown
-//};
-
-enum class GameName : u8
-{
-  UnknownGame = 0,
-  MarioBaseball = 1,
-  ToadstoolTour = 2,
-};
-
 //GameName GetGameIDEnum(const std::string& gameName);
 
 namespace Core
@@ -185,7 +171,6 @@ void SaveScreenShot(std::string_view name);
 
 // This displays messages in a user-visible way.
 void DisplayMessage(std::string message, int time_in_ms);
-void CheckCurrentGame(const std::string& gameID);
 
     void RunRioFunctions(const Core::CPUThreadGuard& guard);
 void FrameUpdateOnCPUThread();
@@ -242,8 +227,10 @@ float vectorMagnitude(float x, float y, float z);
 float RoundZ(float num);
 bool isNight();
 bool isDisableReplays();
+void MSSBCalculateNextGolfer(const Core::CPUThreadGuard& guard, int& nextGolfer);
+void MGTTCalculateNextGolfer(const Core::CPUThreadGuard& guard, int& nextGolfer);
 
-void AutoGolfMode(const Core::CPUThreadGuard& guard, GameName currentGame);
+void AutoGolfMode(const Core::CPUThreadGuard& guard);
 void TrainingMode(const Core::CPUThreadGuard& guard);
 void DisplayBatterFielder(const Core::CPUThreadGuard& guard);
 void SetAvgPing(const Core::CPUThreadGuard& guard);

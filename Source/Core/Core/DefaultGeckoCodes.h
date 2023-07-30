@@ -8,10 +8,11 @@
 #include <tuple>
 #include "Core/HW/Memmap.h"
 #include "Common/TagSet.h"
+#include "Core.h"
 
 class DefaultGeckoCodes {
   public:
-    void Init(std::optional<std::vector<ClientCode>> client_codes, bool tagset_active, bool is_night, bool disable_replays);
+    void Init(Core::GameName current_game, std::optional<std::vector<ClientCode>> client_codes, bool tagset_active, bool is_night, bool disable_replays);
     void RunCodeInject(const Core::CPUThreadGuard& guard);
 
   private:
@@ -22,7 +23,9 @@ class DefaultGeckoCodes {
                            // to write at an addr every frame
       std::vector<u32> codeLines;
     };
-    // DefaultGeckoCode mGeckoCode;
+
+    Core::GameName currentGame;
+
     void AddRequiredCodes(const Core::CPUThreadGuard& guard);
     void AddTagSetCodes(const Core::CPUThreadGuard& guard);
     void AddOptionalCodes(const Core::CPUThreadGuard& guard);

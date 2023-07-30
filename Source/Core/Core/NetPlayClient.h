@@ -197,8 +197,7 @@ public:
   static void SendChecksum(u8 checksumId, u64 frame, u32 checksum);
   bool DoAllPlayersHaveGame();
 
-  static void MSSBAutoGolfMode(bool isField, int BatPort, int FieldPort);
-  static void MGTTAutoGolfMode(int currentGolfer, int playerCount);
+  static void AutoGolfMode(int nextGolfer);
   static void DisplayBatterFielder(u8 BatterPortInt, u8 FielderPortInt);
   static bool isNight();
   static bool isDisableReplays();
@@ -315,8 +314,7 @@ private:
   void ComputeGameDigest(const SyncIdentifier& sync_identifier);
   void DisplayPlayersPing();
 
-
-  void MSSBAutoGolfModeLogic(bool isField, int BatPort, int FieldPort);
+  void AutoGolfModeLogic(int nextGolfer);
   void MGTTAutoGolfModeLogic(int currentGolfer, int playerCount);
 
   u32 GetPlayersMaxPing() const;

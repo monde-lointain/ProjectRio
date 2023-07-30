@@ -197,6 +197,9 @@ void FrameUpdateOnCPUThread()
 {
   if (NetPlay::IsNetPlayRunning() && Core::IsRunningAndStarted())
   {
+    if (mGameBeingPlayed != GameName::MarioBaseball)
+      NetPlay::NetPlayClient::SendTimeBase();
+
     if (s_stat_tracker)
     {
       // Figure out if client is hosting via netplay settings. Could use local player as well
@@ -221,33 +224,11 @@ void FrameUpdateOnCPUThread()
   }
 }
 
-
- void CheckCurrentGame(const std::string& gameID)
-{
-  auto it = mGameMap.find(gameID);
-  if (it != mGameMap.end())
-  {
-    // Game is found in the map
-    mGameBeingPlayed = it->second;
-  }
-  else
-  {
-    // Game is not found in the map
-    mGameBeingPlayed = GameName::UnknownGame;
-  }
-}
 // this function is called from PatchEngine.cpp (ApplyFramePatches()) safely
 // we can do memory reads/writes without worrying
 // anything that needs to read or write to memory should be getting run from here
 void RunRioFunctions(const Core::CPUThreadGuard& guard)
-{
-  SConfig& config = SConfig::GetInstance();
-
-
-  // Access the game ID
-  const std::string& gameID = config.GetGameID();
-  CheckCurrentGame(gameID);
-  
+{  
   if (mGameBeingPlayed == GameName::MarioBaseball)
   {
     if (s_stat_tracker)
@@ -283,36 +264,14 @@ void RunRioFunctions(const Core::CPUThreadGuard& guard)
         runNetplayGameFunctions = false;
       }
     }
-
-    CodeWriter.RunCodeInject(guard);
-    AutoGolfMode(guard, GameName::MarioBaseball);
-    TrainingMode(guard);
     DisplayBatterFielder(guard);
     SetAvgPing(guard);
     RunDraftTimer(guard);
   }
-  else if (mGameBeingPlayed == GameName::ToadstoolTour)
-  {
-    // add check for being in game
-    if (NetPlay::IsNetPlayRunning())
-    {
-      runNetplayGameFunctions = true;
-      if (runNetplayGameFunctions)
-      {
-        SetNetplayerUserInfo();
-        runNetplayGameFunctions = false;
-      }
-    }
-    AutoGolfMode(guard, GameName::ToadstoolTour);
-  }
-  else if (mGameBeingPlayed == GameName::UnknownGame)
-  {
-    return;
-  }
-  else
-  {
-    return;
-  }
+
+  CodeWriter.RunCodeInject(guard);
+  AutoGolfMode(guard);
+  TrainingMode(guard);
 }
 
 void OnFrameEnd()
@@ -328,53 +287,63 @@ void OnFrameEnd()
 #endif
 }
 
-void AutoGolfMode(const Core::CPUThreadGuard& guard, GameName currentGame)
+void AutoGolfMode(const Core::CPUThreadGuard& guard)
 {
-  if (currentGame == GameName::MarioBaseball)
-  {
-    if (IsGolfMode())
-    {
-      u8 BatterPort = PowerPC::MMU::HostRead_U8(guard, aBatterPort);
-      u8 FielderPort = PowerPC::MMU::HostRead_U8(guard, aFielderPort);
-      bool isField = PowerPC::MMU::HostRead_U8(guard, aIsField) == 1;
-
-      if (BatterPort == 0)
-        return;  // means game hasn't started yet
-
-      // makes the player who paused the golfer
-      if (PowerPC::MMU::HostRead_U8(guard, aWhoPaused) == 2)
-        isField = true;
-
-      // add minigame functionality
-      int minigameId = PowerPC::MMU::HostRead_U8(guard, aMinigameID);
-      if (minigameId == 3 || minigameId == 1)
-      {
-        BatterPort = PowerPC::MMU::HostRead_U8(guard, aBarrelBatterPort) + 1;
-        isField = false;
-      }
-      else if (minigameId == 2)
-      {
-        FielderPort = PowerPC::MMU::HostRead_U8(guard, aWallBallPort) + 1;
-        isField = true;
-      }
-
-      NetPlay::NetPlayClient::MSSBAutoGolfMode(isField, BatterPort, FielderPort);
-    }
-  }
-  else if (currentGame == GameName::ToadstoolTour)
-  {
-    if (IsGolfMode())
-    {
-      u8 currentGolfer = PowerPC::MMU::HostRead_U8(guard, aCurrentGolfer);
-      u8 playerCount = PowerPC::MMU::HostRead_U8(guard, aPlayerCount);
-
-      NetPlay::NetPlayClient::MGTTAutoGolfMode(currentGolfer, playerCount);
-    }
-  }
-  else
-  {
+  if (!IsGolfMode())
     return;
+
+  int nextGolfer = -1;
+
+  switch (mGameBeingPlayed) {
+  case GameName::MarioBaseball:
+    MSSBCalculateNextGolfer(guard, nextGolfer);
+    break;
+  case GameName::ToadstoolTour:
+    MGTTCalculateNextGolfer(guard, nextGolfer);
+    break;
   }
+
+  if (nextGolfer >= 4 || nextGolfer < 0)  // something's wrong. probably a CPU player                                         
+    return;   // return to avoid array out-of-range errors
+
+  NetPlay::NetPlayClient::AutoGolfMode(nextGolfer);
+}
+
+void MSSBCalculateNextGolfer(const Core::CPUThreadGuard& guard, int& nextGolfer)
+{
+  u8 BatterPort = PowerPC::MMU::HostRead_U8(guard, aBatterPort);
+  u8 FielderPort = PowerPC::MMU::HostRead_U8(guard, aFielderPort);
+  bool isField = PowerPC::MMU::HostRead_U8(guard, aIsField) == 1;
+
+  // means game hasn't started yet
+  if (BatterPort == 0)
+    return;
+
+  // makes the player who paused the golfer
+  if (PowerPC::MMU::HostRead_U8(guard, aWhoPaused) == 2)
+    isField = true;
+
+  // add minigame functionality
+  int minigameId = PowerPC::MMU::HostRead_U8(guard, aMinigameID);
+  if (minigameId == 3 || minigameId == 1)
+  {
+    BatterPort = PowerPC::MMU::HostRead_U8(guard, aBarrelBatterPort) + 1;
+    isField = false;
+  }
+  else if (minigameId == 2)
+  {
+    FielderPort = PowerPC::MMU::HostRead_U8(guard, aWallBallPort) + 1;
+    isField = true;
+  }
+
+  // evaluate which player should be golfer here
+  nextGolfer = isField ? FielderPort - 1 : BatterPort - 1;  // subtract 1 since m_pad_map uses 0->3 instead of 1->4
+}
+
+void MGTTCalculateNextGolfer(const Core::CPUThreadGuard& guard, int& nextGolfer)
+{
+  // u8 playerCount = PowerPC::MMU::HostRead_U8(guard, aPlayerCount);
+  nextGolfer = PowerPC::MMU::HostRead_U8(guard, aCurrentGolfer);
 }
 
 bool IsGolfMode()
@@ -392,6 +361,9 @@ void TrainingMode(const Core::CPUThreadGuard& guard)
   // if training mode config is on and not ranked netplay
   // using this feature on ranked can be considered an unfair advantage
   if (!g_ActiveConfig.bTrainingModeOverlay || isTagSetActive())
+    return;
+
+  if (mGameBeingPlayed != GameName::MarioBaseball)
     return;
 
   //bool isPitchThrown = PowerPC::MMU::HostRead_U8(0x80895D6C) == 1 ? true : false;
@@ -833,7 +805,7 @@ bool Init(std::unique_ptr<BootParameters> boot, const WindowSystemInfo& wsi)
       GetActiveTagSet(NetPlay::IsNetPlayRunning()).value().client_codes_vector() :
       std::nullopt;
 
-  CodeWriter.Init(client_codes, isTagSetActive(), isNight(), isDisableReplays());
+  CodeWriter.Init(mGameBeingPlayed, client_codes, isTagSetActive(), isNight(), isDisableReplays());
 
   return true;
 }
