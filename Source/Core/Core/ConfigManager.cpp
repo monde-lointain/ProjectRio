@@ -415,19 +415,6 @@ bool SConfig::GameIsAllowed() const
   return can_play;
 }
 
-bool SConfig::checkGame() const
-{
-  const std::string& gameID = GetGameID();
-  if (gameID == "GYQE01")
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
 Common::IniFile SConfig::LoadDefaultGameIni() const
 {
   return LoadDefaultGameIni(GetGameID(), m_revision);
