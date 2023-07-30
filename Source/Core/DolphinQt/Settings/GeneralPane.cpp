@@ -283,25 +283,25 @@ void GeneralPane::LoadConfig()
     SignalBlocking(m_combobox_fallback_region)->setCurrentIndex(FALLBACK_REGION_NTSCJ_INDEX);
 }
 
-static QString UpdateTrackFromIndex(int index)
-{
-  QString value;
-
-  switch (index)
-  {
-  case AUTO_UPDATE_DISABLE_INDEX:
-    value = QString::fromStdString(AUTO_UPDATE_DISABLE_STRING);
-    break;
-  case AUTO_UPDATE_BETA_INDEX:
-    value = QString::fromStdString(AUTO_UPDATE_BETA_STRING);
-    break;
-  case AUTO_UPDATE_DEV_INDEX:
-    value = QString::fromStdString(AUTO_UPDATE_DEV_STRING);
-    break;
-  }
-
-  return value;
-}
+//static QString UpdateTrackFromIndex(int index)
+//{
+//  QString value;
+//
+//  switch (index)
+//  {
+//  case AUTO_UPDATE_DISABLE_INDEX:
+//    value = QString::fromStdString(AUTO_UPDATE_DISABLE_STRING);
+//    break;
+//  case AUTO_UPDATE_BETA_INDEX:
+//    value = QString::fromStdString(AUTO_UPDATE_BETA_STRING);
+//    break;
+//  case AUTO_UPDATE_DEV_INDEX:
+//    value = QString::fromStdString(AUTO_UPDATE_DEV_STRING);
+//    break;
+//  }
+//
+//  return value;
+//}
 
 static DiscIO::Region UpdateFallbackRegionFromIndex(int index)
 {
@@ -333,11 +333,11 @@ void GeneralPane::OnSaveConfig()
   Config::ConfigChangeCallbackGuard config_guard;
 
   auto& settings = SConfig::GetInstance();
-  if (AutoUpdateChecker::SystemSupportsAutoUpdates())
-  {
-    Settings::Instance().SetAutoUpdateTrack(
-        UpdateTrackFromIndex(m_combobox_update_track->currentIndex()));
-  }
+  //if (AutoUpdateChecker::SystemSupportsAutoUpdates())
+  //{
+  //  Settings::Instance().SetAutoUpdateTrack(
+  //      UpdateTrackFromIndex(m_combobox_update_track->currentIndex()));
+  //}
 
 #ifdef USE_DISCORD_PRESENCE
   Discord::SetDiscordPresenceEnabled(m_checkbox_discord_presence->isChecked());
