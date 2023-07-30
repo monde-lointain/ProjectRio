@@ -177,6 +177,7 @@ static GameName mGameBeingPlayed = GameName::UnknownGame;
 const std::map<std::string, GameName> mGameMap = {{"GYQE01", GameName::MarioBaseball},
                                                   {"GFTE01", GameName::ToadstoolTour}};
 
+
 bool GetIsThrottlerTempDisabled()
 {
   return s_is_throttler_temp_disabled;
@@ -241,6 +242,7 @@ void FrameUpdateOnCPUThread()
 void RunRioFunctions(const Core::CPUThreadGuard& guard)
 {
   SConfig& config = SConfig::GetInstance();
+
 
   // Access the game ID
   const std::string& gameID = config.GetGameID();
@@ -818,6 +820,13 @@ bool Init(std::unique_ptr<BootParameters> boot, const WindowSystemInfo& wsi)
   // Start the emu thread
   s_is_booting.Set();
   s_emu_thread = std::thread(EmuThread, std::move(boot), prepared_wsi);
+
+  // initialize current game variable
+  std::string game_id = SConfig::GetInstance().GetGameID();
+  if (Core::mGameMap.find(game_id) == mGameMap.end())
+    mGameBeingPlayed = GameName::UnknownGame;
+  else
+    mGameBeingPlayed = mGameMap.at(game_id);
 
   std::optional<std::vector<ClientCode>> client_codes =
       GetActiveTagSet(NetPlay::IsNetPlayRunning()).has_value() ?

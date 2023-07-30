@@ -87,9 +87,15 @@ void GeckoCodeWidget::CreateWidgets()
   m_remove_code = new NonDefaultQPushButton(tr("&Remove Code"));
   m_download_codes = new NonDefaultQPushButton(tr("Download Codes"));
 
-  m_download_codes->setToolTip(tr(m_game_id == "GYQE01" ?
-                                      "Download Mario Superstar Baseball Codes" :
-                                      "Download Codes from WiiRD Database"));
+  std::string download_codes_tooltip;
+  if (m_game_id == "GYQE01") {
+    download_codes_tooltip = "Download Mario Superstar Baseball Codes";
+  } else if (m_game_id == "GFTE01") {
+    download_codes_tooltip = "Download Mario Golf Toadstool Tour Codes";
+  } else {
+    "Download Codes from WiiRD Database";
+  }
+  m_download_codes->setToolTip(QString::fromStdString(download_codes_tooltip));
 
   m_code_list->setEnabled(!m_game_id.empty());
   m_name_label->setEnabled(!m_game_id.empty());
