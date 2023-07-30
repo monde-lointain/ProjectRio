@@ -395,6 +395,9 @@ void NetPlaySetupDialog::ConnectWidgets()
     Settings::GetQSettings().setValue(QStringLiteral("netplay/hostgame"),
                                       m_host_games->currentText());
   });
+  connect(m_host_games, qOverload<int>(&QComboBox::currentIndexChanged), this,
+          &NetPlaySetupDialog::CheckGameModesAreAllowed);
+
   connect(m_host_game_mode, qOverload<int>(&QComboBox::currentIndexChanged), this,
           &NetPlaySetupDialog::UpdateGameModeDescription);
 
@@ -556,6 +559,18 @@ void NetPlaySetupDialog::UpdateGameModeDescription()
 
   QScrollBar* scrollBar = m_game_mode_description->verticalScrollBar();
   scrollBar->setValue(scrollBar->minimum());  // set scroll bar to the top
+}
+
+void NetPlaySetupDialog::CheckGameModesAreAllowed()
+{
+  std::string game_id = host_games_map.at(m_host_games->currentIndex()).GetGameID();
+  if (game_id == "GYQE01")
+    m_host_game_mode->setEnabled(true);
+  else
+  {
+    m_host_game_mode->setCurrentIndex(0);
+    m_host_game_mode->setDisabled(true);
+  }
 }
 
 void NetPlaySetupDialog::show()
@@ -747,7 +762,7 @@ void NetPlaySetupDialog::UpdateListBrowser()
   m_table_widget->clear();
   m_table_widget->setColumnCount(7);
   m_table_widget->setHorizontalHeaderLabels({tr("Region"), tr("Name"), tr("Game Mode"),
-                                             tr("In Game"), tr("Password?"), tr("Players"),
+                                             tr("In Game"), tr("Game"), tr("Players"),
                                              tr("Version")});
 
   auto* hor_header = m_table_widget->horizontalHeader();
@@ -766,10 +781,18 @@ void NetPlaySetupDialog::UpdateListBrowser()
     const auto& entry = m_sessions[i];
 
     std::vector<std::string> game_tags = Config::LobbyNameVector(entry.name);
+    std::string game_name;
+    if (entry.game_id == "Mario Superstar Baseball (GYQE01)")
+      game_name = "MSSB";
+    else if (entry.game_id == "Mario Golf: Toadstool Tour (GFTE01)")
+      game_name = "MGTT";
+    else
+      game_name = "Unknown";
 
     auto* region = new QTableWidgetItem(QString::fromStdString(entry.region));
     auto* name = new QTableWidgetItem(QString::fromStdString(game_tags[0]));
-    auto* password = new QTableWidgetItem(entry.has_password ? tr("Yes") : tr("No"));
+    //auto* password = new QTableWidgetItem(entry.has_password ? tr("Yes") : tr("No"));
+    auto* game = new QTableWidgetItem(QString::fromStdString(game_name));
     auto* in_game = new QTableWidgetItem(entry.in_game ? tr("Yes") : tr("No"));
     auto* gamemode = new QTableWidgetItem(QString::fromStdString(game_tags[1]));
     auto* player_count = new QTableWidgetItem(QStringLiteral("%1").arg(entry.player_count));
@@ -782,14 +805,14 @@ void NetPlaySetupDialog::UpdateListBrowser()
     if (tagset_id == 0)
       enabled = true;
 
-    for (const auto& item : {region, name, in_game, gamemode, password, player_count, version})
+    for (const auto& item : {region, name, in_game, gamemode, game, player_count, version})
       item->setFlags(enabled ? Qt::ItemIsEnabled | Qt::ItemIsSelectable : Qt::NoItemFlags);
 
     m_table_widget->setItem(i, 0, region);
     m_table_widget->setItem(i, 1, name);
     m_table_widget->setItem(i, 2, gamemode);  // was game_id
     m_table_widget->setItem(i, 3, in_game);
-    m_table_widget->setItem(i, 4, password);
+    m_table_widget->setItem(i, 4, game);
     m_table_widget->setItem(i, 5, player_count);
     m_table_widget->setItem(i, 6, version);
   }
