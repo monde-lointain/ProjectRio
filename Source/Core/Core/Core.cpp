@@ -296,13 +296,10 @@ void RunRioFunctions(const Core::CPUThreadGuard& guard)
       if (runNetplayGameFunctions)
       {
         SetNetplayerUserInfo();
-        NetPlay::NetPlayClient::SendGameID(PowerPC::MMU::HostRead_U32(guard, aGameId));
         runNetplayGameFunctions = false;
       }
-      AutoGolfMode(guard, GameName::MarioGolf);
-
     }
-   
+    AutoGolfMode(guard, GameName::MarioGolf);
   }
   else if (currentGameEnum == GameName::Unknown)
   {

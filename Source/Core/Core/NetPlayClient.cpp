@@ -2800,7 +2800,7 @@ void NetPlayClient::MGTTAutoGolfModeLogic(int currentGolfer, int playerCount)
                              // lockout window (60 frames)
     return;
 
-  int NextGolferPort = currentGolfer - 1;  // subtract 1 since m_pad_map uses 0->3 instead of 1->4
+  int NextGolferPort = currentGolfer;
   if (NextGolferPort >= 4 || NextGolferPort < 0)  // something's wrong. probably a CPU player
     return;                                       // return to avoid array out-of-range errors
 
