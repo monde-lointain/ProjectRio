@@ -23,7 +23,6 @@ class DefaultGeckoCodes {
       std::vector<u32> codeLines;
     };
     // DefaultGeckoCode mGeckoCode;
-
     void AddRequiredCodes(const Core::CPUThreadGuard& guard);
     void AddTagSetCodes(const Core::CPUThreadGuard& guard);
     void AddOptionalCodes(const Core::CPUThreadGuard& guard);

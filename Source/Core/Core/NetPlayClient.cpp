@@ -2727,13 +2727,12 @@ void NetPlayClient::SendGameID(u32 gameId)
   netplay_client->SendAsync(std::move(packet));
 }
 
-// Auto Golf Mode functions
-void NetPlayClient::AutoGolfMode(bool isField, int BatPort, int FieldPort)
+void NetPlayClient::MSSBAutoGolfMode(bool isField, int BatPort, int FieldPort)
 {
-  netplay_client->AutoGolfModeLogic(isField, BatPort, FieldPort);
+  netplay_client->MSSBAutoGolfModeLogic(isField, BatPort, FieldPort);
 }
 
-void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
+void NetPlayClient::MSSBAutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
 {
   PlayerId clientID = m_local_player->pid; // refers to netplay client (the computer that's connected)
 
@@ -2763,6 +2762,55 @@ void NetPlayClient::AutoGolfModeLogic(bool isField, int BatPort, int FieldPort)
   // if the current golfer is also the one who should be the golfer, return
   // this prevents bugs due to requesting a swap every frame
   // m_pad_map is an array. the indices are the ports (0->3) and the values are the client ID's assigned to that port
+  if (m_pad_map[NextGolferPort] == clientID)
+    return;
+
+  // find the player that should be the golfer and assign them as the golfer
+  NOTICE_LOG_FMT(NETPLAY, "Client {} will swap golfer to port {}", clientID, NextGolferPort + 1);
+  RequestGolfControl(m_pad_map[NextGolferPort]);
+  framesAsGolfer = 0;
+  NOTICE_LOG_FMT(NETPLAY, "Successfully swapped golfer");
+}
+
+void NetPlayClient::MGTTAutoGolfMode(int currentGolfer, int playerCount)
+{
+  netplay_client->MGTTAutoGolfModeLogic(currentGolfer, playerCount);
+}
+
+void NetPlayClient::MGTTAutoGolfModeLogic(int currentGolfer, int playerCount)
+{
+  PlayerId clientID =
+      m_local_player->pid;  // refers to netplay client (the computer that's connected)
+
+  // don't run the rest of the code unless we're the golfer
+  if (clientID != m_current_golfer)
+  {
+    framesAsGolfer = 0;
+    return;
+  }
+
+  // auto golf logic will only complete if client's been the golfer for more than 60 frames
+  // this is to ensure that under laggier conditions, a golfer who's game is too far behind
+  // doesn't swap the golfer status back and forth for a short while, which can be jarring to
+  // players
+  if (framesAsGolfer < 255)  // don't want a memory overflow here
+    framesAsGolfer++;
+  if (framesAsGolfer <= 60)  // delay this so that swapping bugs are way less likely; 1 second
+                             // lockout window (60 frames)
+    return;
+
+  int NextGolferPort = currentGolfer;
+  if (NextGolferPort >= 4 || NextGolferPort < 0)  // something's wrong. probably a CPU player
+    return;                                       // return to avoid array out-of-range errors
+
+  // if the player who should be the gofler isn't in the lobby, return
+  if (!PortHasPlayerAssigned(NextGolferPort))
+    return;
+
+  // if the current golfer is also the one who should be the golfer, return
+  // this prevents bugs due to requesting a swap every frame
+  // m_pad_map is an array. the indices are the ports (0->3) and the values are the client ID's
+  // assigned to that port
   if (m_pad_map[NextGolferPort] == clientID)
     return;
 

@@ -108,6 +108,8 @@
 #include "jni/AndroidCommon/IDCache.h"
 #endif
 
+
+
 namespace Core
 {
 static bool s_wants_determinism;
@@ -172,10 +174,9 @@ static Common::EventHook s_frame_presented = AfterPresentEvent::Register(
 
 DefaultGeckoCodes CodeWriter;
 static GameName mGameBeingPlayed = GameName::UnknownGame;
-const std::map<std::string, GameName> mGameMap = {
-  {"GYQE01", GameName::MarioBaseball},
-  {"GFTE01", GameName::ToadstoolTour}
-};
+const std::map<std::string, GameName> mGameMap = {{"GYQE01", GameName::MarioBaseball},
+                                                  {"GFTE01", GameName::ToadstoolTour}};
+
 
 bool GetIsThrottlerTempDisabled()
 {
@@ -220,54 +221,98 @@ void FrameUpdateOnCPUThread()
   }
 }
 
+
+ void CheckCurrentGame(const std::string& gameID)
+{
+  auto it = mGameMap.find(gameID);
+  if (it != mGameMap.end())
+  {
+    // Game is found in the map
+    mGameBeingPlayed = it->second;
+  }
+  else
+  {
+    // Game is not found in the map
+    mGameBeingPlayed = GameName::UnknownGame;
+  }
+}
 // this function is called from PatchEngine.cpp (ApplyFramePatches()) safely
 // we can do memory reads/writes without worrying
 // anything that needs to read or write to memory should be getting run from here
 void RunRioFunctions(const Core::CPUThreadGuard& guard)
 {
-  if (mGameBeingPlayed != GameName::MarioBaseball)
-    return;
+  SConfig& config = SConfig::GetInstance();
 
-  if (s_stat_tracker) {
-    s_stat_tracker->Run(guard);
-  }
-  if (GetState() == State::Stopping || GetState() == State::Uninitialized) {
-    s_stat_tracker->dumpGame(guard);
-    std::cout << "Emulation stopped. Dumping game." << std::endl;
-    s_stat_tracker->init();
-  }
 
+  // Access the game ID
+  const std::string& gameID = config.GetGameID();
+  CheckCurrentGame(gameID);
   
-  if (PowerPC::MMU::HostRead_U32(guard, aGameId) == 0)
+  if (mGameBeingPlayed == GameName::MarioBaseball)
   {
-    runNetplayGameFunctions = true;
-  }
-
-  if (NetPlay::IsNetPlayRunning())
-  {
-    // send checksum for desync detection
-    u64 frame = Movie::GetCurrentFrame();
-    if (frame % 60)
+    if (s_stat_tracker)
     {
-      u8 checksumId = (frame / 60) & 0xF;
-      u32 checksum = PowerPC::MMU::HostRead_U32(guard, 0x802EBFB8);
-      NetPlay::NetPlayClient::SendChecksum(checksumId, frame, checksum);
+      s_stat_tracker->Run(guard);
     }
-    if (runNetplayGameFunctions)
+    if (GetState() == State::Stopping || GetState() == State::Uninitialized)
     {
-      SetNetplayerUserInfo();
-      NetPlay::NetPlayClient::SendGameID(PowerPC::MMU::HostRead_U32(guard, aGameId));
-      runNetplayGameFunctions = false;
+      s_stat_tracker->dumpGame(guard);
+      std::cout << "Emulation stopped. Dumping game." << std::endl;
+      s_stat_tracker->init();
     }
 
-  }
+    if (PowerPC::MMU::HostRead_U32(guard, aGameId) == 0)
+    {
+      runNetplayGameFunctions = true;
+    }
 
-  CodeWriter.RunCodeInject(guard);
-  AutoGolfMode(guard);
-  TrainingMode(guard);
-  DisplayBatterFielder(guard);
-  SetAvgPing(guard);
-  RunDraftTimer(guard);
+    if (NetPlay::IsNetPlayRunning())
+    {
+      // send checksum for desync detection
+      u64 frame = Movie::GetCurrentFrame();
+      if (frame % 60)
+      {
+        u8 checksumId = (frame / 60) & 0xF;
+        u32 checksum = PowerPC::MMU::HostRead_U32(guard, 0x802EBFB8);
+        NetPlay::NetPlayClient::SendChecksum(checksumId, frame, checksum);
+      }
+      if (runNetplayGameFunctions)
+      {
+        SetNetplayerUserInfo();
+        NetPlay::NetPlayClient::SendGameID(PowerPC::MMU::HostRead_U32(guard, aGameId));
+        runNetplayGameFunctions = false;
+      }
+    }
+
+    CodeWriter.RunCodeInject(guard);
+    AutoGolfMode(guard, GameName::MarioBaseball);
+    TrainingMode(guard);
+    DisplayBatterFielder(guard);
+    SetAvgPing(guard);
+    RunDraftTimer(guard);
+  }
+  else if (mGameBeingPlayed == GameName::ToadstoolTour)
+  {
+    // add check for being in game
+    if (NetPlay::IsNetPlayRunning())
+    {
+      runNetplayGameFunctions = true;
+      if (runNetplayGameFunctions)
+      {
+        SetNetplayerUserInfo();
+        runNetplayGameFunctions = false;
+      }
+    }
+    AutoGolfMode(guard, GameName::ToadstoolTour);
+  }
+  else if (mGameBeingPlayed == GameName::UnknownGame)
+  {
+    return;
+  }
+  else
+  {
+    return;
+  }
 }
 
 void OnFrameEnd()
@@ -283,35 +328,52 @@ void OnFrameEnd()
 #endif
 }
 
-void AutoGolfMode(const Core::CPUThreadGuard& guard)
+void AutoGolfMode(const Core::CPUThreadGuard& guard, GameName currentGame)
 {
-  if (IsGolfMode())
+  if (currentGame == GameName::MarioBaseball)
   {
-    u8 BatterPort = PowerPC::MMU::HostRead_U8(guard, aBatterPort);      
-    u8 FielderPort = PowerPC::MMU::HostRead_U8(guard, aFielderPort);
-    bool isField = PowerPC::MMU::HostRead_U8(guard, aIsField) == 1;
-
-    if (BatterPort == 0)
-      return;  // means game hasn't started yet
-
-    // makes the player who paused the golfer
-    if (PowerPC::MMU::HostRead_U8(guard, aWhoPaused) == 2)
-      isField = true;
-
-    // add minigame functionality
-    int minigameId = PowerPC::MMU::HostRead_U8(guard, aMinigameID);
-    if (minigameId == 3 || minigameId == 1)
+    if (IsGolfMode())
     {
-      BatterPort = PowerPC::MMU::HostRead_U8(guard, aBarrelBatterPort) + 1;
-      isField = false;
-    }
-    else if (minigameId == 2)
-    {
-      FielderPort = PowerPC::MMU::HostRead_U8(guard, aWallBallPort) + 1;
-      isField = true;
-    }
+      u8 BatterPort = PowerPC::MMU::HostRead_U8(guard, aBatterPort);
+      u8 FielderPort = PowerPC::MMU::HostRead_U8(guard, aFielderPort);
+      bool isField = PowerPC::MMU::HostRead_U8(guard, aIsField) == 1;
 
-    NetPlay::NetPlayClient::AutoGolfMode(isField, BatterPort, FielderPort);
+      if (BatterPort == 0)
+        return;  // means game hasn't started yet
+
+      // makes the player who paused the golfer
+      if (PowerPC::MMU::HostRead_U8(guard, aWhoPaused) == 2)
+        isField = true;
+
+      // add minigame functionality
+      int minigameId = PowerPC::MMU::HostRead_U8(guard, aMinigameID);
+      if (minigameId == 3 || minigameId == 1)
+      {
+        BatterPort = PowerPC::MMU::HostRead_U8(guard, aBarrelBatterPort) + 1;
+        isField = false;
+      }
+      else if (minigameId == 2)
+      {
+        FielderPort = PowerPC::MMU::HostRead_U8(guard, aWallBallPort) + 1;
+        isField = true;
+      }
+
+      NetPlay::NetPlayClient::MSSBAutoGolfMode(isField, BatterPort, FielderPort);
+    }
+  }
+  else if (currentGame == GameName::ToadstoolTour)
+  {
+    if (IsGolfMode())
+    {
+      u8 currentGolfer = PowerPC::MMU::HostRead_U8(guard, aCurrentGolfer);
+      u8 playerCount = PowerPC::MMU::HostRead_U8(guard, aPlayerCount);
+
+      NetPlay::NetPlayClient::MGTTAutoGolfMode(currentGolfer, playerCount);
+    }
+  }
+  else
+  {
+    return;
   }
 }
 
@@ -344,7 +406,7 @@ void TrainingMode(const Core::CPUThreadGuard& guard)
     if (BatterPort > 0)
       BatterPort--;
     u32 stickDirectionAddr = 0x8089392D + (0x10 * BatterPort);
-
+    float contactQuality = PowerPC::MMU::HostRead_F32(guard, aAB_ContactQuality);
     u16 contactFrame = PowerPC::MMU::HostRead_U16(guard, aContactFrame);
     u8 typeOfContact_Value = PowerPC::MMU::HostRead_U8(guard, aTypeOfContact);
     std::string typeOfContact;
@@ -404,6 +466,7 @@ void TrainingMode(const Core::CPUThreadGuard& guard)
       "Batting Data:                    \n"
       "Contact Frame:  {}\n"
       "Type of Contact:  {}\n"
+      "Contact Quality: {}\n"
       "Input Direction:  {}\n"
       "Charge Percent:  {}%\n"
       "Ball Angle:  {}°\n\n"
@@ -414,6 +477,7 @@ void TrainingMode(const Core::CPUThreadGuard& guard)
       "Net:  {} m/s  -->  {} mph",
       contactFrame,
       typeOfContact,
+      contactQuality,
       inputDirection,
       totalCharge,
       angle,

@@ -2,6 +2,7 @@
 #include "NetPlayProto.h"
 #include "Config/NetplaySettings.h"
 #include <VideoCommon/VideoConfig.h>
+#include "ConfigManager.h"
 
 void DefaultGeckoCodes::Init(std::optional<std::vector<ClientCode>> client_codes, bool tagset_active, bool is_night,
                              bool disable_replays)

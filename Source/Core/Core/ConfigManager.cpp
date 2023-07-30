@@ -402,7 +402,7 @@ DiscIO::Language SConfig::GetLanguageAdjustedForRegion(bool wii, DiscIO::Region 
 
 bool SConfig::GameIsAllowed() const
 {
-  std::vector<std::string> games_list = {"GYQE01"};
+  std::vector<std::string> games_list = {"GYQE01", "GFTE01"};
   bool can_play = false;
   std::string current_game = GetGameID();
   for (std::string game : games_list)

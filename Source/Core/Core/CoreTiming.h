@@ -24,6 +24,7 @@
 #include "Common/CommonTypes.h"
 #include "Common/SPSCQueue.h"
 
+
 class PointerWrap;
 
 namespace Core
