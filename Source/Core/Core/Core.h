@@ -14,6 +14,7 @@
 #include <string>
 #include <string_view>
 #include <optional>
+#include <map>
 
 #include "Common/CommonTypes.h"
 
@@ -47,6 +48,12 @@ enum class State
   Running,
   Stopping,
   Starting,
+};
+
+enum class GameName : u8 {
+  UnknownGame = 0,
+  MarioBaseball = 1,
+  ToadstoolTour = 2,
 };
 
 // Console type values based on:
