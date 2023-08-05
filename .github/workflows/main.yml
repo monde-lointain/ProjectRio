@@ -118,8 +118,8 @@ jobs:
           sudo apt install \
           cmake \
           ca-certificates \
-          qtbase5-dev \
-          qtbase5-private-dev \
+          qtbase6-dev \
+          qtbase6-private-dev \
           make \
           pkg-config \
           udev \
