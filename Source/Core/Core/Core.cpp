@@ -615,6 +615,11 @@ void RunDraftTimer(const Core::CPUThreadGuard& guard)
 // rounds to 2 decimal places
 float u32ToFloat(u32 value)
 {
+  union{
+    u32 num;
+    float fnum;
+  } float_converter;
+  
   float_converter.num = value;
   return float_converter.fnum;
 }
