@@ -120,6 +120,7 @@ jobs:
           cmake \
           ca-certificates \
           qt6-base-dev \
+          qt6-base-private-dev \
           libqt6svg6-dev \
           make \
           pkg-config \
