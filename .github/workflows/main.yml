@@ -119,7 +119,8 @@ jobs:
           sudo apt install \
           cmake \
           ca-certificates \
-          qt6-dev \
+          qt6-base-dev \
+          libqt6svg6-dev \
           make \
           pkg-config \
           udev \
