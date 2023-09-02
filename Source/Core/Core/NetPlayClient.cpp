@@ -1716,34 +1716,13 @@ bool NetPlayClient::isDisableReplays()
   return netplay_client->m_disable_replays;
 }
 
-void NetPlayClient::DisplayBatterFielder(u8 BatterPortInt, u8 FielderPortInt)
+std::string NetPlayClient::GetNetplayNames(u8 PortInt)
 {
-  std::string playername = "";
-  u32 color = OSD::Color::CYAN;
-  std::array<u32, 4> portColor = {
-      {OSD::Color::RED, OSD::Color::BLUE, OSD::Color::YELLOW, OSD::Color::GREEN}};
-  BatterPortInt--;
-  FielderPortInt--;
+  bool playerExists = PortInt >= 0 && PortInt <= 3 ? true : false;  // checks that the port isn't a CPU
+  if (!playerExists)
+    return ""; // empty string for no player
 
-  bool fielderExists = FielderPortInt >= 0 && FielderPortInt <= 3 ? true : false;  // checks that the port isn't a CPU
-  if (fielderExists)
-  {
-    playername = netplay_client->m_players[netplay_client->m_pad_map[FielderPortInt]].name;
-
-    color = portColor[FielderPortInt];
-    OSD::AddTypedMessage(OSD::MessageType::CurrentFielder, fmt::format("Fielder: {}", playername),
-                         OSD::Duration::SHORT, color);
-  }
-
-  bool batterExists = BatterPortInt >= 0 && BatterPortInt <= 3 ? true : false;  // checks that the port isn't a CPU
-  if (batterExists)
-  {
-    playername = netplay_client->m_players[netplay_client->m_pad_map[BatterPortInt]].name;
-
-    color = portColor[BatterPortInt];
-    OSD::AddTypedMessage(OSD::MessageType::CurrentBatter, fmt::format("Batter: {}", playername),
-                         OSD::Duration::SHORT, color);
-  }
+  return netplay_client->m_players[netplay_client->m_pad_map[PortInt]].name;
 }
 
 std::map<int, LocalPlayers::LocalPlayers::Player> NetPlayClient::getNetplayerUserInfo()

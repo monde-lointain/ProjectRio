@@ -264,11 +264,11 @@ void RunRioFunctions(const Core::CPUThreadGuard& guard)
         runNetplayGameFunctions = false;
       }
     }
-    DisplayBatterFielder(guard);
     SetAvgPing(guard);
     RunDraftTimer(guard);
   }
 
+  DisplayPlayerNames(guard);
   CodeWriter.RunCodeInject(guard);
   AutoGolfMode(guard);
   TrainingMode(guard);
@@ -528,55 +528,90 @@ void TrainingMode(const Core::CPUThreadGuard& guard)
   previousContactMade = ContactMade;
 }
 
-void DisplayBatterFielder(const Core::CPUThreadGuard& guard)
+void DisplayPlayerNames(const Core::CPUThreadGuard& guard)
 {
   if (!g_ActiveConfig.bShowBatterFielder)
     return;
 
-  u8 BatterPort = PowerPC::MMU::HostRead_U8(guard, aBatterPort);
-  u8 FielderPort = PowerPC::MMU::HostRead_U8(guard, aFielderPort); 
-  if (BatterPort == 0 || FielderPort == 0) // game hasn't started yet; do not continue func
-    return;
+  std::string P1 = LocalPlayers::m_local_player_1.GetUsername();
+  std::string P2 = LocalPlayers::m_local_player_2.GetUsername();
+  std::string P3 = LocalPlayers::m_local_player_3.GetUsername();
+  std::string P4 = LocalPlayers::m_local_player_4.GetUsername();
+  std::vector<std::string> LocalPlayerList{P1, P2, P3, P4};
+  std::array<u32, 4> portColor = {
+      {OSD::Color::RED, OSD::Color::BLUE, OSD::Color::YELLOW, OSD::Color::GREEN}};
 
-  // Run using NetPlay Nicknames
-  if (NetPlay::IsNetPlayRunning())
-    NetPlay::NetPlayClient::DisplayBatterFielder(BatterPort, FielderPort);
-
-  // Run using Local Players
-  else
-  {    
-    std::string P1 = LocalPlayers::m_local_player_1.GetUsername();
-    std::string P2 = LocalPlayers::m_local_player_2.GetUsername();
-    std::string P3 = LocalPlayers::m_local_player_3.GetUsername();
-    std::string P4 = LocalPlayers::m_local_player_4.GetUsername();
-    std::vector<std::string> LocalPlayerList{P1, P2, P3, P4};
-    std::array<u32, 4> portColor = {
-        {OSD::Color::RED, OSD::Color::BLUE, OSD::Color::YELLOW, OSD::Color::GREEN}};
+  switch (mGameBeingPlayed)
+  {
+  case GameName::MarioBaseball:
+  {
+    u8 BatterPort = PowerPC::MMU::HostRead_U8(guard, aBatterPort);
+    u8 FielderPort = PowerPC::MMU::HostRead_U8(guard, aFielderPort);
+    if (BatterPort == 0 || FielderPort == 0)  // game hasn't started yet; do not continue func
+      return;
 
     // subtract 1 from each port so they can be used as indeces in the arrays
-    if (BatterPort < 5)
-      BatterPort--;
-    if (FielderPort < 5)
-      FielderPort--;
+    BatterPort--;
+    FielderPort--;
 
-    if (BatterPort < 4)
+    std::string batterName = "";
+    std::string fielderName = "";
+
+    // Run using NetPlay Nicknames
+    if (NetPlay::IsNetPlayRunning())
     {
-      if (LocalPlayerList[BatterPort] != "")  // check for valid user & port
-      {
-        OSD::AddTypedMessage(OSD::MessageType::CurrentBatter,
-                             fmt::format("Batter: {}", LocalPlayerList[BatterPort]),
-                             OSD::Duration::SHORT, portColor[BatterPort]);
-      }
+      batterName = NetPlay::NetPlayClient::GetNetplayNames(BatterPort);
+      fielderName = NetPlay::NetPlayClient::GetNetplayNames(FielderPort);
     }
-    if (FielderPort < 4)
+    // Run using Local Players
+    else
     {
-      if (LocalPlayerList[FielderPort] != "")  // check for valid user & port
-      {
-        OSD::AddTypedMessage(OSD::MessageType::CurrentFielder,
-                             fmt::format("Fielder: {}", LocalPlayerList[FielderPort]),
-                             OSD::Duration::SHORT, portColor[FielderPort]);
-      }
+      if (BatterPort < 4)
+        batterName = LocalPlayerList[BatterPort];
+      if (FielderPort < 4)
+        fielderName = LocalPlayerList[FielderPort];
     }
+
+    // check for valid user
+    if (batterName != "")
+    {
+      OSD::AddTypedMessage(OSD::MessageType::CurrentBatter, fmt::format("Batter: {}", batterName),
+                           OSD::Duration::SHORT, portColor[BatterPort]);
+    }
+
+    // check for valid user
+    if (fielderName != "")
+    {
+      OSD::AddTypedMessage(OSD::MessageType::CurrentFielder,
+                           fmt::format("Fielder: {}", fielderName), OSD::Duration::SHORT,
+                           portColor[FielderPort]);
+    }
+
+    break;
+  }
+  case GameName::ToadstoolTour:
+  {
+    u8 GolferPort = PowerPC::MMU::HostRead_U8(guard, aCurrentGolfer);
+    std::string GolferName = "";
+
+    if (NetPlay::IsNetPlayRunning())
+    {
+      GolferName = NetPlay::NetPlayClient::GetNetplayNames(GolferPort);
+    }
+    else
+    {
+      if (GolferPort < 4)
+        GolferName = LocalPlayerList[GolferPort];
+    }
+
+    // check for valid user
+    if (GolferName != "")
+    {
+      OSD::AddTypedMessage(OSD::MessageType::CurrentBatter, fmt::format("Golfer: {}", GolferName),
+                           OSD::Duration::SHORT, portColor[GolferPort]);
+    }
+    break;
+  }
   }
 }
 

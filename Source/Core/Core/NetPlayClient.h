@@ -198,7 +198,7 @@ public:
   bool DoAllPlayersHaveGame();
 
   static void AutoGolfMode(int nextGolfer);
-  static void DisplayBatterFielder(u8 BatterPortInt, u8 FielderPortInt);
+  static std::string GetNetplayNames(u8 PortInt);
   static bool isNight();
   static bool isDisableReplays();
   static u32 sGetPlayersMaxPing();
