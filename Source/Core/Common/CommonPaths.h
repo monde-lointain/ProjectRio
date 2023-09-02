@@ -13,9 +13,9 @@
 // The normal user directory
 #ifndef STEAM
 #ifdef _WIN32
-#define NORMAL_USER_DIR "ProjectRio"
+#define NORMAL_USER_DIR "Project Rio"
 #elif defined(__APPLE__)
-#define NORMAL_USER_DIR "Library/Application Support/ProjectRio"
+#define NORMAL_USER_DIR "Library/Application Support/Project Rio"
 #elif defined(ANDROID)
 #define NORMAL_USER_DIR "/sdcard/project-rio"
 #else
