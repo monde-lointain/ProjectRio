@@ -130,8 +130,8 @@ void AdvancedWidget::CreateWidgets()
   utility_layout->addWidget(m_dump_efb_target, 2, 0);
   utility_layout->addWidget(m_dump_xfb_target, 2, 1);
 
-  utility_layout->addWidget(custom_textures_label, 2, 0);
-  utility_layout->addWidget(m_custom_textures_list, 3, 0);
+  utility_layout->addWidget(custom_textures_label, 3, 0);
+  utility_layout->addWidget(m_custom_textures_list, 3, 1);
 
   // Texture dumping
   auto* texture_dump_box = new QGroupBox(tr("Texture Dumping"));
