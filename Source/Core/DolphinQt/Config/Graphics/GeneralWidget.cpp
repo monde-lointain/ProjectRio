@@ -85,7 +85,7 @@ void GeneralWidget::CreateWidgets()
   auto* m_options_layout = new QGridLayout();
 
   m_show_ping = new ConfigBool(tr("Show NetPlay Ping"), Config::GFX_SHOW_NETPLAY_PING);
-  m_show_batter_fielder = new ConfigBool(tr("Show Batting / Fielding Player"), Config::GFX_SHOW_BATTER_FIELDER);
+  m_show_player_names = new ConfigBool(tr("Show Player Names"), Config::GFX_SHOW_PLAYER_NAMES);
   m_training_mode = new ConfigBool(tr("Training Mode v1.0"), Config::GFX_TRAINING_MODE);
   m_draft_timer = new ConfigBool(tr("Draft Timer"), Config::GFX_DRAFT_TIMER);
 
@@ -102,7 +102,7 @@ void GeneralWidget::CreateWidgets()
   m_options_layout->addWidget(m_show_messages, 0, 1);
   m_options_layout->addWidget(m_show_ping, 1, 1);
 
-  m_options_layout->addWidget(m_show_batter_fielder, 3, 0);
+  m_options_layout->addWidget(m_show_player_names, 3, 0);
   m_options_layout->addWidget(m_training_mode, 3, 1);
 
   m_options_layout->addWidget(m_draft_timer, 4, 0);
@@ -259,9 +259,9 @@ void GeneralWidget::AddDescriptions()
                  "two or fewer cores, it is recommended to enable this option, as a large shader "
                  "queue may reduce frame rates.<br><br><dolphin_emphasis>Otherwise, if "
                  "unsure, leave this unchecked.</dolphin_emphasis>");
-  static const char TR_SHOW_BATTER_FIELDER[] =
-      QT_TR_NOOP("Shows the name of the Batter & Fielder on the screen. Uses Local Players for offline games "
-                 "and NetPlay nicknames for online games. Be sure to assign Local Players to the correct port.");
+  static const char TR_SHOW_PLAYER_NAMES[] =
+      QT_TR_NOOP("Shows the names of the players during a match. For Mario Baseball, the Batter and Fielder names are shown."
+                 " For Mario Golf, the current Golfer's name is shown. Be sure to assign Local Players to the correct port.");
 
   static const char TR_TRAINING_MODE[] =
       QT_TR_NOOP("Displays game informaiton on screen in real-time. Useful for "
@@ -284,7 +284,7 @@ void GeneralWidget::AddDescriptions()
 
   m_show_ping->SetDescription(tr(TR_SHOW_NETPLAY_PING_DESCRIPTION));
 
-  m_show_batter_fielder->SetDescription(tr(TR_SHOW_BATTER_FIELDER));
+  m_show_player_names->SetDescription(tr(TR_SHOW_PLAYER_NAMES));
 
   m_training_mode->SetDescription(tr(TR_TRAINING_MODE));
 

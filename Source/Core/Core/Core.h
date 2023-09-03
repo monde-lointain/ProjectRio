@@ -284,4 +284,5 @@ static const u32 aSceneId = 0x800E877F;
 
 static const u32 aCurrentGolfer = 0x804E68FB; // 0-3, indicates current golfing player
 static const u32 aPlayerCount = 0x804E68FA; // indicates total player count
+static const u32 aIsGolfMatch = 0x80162B5F; // 1 if golfing session active; 0 on menus
 }  // namespace Core

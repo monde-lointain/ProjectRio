@@ -52,7 +52,7 @@ private:
   std::array<ConfigRadioInt*, 4> m_shader_compilation_mode{};
   ConfigBool* m_wait_for_shaders;
   
-  ConfigBool* m_show_batter_fielder;
+  ConfigBool* m_show_player_names;
   ConfigBool* m_training_mode;
   ConfigBool* m_draft_timer;
 };

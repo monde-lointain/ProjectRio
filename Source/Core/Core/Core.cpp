@@ -530,7 +530,7 @@ void TrainingMode(const Core::CPUThreadGuard& guard)
 
 void DisplayPlayerNames(const Core::CPUThreadGuard& guard)
 {
-  if (!g_ActiveConfig.bShowBatterFielder)
+  if (!g_ActiveConfig.bShowPlayerNames)
     return;
 
   std::string P1 = LocalPlayers::m_local_player_1.GetUsername();
@@ -548,7 +548,7 @@ void DisplayPlayerNames(const Core::CPUThreadGuard& guard)
     u8 BatterPort = PowerPC::MMU::HostRead_U8(guard, aBatterPort);
     u8 FielderPort = PowerPC::MMU::HostRead_U8(guard, aFielderPort);
     if (BatterPort == 0 || FielderPort == 0)  // game hasn't started yet; do not continue func
-      return;
+      break;
 
     // subtract 1 from each port so they can be used as indeces in the arrays
     BatterPort--;
@@ -591,6 +591,9 @@ void DisplayPlayerNames(const Core::CPUThreadGuard& guard)
   }
   case GameName::ToadstoolTour:
   {
+    if (PowerPC::MMU::HostRead_U8(guard, aIsGolfMatch) == 0)
+      break;
+
     u8 GolferPort = PowerPC::MMU::HostRead_U8(guard, aCurrentGolfer);
     std::string GolferName = "";
 
@@ -598,10 +601,9 @@ void DisplayPlayerNames(const Core::CPUThreadGuard& guard)
     {
       GolferName = NetPlay::NetPlayClient::GetNetplayNames(GolferPort);
     }
-    else
+    else if (GolferPort < 4)
     {
-      if (GolferPort < 4)
-        GolferName = LocalPlayerList[GolferPort];
+      GolferName = LocalPlayerList[GolferPort];
     }
 
     // check for valid user

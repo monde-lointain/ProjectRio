@@ -38,7 +38,7 @@ extern const Info<bool> GFX_SHOW_GRAPHS;
 extern const Info<bool> GFX_SHOW_SPEED;
 extern const Info<bool> GFX_SHOW_SPEED_COLORS;
 extern const Info<int> GFX_PERF_SAMP_WINDOW;
-extern const Info<bool> GFX_SHOW_BATTER_FIELDER;
+extern const Info<bool> GFX_SHOW_PLAYER_NAMES;
 extern const Info<bool> GFX_TRAINING_MODE;
 extern const Info<bool> GFX_DRAFT_TIMER;
 extern const Info<bool> GFX_SHOW_NETPLAY_PING;

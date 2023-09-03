@@ -35,7 +35,7 @@ const Info<bool> GFX_SHOW_SPEED{{System::GFX, "Settings", "ShowSpeed"}, false};
 const Info<bool> GFX_SHOW_SPEED_COLORS{{System::GFX, "Settings", "ShowSpeedColors"}, true};
 const Info<int> GFX_PERF_SAMP_WINDOW{{System::GFX, "Settings", "PerfSampWindowMS"}, 1000};
 const Info<bool> GFX_SHOW_NETPLAY_PING{{System::GFX, "Settings", "ShowNetPlayPing"}, false};
-const Info<bool> GFX_SHOW_BATTER_FIELDER{{System::GFX, "Settings", "ShowBatterFielder"}, true};
+const Info<bool> GFX_SHOW_PLAYER_NAMES{{System::GFX, "Settings", "ShowPlayerNames"}, true};
 const Info<bool> GFX_TRAINING_MODE{{System::GFX, "Settings", "TrainingModeOverlay"}, false};
 const Info<bool> GFX_DRAFT_TIMER{{System::GFX, "Settings", "DraftTimer"}, true};
 const Info<bool> GFX_SHOW_NETPLAY_MESSAGES{{System::GFX, "Settings", "ShowNetPlayMessages"}, false};
