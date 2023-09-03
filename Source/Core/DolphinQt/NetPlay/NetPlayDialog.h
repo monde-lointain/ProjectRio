@@ -54,6 +54,7 @@ public:
   void Update() override;
   void AppendChat(const std::string& msg) override;
   void DisplayActiveGeckoCodes();
+  void UpdateLobbyLayout(std ::string game_name);
 
   void OnMsgChangeGame(const NetPlay::SyncIdentifier& sync_identifier,
                        const std::string& netplay_name) override;
@@ -79,6 +80,7 @@ public:
   void OnRandomStadiumResult(int stadium);
   void OnNightResult(bool is_night);
   void OnDisableReplaysResult(bool disable);
+  void OnCourseResult(std::string message);
   void OnActiveGeckoCodes(std::string codeStr);
   bool IsSpectating() override;
   void SetSpectating(bool spectating) override;
@@ -120,6 +122,8 @@ private:
   void OnSpectatorToggle();
   void OnCoinFlip();
   void OnRandomStadium();
+  void OnRandomCourse(bool rand9);
+
   void OnStart();
   void DisplayMessage(const QString& msg, const std::string& color,
                       int duration = OSD::Duration::NORMAL);
@@ -181,6 +185,8 @@ private:
   QActionGroup* m_network_mode_group;
   QPushButton* m_coin_flipper;
   QPushButton* m_random_stadium;
+  QPushButton* m_random_9;
+  QPushButton* m_random_18;
   QCheckBox* m_night_stadium;
   QCheckBox* m_disable_replays;
   QCheckBox* m_spectator_toggle;

@@ -296,9 +296,17 @@ void NetPlayDialog::CreateChatLayout()
   m_chat_send_button = new QPushButton(tr("Send"));
   m_coin_flipper = new QPushButton(tr("Coin Flip"));
   m_coin_flipper->setAutoDefault(false); // prevents accidental coin flips when trying to send a chat msg
-  m_random_stadium = new QPushButton(tr("Stadium"));
+  m_random_stadium = new QPushButton(tr("Random Stadium"));
   m_random_stadium->setAutoDefault(false);
   m_random_stadium->setToolTip(tr("Generates a random stadium and posts in the netplay chat."));
+
+  // MGTT buttons
+  m_random_9 = new QPushButton(tr("Random 9"));
+  m_random_9->setAutoDefault(false);
+  m_random_9->setToolTip(tr("Generates a random 9-hole course and posts in the netplay chat."));
+  m_random_18 = new QPushButton(tr("Random 18"));
+  m_random_18->setAutoDefault(false);
+  m_random_18->setToolTip(tr("Generates a random 18-hole course and posts in the netplay chat."));
 
   // This button will get re-enabled when something gets entered into the chat box
   m_chat_send_button->setEnabled(false);
@@ -314,6 +322,8 @@ void NetPlayDialog::CreateChatLayout()
   layout->addWidget(m_chat_send_button, 1, 1);
   layout->addWidget(m_coin_flipper, 1, 2);
   layout->addWidget(m_random_stadium, 1, 3);
+  layout->addWidget(m_random_9, 1, 3); // these buttons should overlay the existing buttons so that we can easily disable/enable when changing games
+  layout->addWidget(m_random_18, 1, 4);
 
   m_chat_box->setLayout(layout);
 }
@@ -418,6 +428,8 @@ void NetPlayDialog::ConnectWidgets()
 
   connect(m_coin_flipper, &QPushButton::clicked, this, &NetPlayDialog::OnCoinFlip);
   connect(m_random_stadium, &QPushButton::clicked, this, &NetPlayDialog::OnRandomStadium);
+  connect(m_random_9, &QPushButton::clicked, this, [this] { NetPlayDialog::OnRandomCourse(true); });
+  connect(m_random_18, &QPushButton::clicked, this, [this] { NetPlayDialog::OnRandomCourse(false); });
   
   const auto hia_function = [this](bool enable) {
     if (m_host_input_authority != enable)
@@ -540,34 +552,80 @@ void NetPlayDialog::OnRandomStadium()
 void NetPlayDialog::OnRandomStadiumResult(int stadium)
 {
   u8 stadium_id = 0;
+  std::string stadium_msg_color = "DodgerBlue";
 
   switch (stadium) {
   case 0:
-    DisplayMessage(tr("Mario Stadium!"), "DodgerBlue");
+    DisplayMessage(tr("Mario Stadium!"), stadium_msg_color);
     break;
   case 1:
-    DisplayMessage(tr("Peach's Garden!"), "DodgerBlue");
+    DisplayMessage(tr("Peach's Garden!"), stadium_msg_color);
     stadium_id = 4;
     break;
   case 2:
-    DisplayMessage(tr("Wario's Palace!"), "DodgerBlue");
+    DisplayMessage(tr("Wario's Palace!"), stadium_msg_color);
     stadium_id = 2;
     break;
   case 3:
-    DisplayMessage(tr("Yoshi's Park!"), "DodgerBlue");
+    DisplayMessage(tr("Yoshi's Park!"), stadium_msg_color);
     stadium_id = 3;
     break;
   case 4:
-    DisplayMessage(tr("DK's Jungle!"), "DodgerBlue");
+    DisplayMessage(tr("DK's Jungle!"), stadium_msg_color);
     stadium_id = 5;
     break;
   case 5:
-    DisplayMessage(tr("Bowser's Castle!"), "DodgerBlue");
+    DisplayMessage(tr("Bowser's Castle!"), stadium_msg_color);
     stadium_id = 1;
     break;
   default:
     DisplayMessage(tr("There was an error. Please try again"), "red");
   }
+}
+
+void NetPlayDialog::OnRandomCourse(bool rand9)
+{
+  u8 randCourse;
+  randCourse = rand() % 6;
+  std::string CourseName = "";
+
+  std::string FrontOrBackHoles = rand() % 2 == 0 ? "Front 9 Holes" : "Back 9 Holes";
+  std::string FrontOrBackTees = rand() % 2 == 0 ? "Front Tees" : "Back Tees";
+
+  switch (randCourse)
+  {
+  case 0:
+    CourseName = "Lakitu Valley";
+    break;
+  case 1:
+    CourseName = "Cheep Cheep Falls";
+    break;
+  case 2:
+    CourseName = "Shifting Sands";
+    break;
+  case 3:
+    CourseName = "Blooper Bay";
+    break;
+  case 4:
+    CourseName = "Peach’s Castle Grounds";
+    break;
+  case 5:
+    CourseName = "Bowser Badlands";
+    break;
+  default:
+    CourseName = "There was an error. Please try again";
+  }
+
+  if (rand9)
+    CourseName += " " + FrontOrBackHoles;
+
+  std::string ResultMessage = CourseName + " - " + FrontOrBackTees;
+  Settings::Instance().GetNetPlayClient()->SendCourse(ResultMessage);
+}
+
+void NetPlayDialog::OnCourseResult(std::string message)
+{
+  DisplayMessage(QString::fromStdString(message), "DodgerBlue");
 }
 
 void NetPlayDialog::OnNightResult(bool is_night)
@@ -999,6 +1057,29 @@ void NetPlayDialog::OnMsgChangeGame(const NetPlay::SyncIdentifier& sync_identifi
     m_current_game_name = netplay_name;
     UpdateDiscordPresence();
   });
+  UpdateLobbyLayout(netplay_name);
+}
+
+void NetPlayDialog::UpdateLobbyLayout(std ::string game_name)
+{
+  if (game_name == "Mario Superstar Baseball (GYQE01)")
+  {
+    m_night_stadium->setVisible(true);
+    m_disable_replays->setVisible(true);
+
+    m_random_stadium->setVisible(true);
+    m_random_9->setVisible(false);
+    m_random_18->setVisible(false);
+  }
+  else
+  {
+    m_night_stadium->setVisible(false);
+    m_disable_replays->setVisible(false);
+
+    m_random_stadium->setVisible(false);
+    m_random_9->setVisible(true);
+    m_random_18->setVisible(true);
+  }
 }
 
 void NetPlayDialog::OnMsgChangeGBARom(int pad, const NetPlay::GBAConfig& config)

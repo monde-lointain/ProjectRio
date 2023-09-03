@@ -539,6 +539,10 @@ void NetPlayClient::OnData(sf::Packet& packet)
     OnDisableReplaysMsg(packet);
     break;
 
+  case MessageID::Course:
+    OnCourseMsg(packet);
+    break;
+
   default:
     PanicAlertFmtT("Unknown message received with id : {0}", static_cast<u8>(mid));
     break;
@@ -1686,6 +1690,13 @@ void NetPlayClient::OnStadiumMsg(sf::Packet& packet)
   m_dialog->OnRandomStadiumResult(stadium);
 }
 
+void NetPlayClient::OnCourseMsg(sf::Packet& packet)
+{
+  std::string message;
+  packet >> message;
+  m_dialog->OnCourseResult(message);
+}
+
 void NetPlayClient::Send(const sf::Packet& packet, const u8 channel_id)
 {
   Common::ENet::SendPacket(m_server, packet, channel_id);
@@ -1988,6 +1999,15 @@ void NetPlayClient::SendStadium(int stadium)
   sf::Packet packet;
   packet << MessageID::Stadium;
   packet << stadium;
+
+  SendAsync(std::move(packet));
+}
+
+void NetPlayClient::SendCourse(std::string message)
+{
+  sf::Packet packet;
+  packet << MessageID::Course;
+  packet << message;
 
   SendAsync(std::move(packet));
 }

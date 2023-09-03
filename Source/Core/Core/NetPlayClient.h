@@ -86,6 +86,7 @@ public:
   virtual void OnDisableReplaysResult(bool disable) = 0;
   virtual void OnActiveGeckoCodes(std::string codeStr) = 0;
   virtual void OnRandomStadiumResult(int stadium) = 0;
+  virtual void OnCourseResult(std::string message) = 0;
   virtual bool IsSpectating() = 0;
   virtual void SetSpectating(bool spectating) = 0;
 
@@ -155,6 +156,7 @@ public:
   void SendNightStadium(bool is_night);
   void SendStadium(int stadium);
   void SendDisableReplays(bool disable);
+  void SendCourse(std::string message);
   void RequestStopGame();
   void SendPowerButtonEvent();
   void RequestGolfControl(PlayerId pid);
@@ -315,7 +317,6 @@ private:
   void DisplayPlayersPing();
 
   void AutoGolfModeLogic(int nextGolfer);
-  void MGTTAutoGolfModeLogic(int currentGolfer, int playerCount);
 
   u32 GetPlayersMaxPing() const;
 
@@ -369,6 +370,7 @@ private:
   void OnChecksumMsg(sf::Packet& packet);
   void OnGameIDMsg(sf::Packet& packet);
   void OnStadiumMsg(sf::Packet& packet);
+  void OnCourseMsg(sf::Packet& packet);
   void OnDisableReplaysMsg(sf::Packet& packet);
 
   int framesAsGolfer = 0;
