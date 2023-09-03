@@ -40,7 +40,8 @@ void DefaultGeckoCodes::AddRequiredCodes(const Core::CPUThreadGuard& guard)
     PowerPC::MMU::HostWrite_U32(guard, 0x38600005, aBootToMainMenu);
 
   // Skip Mem Card Check
-  PowerPC::MMU::HostWrite_U8(guard, 0x1, aSkipMemCardCheck);
+  if (TagSetActive)
+    PowerPC::MMU::HostWrite_U8(guard, 0x1, aSkipMemCardCheck);
 
   // Unlock Everything
   PowerPC::MMU::HostWrite_U8(guard, 0x2, aUnlockEverything_1);
