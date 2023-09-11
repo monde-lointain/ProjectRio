@@ -9,14 +9,14 @@ namespace LocalPlayers
 // gets a vector of all the local players
 std::vector<LocalPlayers::Player> LocalPlayers::GetPlayers()
 {
-  IniFile local_players_ini;
+  Common::IniFile local_players_ini;
   local_players_ini.Load(File::GetUserPath(F_LOCALPLAYERSCONFIG_IDX));
 
   std::vector<LocalPlayers::Player> players;
   LocalPlayers::Player defaultPlayer{"No Player Selected", "0"};
   players.push_back(defaultPlayer);
 
-  for (const IniFile* ini : {&local_players_ini})
+  for (const Common::IniFile* ini : {&local_players_ini})
   {
     std::vector<std::string> lines;
     ini->GetLines("Local_Players_List", &lines, false);
@@ -65,10 +65,10 @@ std::map<int, LocalPlayers::Player> LocalPlayers::GetPortPlayers()
 {
   std::map<int, LocalPlayers::Player> LocalPortPlayers;
 
-  IniFile local_players_ini;
+  Common::IniFile local_players_ini;
   local_players_ini.Load(File::GetUserPath(F_LOCALPLAYERSCONFIG_IDX));
-  IniFile::Section* localplayers = local_players_ini.GetOrCreateSection("Local Players");
-  const IniFile::Section::SectionMap portmap = localplayers->GetValues();
+  Common::IniFile::Section* localplayers = local_players_ini.GetOrCreateSection("Local Players");
+  const Common::IniFile::Section::SectionMap portmap = localplayers->GetValues();
 
   for (const auto& name : portmap)
   {

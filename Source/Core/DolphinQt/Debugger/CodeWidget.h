@@ -22,6 +22,10 @@ namespace Common
 {
 struct Symbol;
 }
+namespace Core
+{
+class System;
+}
 
 class CodeWidget : public QDockWidget
 {
@@ -66,14 +70,19 @@ private:
   void closeEvent(QCloseEvent*) override;
   void showEvent(QShowEvent* event) override;
 
+  Core::System& m_system;
+
   CodeDiffDialog* m_diff_dialog = nullptr;
   QLineEdit* m_search_address;
-  QLineEdit* m_search_symbols;
   QPushButton* m_code_diff;
 
+  QLineEdit* m_search_callstack;
   QListWidget* m_callstack_list;
+  QLineEdit* m_search_symbols;
   QListWidget* m_symbols_list;
+  QLineEdit* m_search_calls;
   QListWidget* m_function_calls_list;
+  QLineEdit* m_search_callers;
   QListWidget* m_function_callers_list;
   CodeViewWidget* m_code_view;
   QSplitter* m_box_splitter;

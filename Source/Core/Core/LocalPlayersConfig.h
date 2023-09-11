@@ -11,9 +11,9 @@ class IniFile;
 
 namespace LocalPlayers
 {
-  //std::vector<LocalPlayers> LoadPlayers(const IniFile& localIni);
-  void SavePlayers(IniFile& inifile, std::vector<LocalPlayers::Player>& players);
-  std::vector<std::string> LoadPortPlayers(IniFile& inifile);
+  //std::vector<LocalPlayers> LoadPlayers(const Common::IniFile& localIni);
+  void SavePlayers(Common::IniFile& inifile, std::vector<LocalPlayers::Player>& players);
+  std::vector<std::string> LoadPortPlayers(Common::IniFile& inifile);
 
   void SaveLocalPorts();
   void LoadLocalPorts();

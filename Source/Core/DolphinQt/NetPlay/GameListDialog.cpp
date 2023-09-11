@@ -50,7 +50,7 @@ void GameListDialog::PopulateGameList()
   for (int i = 0; i < m_game_list_model.rowCount(QModelIndex()); i++)
   {
     std::shared_ptr<const UICommon::GameFile> game = m_game_list_model.GetGameFile(i);
-    if ((m_game_list_model.GetNetPlayName(*game) == "Mario Superstar Baseball (GYQE01)"))
+    if ((m_game_list_model.GetNetPlayName(*game) == "Mario Superstar Baseball (GYQE01)") || (m_game_list_model.GetNetPlayName(*game) == "Mario Golf: Toadstool Tour (GFTE01)"))
     {
       auto* item =
           new QListWidgetItem(QString::fromStdString(m_game_list_model.GetNetPlayName(*game)));

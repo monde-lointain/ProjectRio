@@ -35,7 +35,7 @@ static void SaveLocalPlayers(std::vector<std::string>& lines, const LocalPlayers
   lines.push_back(playerObj.LocalPlayerToStr());
 }
 
-void SavePlayers(IniFile& inifile, std::vector<LocalPlayers::Player>& players)
+void SavePlayers(Common::IniFile& inifile, std::vector<LocalPlayers::Player>& players)
 {
   std::vector<std::string> lines;
 
@@ -47,13 +47,13 @@ void SavePlayers(IniFile& inifile, std::vector<LocalPlayers::Player>& players)
   inifile.SetLines("Local_Players_List", lines);
 }
 
-std::vector<std::string> LoadPortPlayers(IniFile& inifile)
+std::vector<std::string> LoadPortPlayers(Common::IniFile& inifile)
 {
   std::vector<std::string> ports;
 
-  IniFile::Section* localplayers = inifile.GetOrCreateSection("Local Players");
+  Common::IniFile::Section* localplayers = inifile.GetOrCreateSection("Local Players");
 
-  const IniFile::Section::SectionMap portmap = localplayers->GetValues();
+  const Common::IniFile::Section::SectionMap portmap = localplayers->GetValues();
   for (const auto& name : portmap)
   {
     ports.push_back(name.second);
@@ -66,9 +66,9 @@ std::vector<std::string> LoadPortPlayers(IniFile& inifile)
 void SaveLocalPorts()
 {
   const auto ini_path = File::GetUserPath(F_LOCALPLAYERSCONFIG_IDX);
-  IniFile ini;
+  Common::IniFile ini;
   ini.Load(ini_path);
-  IniFile::Section* localplayers = ini.GetOrCreateSection("Local Players");
+  Common::IniFile::Section* localplayers = ini.GetOrCreateSection("Local Players");
   localplayers->Set("Online Player", (m_online_player).LocalPlayerToStr());
   localplayers->Set("Player 1", (m_local_player_1).LocalPlayerToStr());
   localplayers->Set("Player 2", (m_local_player_2).LocalPlayerToStr());

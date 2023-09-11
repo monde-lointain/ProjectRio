@@ -61,6 +61,7 @@ private:
   void OpenInternetTest();
   std::string LobbyNameString();
   void UpdateGameModeDescription();
+  void CheckGameModesAreAllowed();
 
   // Browser Stuff
   void RefreshBrowser();

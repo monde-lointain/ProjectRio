@@ -18,7 +18,7 @@ namespace Common
 {
 std::string RootUserPath(FromWhichRoot from)
 {
-  int idx = from == FROM_CONFIGURED_ROOT ? D_WIIROOT_IDX : D_SESSION_WIIROOT_IDX;
+  int idx = from == FromWhichRoot::Configured ? D_WIIROOT_IDX : D_SESSION_WIIROOT_IDX;
   std::string dir = File::GetUserPath(idx);
   dir.pop_back();  // remove trailing path separator
   return dir;
@@ -38,6 +38,12 @@ std::string GetImportTitlePath(u64 title_id, std::optional<FromWhichRoot> from)
 std::string GetTicketFileName(u64 title_id, std::optional<FromWhichRoot> from)
 {
   return fmt::format("{}/ticket/{:08x}/{:08x}.tik", RootUserPath(from),
+                     static_cast<u32>(title_id >> 32), static_cast<u32>(title_id));
+}
+
+std::string GetV1TicketFileName(u64 title_id, std::optional<FromWhichRoot> from)
+{
+  return fmt::format("{}/ticket/{:08x}/{:08x}.tv1", RootUserPath(from),
                      static_cast<u32>(title_id >> 32), static_cast<u32>(title_id));
 }
 
@@ -70,7 +76,7 @@ std::string GetMiiDatabasePath(std::optional<FromWhichRoot> from)
 bool IsTitlePath(const std::string& path, std::optional<FromWhichRoot> from, u64* title_id)
 {
   std::string expected_prefix = RootUserPath(from) + "/title/";
-  if (!StringBeginsWith(path, expected_prefix))
+  if (!path.starts_with(expected_prefix))
   {
     return false;
   }
@@ -84,7 +90,8 @@ bool IsTitlePath(const std::string& path, std::optional<FromWhichRoot> from, u64
   }
 
   u32 title_id_high, title_id_low;
-  if (!AsciiToHex(components[0], title_id_high) || !AsciiToHex(components[1], title_id_low))
+  if (Common::FromChars(components[0], title_id_high, 16).ec != std::errc{} ||
+      Common::FromChars(components[1], title_id_low, 16).ec != std::errc{})
   {
     return false;
   }
@@ -149,8 +156,11 @@ std::string UnescapeFileName(const std::string& filename)
   {
     u32 character;
     if (pos + 6 <= result.size() && result[pos + 4] == '_' && result[pos + 5] == '_')
-      if (AsciiToHex(result.substr(pos + 2, 2), character))
+      if (Common::FromChars(std::string_view{result}.substr(pos + 2, 2), character, 16).ec ==
+          std::errc{})
+      {
         result.replace(pos, 6, {static_cast<char>(character)});
+      }
 
     ++pos;
   }

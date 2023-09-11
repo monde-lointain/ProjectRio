@@ -62,8 +62,6 @@ void ToolBar::OnEmulationStateChanged(Core::State state)
   bool running = state != Core::State::Uninitialized;
   m_stop_action->setEnabled(running);
   m_fullscreen_action->setEnabled(running);
-  // m_screenshot_action->setEnabled(running);
-  m_controllers_action->setEnabled(NetPlay::IsNetPlayRunning() ? !running : true);
 
   bool playing = running && state != Core::State::Paused;
   UpdatePausePlayButtonState(playing);
@@ -140,7 +138,6 @@ void ToolBar::MakeActions()
   m_config_action = addAction(tr("Config"), this, &ToolBar::SettingsPressed);
   m_graphics_action = addAction(tr("Graphics"), this, &ToolBar::GraphicsPressed);
   m_controllers_action = addAction(tr("Controllers"), this, &ToolBar::ControllersPressed);
-  m_controllers_action->setEnabled(true);
 
   m_view_gecko_codes_action = addAction(tr("Mods"), this, &ToolBar::ViewGeckoCodes);
 
@@ -174,46 +171,45 @@ void ToolBar::UpdatePausePlayButtonState(const bool playing_state)
 {
   if (playing_state)
   {
-    disconnect(m_pause_play_action, 0, 0, 0);
+    disconnect(m_pause_play_action, nullptr, nullptr, nullptr);
     m_pause_play_action->setText(tr("Pause"));
-    m_pause_play_action->setIcon(Resources::GetScaledThemeIcon("pause"));
+    m_pause_play_action->setIcon(Resources::GetThemeIcon("pause"));
     connect(m_pause_play_action, &QAction::triggered, this, &ToolBar::PausePressed);
   }
   else
   {
-    disconnect(m_pause_play_action, 0, 0, 0);
+    disconnect(m_pause_play_action, nullptr, nullptr, nullptr);
     m_pause_play_action->setText(tr("Play"));
-    m_pause_play_action->setIcon(Resources::GetScaledThemeIcon("play"));
+    m_pause_play_action->setIcon(Resources::GetThemeIcon("play"));
     connect(m_pause_play_action, &QAction::triggered, this, &ToolBar::PlayPressed);
   }
 }
 
 void ToolBar::UpdateIcons()
 {
-  m_step_action->setIcon(Resources::GetScaledThemeIcon("debugger_step_in"));
-  m_step_over_action->setIcon(Resources::GetScaledThemeIcon("debugger_step_over"));
-  m_step_out_action->setIcon(Resources::GetScaledThemeIcon("debugger_step_out"));
-  m_skip_action->setIcon(Resources::GetScaledThemeIcon("debugger_skip"));
-  m_show_pc_action->setIcon(Resources::GetScaledThemeIcon("debugger_show_pc"));
-  m_set_pc_action->setIcon(Resources::GetScaledThemeIcon("debugger_set_pc"));
+  m_step_action->setIcon(Resources::GetThemeIcon("debugger_step_in"));
+  m_step_over_action->setIcon(Resources::GetThemeIcon("debugger_step_over"));
+  m_step_out_action->setIcon(Resources::GetThemeIcon("debugger_step_out"));
+  m_skip_action->setIcon(Resources::GetThemeIcon("debugger_skip"));
+  m_show_pc_action->setIcon(Resources::GetThemeIcon("debugger_show_pc"));
+  m_set_pc_action->setIcon(Resources::GetThemeIcon("debugger_set_pc"));
 
-  m_open_action->setIcon(Resources::GetScaledThemeIcon("open"));
-  m_refresh_action->setIcon(Resources::GetScaledThemeIcon("refresh"));
+  m_open_action->setIcon(Resources::GetThemeIcon("open"));
+  m_refresh_action->setIcon(Resources::GetThemeIcon("refresh"));
 
   const Core::State state = Core::GetState();
   const bool playing = state != Core::State::Uninitialized && state != Core::State::Paused;
   if (!playing)
-    m_pause_play_action->setIcon(Resources::GetScaledThemeIcon("play"));
+    m_pause_play_action->setIcon(Resources::GetThemeIcon("play"));
   else
-    m_pause_play_action->setIcon(Resources::GetScaledThemeIcon("pause"));
+    m_pause_play_action->setIcon(Resources::GetThemeIcon("pause"));
 
-  m_stop_action->setIcon(Resources::GetScaledThemeIcon("stop"));
-  m_fullscreen_action->setIcon(Resources::GetScaledThemeIcon("fullscreen"));
-  //m_screenshot_action->setIcon(Resources::GetScaledThemeIcon("screenshot"));
-  m_config_action->setIcon(Resources::GetScaledThemeIcon("config"));
-  m_controllers_action->setIcon(Resources::GetScaledThemeIcon("classic"));
-  m_graphics_action->setIcon(Resources::GetScaledThemeIcon("graphics"));
-  m_start_netplay_action->setIcon(Resources::GetScaledThemeIcon("wifi"));
-  m_view_gecko_codes_action->setIcon(Resources::GetScaledThemeIcon("debugger_add_breakpoint@2x"));
-  m_local_play_action->setIcon(Resources::GetScaledThemeIcon("rio"));
+  m_stop_action->setIcon(Resources::GetThemeIcon("stop"));
+  m_fullscreen_action->setIcon(Resources::GetThemeIcon("fullscreen"));
+  m_config_action->setIcon(Resources::GetThemeIcon("config"));
+  m_controllers_action->setIcon(Resources::GetThemeIcon("classic"));
+  m_graphics_action->setIcon(Resources::GetThemeIcon("graphics"));
+  m_start_netplay_action->setIcon(Resources::GetThemeIcon("wifi"));
+  m_view_gecko_codes_action->setIcon(Resources::GetThemeIcon("debugger_add_breakpoint@2x"));
+  m_local_play_action->setIcon(Resources::GetThemeIcon("rio"));
 }

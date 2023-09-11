@@ -92,7 +92,31 @@ class x64EmitterTest : public testing::Test
 protected:
   void SetUp() override
   {
-    memset(&cpu_info, 0x01, sizeof(cpu_info));
+    // Ensure settings are constant no matter on which actual hardware the test runs.
+    // Attempt to maximize complex code coverage. Note that this will miss some paths.
+    cpu_info.vendor = CPUVendor::Intel;
+    cpu_info.cpu_id = "GenuineIntel";
+    cpu_info.model_name = "Unknown";
+    cpu_info.HTT = true;
+    cpu_info.num_cores = 8;
+    cpu_info.bSSE3 = true;
+    cpu_info.bSSSE3 = true;
+    cpu_info.bSSE4_1 = true;
+    cpu_info.bSSE4_2 = true;
+    cpu_info.bLZCNT = true;
+    cpu_info.bAVX = true;
+    cpu_info.bBMI1 = true;
+    cpu_info.bBMI2 = true;
+    cpu_info.bBMI2FastParallelBitOps = true;
+    cpu_info.bFMA = true;
+    cpu_info.bFMA4 = true;
+    cpu_info.bAES = true;
+    cpu_info.bMOVBE = true;
+    cpu_info.bFlushToZero = true;
+    cpu_info.bAtom = false;
+    cpu_info.bCRC32 = true;
+    cpu_info.bSHA1 = true;
+    cpu_info.bSHA2 = true;
 
     emitter.reset(new X64CodeBlock());
     emitter->AllocCodeSpace(4096);
@@ -268,7 +292,7 @@ TEST_F(x64EmitterTest, JMP)
                     "jmp .-8");
 
   emitter->NOP(6);
-  emitter->JMP(code_buffer, true);
+  emitter->JMP(code_buffer, XEmitter::Jump::Near);
   ExpectDisassembly("multibyte nop "
                     "jmp .-11");
 }
@@ -356,10 +380,10 @@ BITSEARCH_TEST(TZCNT);
 
 TEST_F(x64EmitterTest, PREFETCH)
 {
-  emitter->PREFETCH(XEmitter::PF_NTA, MatR(R12));
-  emitter->PREFETCH(XEmitter::PF_T0, MatR(R12));
-  emitter->PREFETCH(XEmitter::PF_T1, MatR(R12));
-  emitter->PREFETCH(XEmitter::PF_T2, MatR(R12));
+  emitter->PREFETCH(XEmitter::PrefetchLevel::NTA, MatR(R12));
+  emitter->PREFETCH(XEmitter::PrefetchLevel::T0, MatR(R12));
+  emitter->PREFETCH(XEmitter::PrefetchLevel::T1, MatR(R12));
+  emitter->PREFETCH(XEmitter::PrefetchLevel::T2, MatR(R12));
 
   ExpectDisassembly("prefetchnta byte ptr ds:[r12] "
                     "prefetcht0 byte ptr ds:[r12] "

@@ -5,7 +5,9 @@
 #include <ostream>
 
 //For Mem Access
-#include "Core/HW/Memmap.h"
+// #include "Core/HW/Memmap.h"
+#include "Core/PowerPC/MMU.h"
+#include "Core/PowerPC/PowerPC.h"
 
 template <typename T>
 class TrackerValue {
@@ -59,16 +61,16 @@ public:
 
     u32 adr;
 
-    T read_value() {
+    T read_value(const Core::CPUThreadGuard& guard) {
         T mem_val;
         if constexpr(std::is_same<T, u8>::value){
-            mem_val = Memory::Read_U8(adr);
+            mem_val = PowerPC::MMU::HostRead_U8(guard, adr);
         }
         else if constexpr(std::is_same<T, u16>::value){
-            mem_val = Memory::Read_U16(adr);
+            mem_val = PowerPC::MMU::HostRead_U16(guard, adr);
         }
         else if constexpr(std::is_same<T, u32>::value){
-            mem_val = Memory::Read_U32(adr);
+            mem_val = PowerPC::MMU::HostRead_U32(guard, adr);
         }
         TrackerValue<T>::set_value(mem_val);
         return mem_val;

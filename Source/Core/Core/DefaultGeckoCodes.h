@@ -8,11 +8,12 @@
 #include <tuple>
 #include "Core/HW/Memmap.h"
 #include "Common/TagSet.h"
+#include "Core.h"
 
 class DefaultGeckoCodes {
   public:
-    void Init(std::optional<std::vector<ClientCode>> client_codes, bool tagset_active, bool is_night, bool disable_replays);
-    void RunCodeInject();
+    void Init(Core::GameName current_game, std::optional<std::vector<ClientCode>> client_codes, bool tagset_active, bool is_night, bool disable_replays);
+    void RunCodeInject(const Core::CPUThreadGuard& guard);
 
   private:
     struct DefaultGeckoCode
@@ -22,12 +23,13 @@ class DefaultGeckoCodes {
                            // to write at an addr every frame
       std::vector<u32> codeLines;
     };
-    // DefaultGeckoCode mGeckoCode;
 
-    void AddRequiredCodes();
-    void AddTagSetCodes();
-    void AddOptionalCodes();
-    void WriteAsm(DefaultGeckoCode CodeBlock);
+    Core::GameName currentGame;
+
+    void AddRequiredCodes(const Core::CPUThreadGuard& guard);
+    void AddTagSetCodes(const Core::CPUThreadGuard& guard);
+    void AddOptionalCodes(const Core::CPUThreadGuard& guard);
+    void WriteAsm(const Core::CPUThreadGuard& guard, DefaultGeckoCode CodeBlock);
 
     u32 aWriteAddr;  // address where the first code gets written to
 
@@ -105,6 +107,14 @@ class DefaultGeckoCodes {
     static const u32 aDuplicate_12 = 0x806553f8;
     static const u32 aDuplicate_13 = 0x8004e6b0; // write to 0x2c0000ff
     static const u32 aDuplicate_14 = 0x806553d4;
+
+    // Captain Swap on CSS [nuche]
+    static const u32 aCaptainSwap_1 = 0x8064f678; // write to 0x60000000
+    static const u32 aCaptainSwap_2 = 0x8064f67c;  // write to 0x60000000
+    static constexpr std::array<u32, 16> aCaptainSwap_3 = {0x002f004f, 0x00420050, 0x00504002, 0x80570032,
+                                                0x0051003e, 0x004f0051, 0x80584002, 0x0051004c,
+                                                0x40020050, 0x0054003e, 0x004d4002, 0x0040003e,
+                                                0x004d0051, 0x003e0046, 0x004b000d, 0x40024000};
 
     // Duplicates and Variants Have Chem [LittleCoaks]
     static constexpr u32 aDuplicateChem[140] = {
@@ -325,6 +335,41 @@ class DefaultGeckoCodes {
         {0x88030002, 0x3c40803c, 0x60426726, 0x88420000, 0x3ce08035, 0x60e730f7, 0x7f023a14,
          0x38400001, 0x98580000, 0x3c40803c, 0x6042672f, 0x88420000, 0x7f023a14, 0x38400001,
          0x98580000, 0x3c40803d, 0x60424400, 0x38e00000, 0x3b000000}
+    };
+
+    // Control Stick Overrides DPad [LittleCoaks]
+    const DefaultGeckoCode sControlStickOverridesDpad = {
+        0x800A59FC, 0,
+        {0x7C0E0378, 0x55CEC63E, 0x2C0E0052, 0x40810024, 0x2C0E00AE, 0x4080001C, 0x7C0E0378,
+         0x55CE063E, 0x2C0E00AE, 0x4080000C, 0x2C0E0052, 0x41810008, 0x54000416, 0x900501C0}
+    };
+
+    // Captain Swap On CSS [nuche]
+    const DefaultGeckoCode sCaptainSwap = {
+        0x8064F674, 0,
+        {0x3D60800F, 0x398B877C, 0xA54C0000, 0x280A0004, 0x41820014, 0x38C4298C, 0x38A0000D,
+         0x38830910, 0x48000264, 0x57C004E7, 0x57C3043E, 0x41820258, 0x3D608075, 0x398B0C48,
+         0x7D6CDA14, 0x8D4B0045, 0x280A0000, 0x408201F8, 0x3D608075, 0x398B0C48, 0x7D6CDA14,
+         0x8D4B0041, 0x280A0000, 0x408201E0, 0x3D608075, 0x398B0C48, 0x1D5B0004, 0x7D6C5214,
+         0x850B0000, 0x2C080009, 0x408001C4, 0x3D60803C, 0x398B6738, 0x1D5B0009, 0x7D6C5214,
+         0x39400009, 0x7D4903A6, 0x38E00000, 0x894B0000, 0x7C085000, 0x40820008, 0x48000014,
+         0x396B0001, 0x38E70001, 0x4200FFE8, 0x48000188, 0x60000000, 0x3D60803C, 0x398B6726,
+         0x1D5B0009, 0x7D6C5214, 0x7D4B3A14, 0x892A0000, 0x3D608011, 0x398B8ED0, 0x3960000C,
+         0x7D6903A6, 0x896C0000, 0x7C095800, 0x40820008, 0x48000010, 0x398C0001, 0x4200FFEC,
+         0x48000140, 0x60000000, 0x3D608035, 0x398B3080, 0x1D5B0004, 0x7D6A6214, 0x912B0000,
+         0x3D60803C, 0x398B6726, 0x1D5B0009, 0x7D6C5214, 0x898B0000, 0x992B0000, 0x7D4B3A14,
+         0x998A0000, 0x3D60803C, 0x398B6738, 0x1D5B0009, 0x7D6C5214, 0x898B0000, 0x990B0000,
+         0x7D4B3A14, 0x998A0000, 0x3D608035, 0x396BE9DB, 0x1D8900A0, 0x7D6B6214, 0x39800008,
+         0x7D8903A6, 0x3D80803C, 0x398C6727, 0x1D5B0009, 0x7D8C5214, 0x3D20803C, 0x3929674B,
+         0x7D295214, 0x88EC0000, 0x2C0700FF, 0x41820010, 0x7CE75A14, 0x89070000, 0x99090000,
+         0x39290001, 0x398C0001, 0x4200FFE0, 0x7C0802A6, 0x90010004, 0x9421FF00, 0xBC610008,
+         0x7F63DB78, 0x3D808006, 0x618C78CC, 0x7D8903A6, 0x4E800421, 0xB8610008, 0x80010104,
+         0x38210100, 0x7C0803A6, 0x7C0802A6, 0x90010004, 0x9421FF00, 0xBC610008, 0x3C608035,
+         0x606330EC, 0x80630000, 0x7F64DB78, 0x3D80806B, 0x618C4C78, 0x7D8903A6, 0x4E800421,
+         0xB8610008, 0x80010104, 0x38210100, 0x7C0803A6, 0x7C0802A6, 0x90010004, 0x9421FF00,
+         0xBC610008, 0x386001BC, 0x48000018, 0x7C0802A6, 0x90010004, 0x9421FF00, 0xBC610008,
+         0x386001BA, 0x3C80800E, 0x6084FBA4, 0x80840000, 0x38A0003F, 0x38C00000, 0x3D80800C,
+         0x618C836C, 0x7D8903A6, 0x4E800421, 0xB8610008, 0x80010104, 0x38210100, 0x7C0803A6}
     };
 
     std::vector<DefaultGeckoCode> sRequiredCodes = {

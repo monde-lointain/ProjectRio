@@ -39,6 +39,11 @@ __declspec(dllimport) void __stdcall DebugBreak(void);
   }
 #endif  // WIN32 ndef
 
+namespace Common
+{
+// strerror_r wrapper to handle XSI and GNU versions.
+const char* StrErrorWrapper(int error, char* buffer, std::size_t length);
+
 // Wrapper function to get last strerror(errno) string.
 // This function might change the error code.
 std::string LastStrerrorString();
@@ -51,3 +56,4 @@ std::string GetLastErrorString();
 // Obtains a full path to the specified module.
 std::optional<std::wstring> GetModuleName(void* hInstance);
 #endif
+}  // namespace Common

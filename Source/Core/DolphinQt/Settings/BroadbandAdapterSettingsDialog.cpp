@@ -48,6 +48,15 @@ void BroadbandAdapterSettingsDialog::InitControls()
     window_title = tr("Broadband Adapter MAC Address");
     break;
 
+  case Type::BuiltIn:
+    address_label = new QLabel(tr("Enter the DNS server to use:"));
+    address_placeholder = QStringLiteral("8.8.8.8");
+    current_address = QString::fromStdString(Config::Get(Config::MAIN_BBA_BUILTIN_DNS));
+    description = new QLabel(tr("Use 8.8.8.8 for normal DNS, else enter your custom one"));
+
+    window_title = tr("Broadband Adapter DNS setting");
+    break;
+
   case Type::XLinkKai:
     address_label = new QLabel(tr("Enter IP address of device running the XLink Kai Client:"));
     address_placeholder = QString::fromStdString("127.0.0.1");
@@ -86,12 +95,14 @@ void BroadbandAdapterSettingsDialog::InitControls()
 
 void BroadbandAdapterSettingsDialog::SaveAddress()
 {
-  const std::string bba_new_address(StripSpaces(m_address_input->text().toStdString()));
+  const std::string bba_new_address(StripWhitespace(m_address_input->text().toStdString()));
 
   switch (m_bba_type)
   {
   case Type::Ethernet:
-    if (!std::regex_match(bba_new_address, std::regex("([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})")))
+  {
+    static const std::regex re_mac_address("([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})");
+    if (!std::regex_match(bba_new_address, re_mac_address))
     {
       ModalMessageBox::critical(
           this, tr("Broadband Adapter Error"),
@@ -102,7 +113,10 @@ void BroadbandAdapterSettingsDialog::SaveAddress()
     }
     Config::SetBaseOrCurrent(Config::MAIN_BBA_MAC, bba_new_address);
     break;
-
+  }
+  case Type::BuiltIn:
+    Config::SetBaseOrCurrent(Config::MAIN_BBA_BUILTIN_DNS, bba_new_address);
+    break;
   case Type::XLinkKai:
     Config::SetBaseOrCurrent(Config::MAIN_BBA_XLINK_IP, bba_new_address);
     break;

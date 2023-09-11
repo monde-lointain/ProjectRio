@@ -3,6 +3,7 @@
 
 #include "DolphinQt/Config/GeckoCodeWidget.h"
 
+#include <algorithm>
 #include <utility>
 
 #include <QCursor>
@@ -41,13 +42,14 @@ GeckoCodeWidget::GeckoCodeWidget(std::string game_id, std::string gametdb_id, u1
 
   if (!m_game_id.empty())
   {
-    IniFile game_ini_local;
+    Common::IniFile game_ini_local;
 
     // We don't use LoadLocalGameIni() here because user cheat codes that are installed via the UI
     // will always be stored in GS/${GAMEID}.ini
     game_ini_local.Load(File::GetUserPath(D_GAMESETTINGS_IDX) + m_game_id + ".ini");
 
-    const IniFile game_ini_default = SConfig::LoadDefaultGameIni(m_game_id, m_game_revision);
+    const Common::IniFile game_ini_default =
+        SConfig::LoadDefaultGameIni(m_game_id, m_game_revision);
     m_gecko_codes = Gecko::LoadCodes(game_ini_default, game_ini_local);
   }
 
@@ -85,9 +87,15 @@ void GeckoCodeWidget::CreateWidgets()
   m_remove_code = new NonDefaultQPushButton(tr("&Remove Code"));
   m_download_codes = new NonDefaultQPushButton(tr("Download Codes"));
 
-  m_download_codes->setToolTip(tr(m_game_id == "GYQE01" ?
-                                      "Download Mario Superstar Baseball Codes" :
-                                      "Download Codes from WiiRD Database"));
+  std::string download_codes_tooltip;
+  if (m_game_id == "GYQE01") {
+    download_codes_tooltip = "Download Mario Superstar Baseball Codes";
+  } else if (m_game_id == "GFTE01") {
+    download_codes_tooltip = "Download Mario Golf Toadstool Tour Codes";
+  } else {
+    "Download Codes from WiiRD Database";
+  }
+  m_download_codes->setToolTip(QString::fromStdString(download_codes_tooltip));
 
   m_code_list->setEnabled(!m_game_id.empty());
   m_name_label->setEnabled(!m_game_id.empty());
@@ -251,7 +259,7 @@ void GeckoCodeWidget::SaveCodes()
   const auto ini_path =
       std::string(File::GetUserPath(D_GAMESETTINGS_IDX)).append(m_game_id).append(".ini");
 
-  IniFile game_ini_local;
+  Common::IniFile game_ini_local;
   game_ini_local.Load(ini_path);
   Gecko::SaveCodes(game_ini_local, m_gecko_codes);
   game_ini_local.Save(ini_path);
@@ -262,6 +270,8 @@ void GeckoCodeWidget::OnContextMenuRequested()
   QMenu menu;
 
   menu.addAction(tr("Sort Alphabetically"), this, &GeckoCodeWidget::SortAlphabetically);
+  menu.addAction(tr("Show Enabled Codes First"), this, &GeckoCodeWidget::SortEnabledCodesFirst);
+  menu.addAction(tr("Show Disabled Codes First"), this, &GeckoCodeWidget::SortDisabledCodesFirst);
 
   menu.exec(QCursor::pos());
 }
@@ -270,6 +280,26 @@ void GeckoCodeWidget::SortAlphabetically()
 {
   m_code_list->sortItems();
   OnListReordered();
+}
+
+void GeckoCodeWidget::SortEnabledCodesFirst()
+{
+  std::stable_sort(m_gecko_codes.begin(), m_gecko_codes.end(), [](const auto& a, const auto& b) {
+    return a.enabled && a.enabled != b.enabled;
+  });
+
+  UpdateList();
+  SaveCodes();
+}
+
+void GeckoCodeWidget::SortDisabledCodesFirst()
+{
+  std::stable_sort(m_gecko_codes.begin(), m_gecko_codes.end(), [](const auto& a, const auto& b) {
+    return !a.enabled && a.enabled != b.enabled;
+  });
+
+  UpdateList();
+  SaveCodes();
 }
 
 void GeckoCodeWidget::OnListReordered()
