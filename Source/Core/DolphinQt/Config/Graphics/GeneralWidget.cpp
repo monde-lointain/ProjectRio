@@ -264,7 +264,7 @@ void GeneralWidget::AddDescriptions()
                  " For Mario Golf, the current Golfer's name is shown. Be sure to assign Local Players to the correct port.");
 
   static const char TR_TRAINING_MODE[] =
-      QT_TR_NOOP("Displays game informaiton on screen in real-time. Useful for "
+      QT_TR_NOOP("Displays game information on screen in real-time. Useful for "
                  "practice/testing/labbing purposes.");
 
     static const char TR_DRAFT_TIMER[] =
