@@ -1964,7 +1964,7 @@ void NetPlayClient::GetActiveGeckoCodes()
     return;
 
   // Find all INI files
-  const auto game_id = "GYQE01";
+  const auto game_id = m_selected_game.game_id;
   const auto revision = 0;
   Common::IniFile globalIni;
   for (const std::string& filename : ConfigLoaders::GetGameIniFilenames(game_id, revision))
