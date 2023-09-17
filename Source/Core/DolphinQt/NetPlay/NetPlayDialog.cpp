@@ -778,6 +778,7 @@ void NetPlayDialog::show(bool use_traversal)
   m_disable_replays->setHidden(!is_hosting);
   m_disable_replays->setEnabled(is_hosting);
 
+  UpdateLobbyLayout();
   SetOptionsEnabled(true);
 
   QDialog::show();
@@ -1051,22 +1052,30 @@ void NetPlayDialog::OnMsgChangeGame(const NetPlay::SyncIdentifier& sync_identifi
                                     const std::string& netplay_name)
 {
   QString qname = QString::fromStdString(netplay_name);
-  QueueOnObject(this, [this, qname, netplay_name, &sync_identifier] {
-    m_game_button->setText(qname);
-    m_current_game_identifier = sync_identifier;
-    m_current_game_name = netplay_name;
-    UpdateDiscordPresence();
-  });
-  UpdateLobbyLayout(netplay_name);
+  //QueueOnObject(this, [this, qname, netplay_name, &sync_identifier] {
+  //  m_game_button->setText(qname);
+  //  m_current_game_identifier = sync_identifier;
+  //  m_current_game_name = netplay_name;
+  //  UpdateDiscordPresence();
+  //});
+  m_game_button->setText(qname);
+  m_current_game_identifier = sync_identifier;
+  m_current_game_name = netplay_name;
+  UpdateDiscordPresence();
+  UpdateLobbyLayout();
 }
 
-void NetPlayDialog::UpdateLobbyLayout(std ::string game_name)
+void NetPlayDialog::UpdateLobbyLayout()
 {
-  if (game_name == "Mario Superstar Baseball (GYQE01)")
+  bool is_hosting = Settings::Instance().GetNetPlayServer() != nullptr;
+  if (m_current_game_name == "Mario Superstar Baseball (GYQE01)")
   {
-    m_night_stadium->setVisible(true);
-    m_disable_replays->setVisible(true);
-
+    if (is_hosting)
+    {
+      m_night_stadium->setVisible(true);
+      m_disable_replays->setVisible(true);
+    }
+    
     m_random_stadium->setVisible(true);
     m_random_9->setVisible(false);
     m_random_18->setVisible(false);
