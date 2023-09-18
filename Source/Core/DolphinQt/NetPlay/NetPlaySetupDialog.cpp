@@ -579,7 +579,6 @@ void NetPlaySetupDialog::show()
   RefreshBrowser();
 
   PopulateGameList();
-  CheckGameModesAreAllowed();
   QDialog::show();
 }
 
