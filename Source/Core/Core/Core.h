@@ -281,8 +281,11 @@ static const u32 aWhoPaused = 0x8039D7D3; // 2 == fielder, 1 == batter
 //static const u32 aMatchStarted = 0x8036F3B8;  // bool for if a game is in session
 static const u32 aSceneId = 0x800E877F;
 
-
-static const u32 aCurrentGolfer = 0x804E68FB; // 0-3, indicates current golfing player
+static const u32 aCurrentGolfer = 0x804E68FB; // 0-3, indicates current golfing player index
+static const u32 aPlayer1Port = 0x804E6674; 
+static const u32 aPlayer2Port = 0x804E6675;
+static const u32 aPlayer3Port = 0x804E6676; 
+static const u32 aPlayer4Port = 0x804E6677; 
 static const u32 aPlayerCount = 0x804E68FA; // indicates total player count
 static const u32 aIsGolfMatch = 0x80162B5F; // 1 if golfing session active; 0 on menus
 }  // namespace Core

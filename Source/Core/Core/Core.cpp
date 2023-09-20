@@ -342,8 +342,23 @@ void MSSBCalculateNextGolfer(const Core::CPUThreadGuard& guard, int& nextGolfer)
 
 void MGTTCalculateNextGolfer(const Core::CPUThreadGuard& guard, int& nextGolfer)
 {
-  // u8 playerCount = PowerPC::MMU::HostRead_U8(guard, aPlayerCount);
-  nextGolfer = PowerPC::MMU::HostRead_U8(guard, aCurrentGolfer);
+  u8 golferIndex = PowerPC::MMU::HostRead_U8(guard, aCurrentGolfer);
+  switch(golferIndex) {
+    case 0:
+      nextGolfer = PowerPC::MMU::HostRead_U8(guard, aPlayer1Port);
+      break;
+    case 1: 
+      nextGolfer = PowerPC::MMU::HostRead_U8(guard, aPlayer2Port);
+      break;
+    case 2:
+      nextGolfer = PowerPC::MMU::HostRead_U8(guard, aPlayer3Port);
+      break;
+    case 3:
+      nextGolfer = PowerPC::MMU::HostRead_U8(guard, aPlayer4Port);
+      break;
+    default:
+      break;
+  }
 }
 
 bool IsGolfMode()
