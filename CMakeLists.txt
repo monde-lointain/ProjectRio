@@ -133,7 +133,7 @@ endif()
 
 if(APPLE)
   option(MACOS_USE_DEFAULT_SEARCH_PATH "Don't prioritize system library paths" OFF)
-  option(SKIP_POSTPROCESS_BUNDLE "Skip postprocessing bundle for redistributability" ON)
+  option(SKIP_POSTPROCESS_BUNDLE "Skip postprocessing bundle for redistributability" OFF)
   # Enable adhoc code signing by default (otherwise makefile builds on ARM will not work)
   option(MACOS_CODE_SIGNING "Enable codesigning" ON)
   option(USE_BUNDLED_MOLTENVK "Build MoltenVK from Externals with Dolphin-specific patches" ON)

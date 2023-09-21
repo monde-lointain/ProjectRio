@@ -2,7 +2,7 @@
 # build-mac.sh
 
 QT_BREW_PATH=$(brew --prefix qt@6)
-CMAKE_FLAGS="-DQt6_DIR=${QT_BREW_PATH}/lib/cmake/Qt6 -DENABLE_NOGUI=false"
+CMAKE_FLAGS="-DQT_DIR=${QT_BREW_PATH}/lib/cmake/Qt5 -DENABLE_NOGUI=false"
 
 DATA_SYS_PATH="./Data/Sys/"
 BINARY_PATH="./build/Binaries/Dolphin.app/Contents/Resources/"
@@ -22,7 +22,7 @@ fi
 mkdir -p build
 pushd build
 cmake ${CMAKE_FLAGS} ..
-make -j7
+cmake --build . --target dolphin-emu -- -j$(nproc)
 popd
 
 # Copy the Sys folder in
