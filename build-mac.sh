@@ -19,7 +19,6 @@ else
 fi
 
 # Move into the build directory, run CMake, and compile the project
-brew reinstall icu4c
 mkdir -p build
 pushd build
 cmake ${CMAKE_FLAGS} ..
